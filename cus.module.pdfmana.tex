@@ -1,0 +1,35 @@
+\CUSDependency{disable={transparent},package={l3opacity}}
+\CUSProvideExplModule{pdfmana}{\cus@d@te}{\cus@versi@n}{special for pdfmanagement}
+\bool_lazy_and:nnF
+  { \cs_if_exist_p:N \pdfmanagement_if_active_p: } 
+  { \pdfmanagement_if_active_p: } 
+  { \tex_endinput:D }
+
+\NewDocumentCommand \transparent { m }
+  { \opacity_select:n { \fp_eval:n{ min(max(0,#1),1) } } }
+
+\NewDocumentCommand \texttransparent { m m }
+  {
+    \mode_leave_vertical:
+    \group_begin:
+      \transparent{#1}
+      #2
+    \group_end:
+  }
+
+\cus_pkg_code:nnn { xcolor } { }
+  {
+    \cs_set_eq:NN \cus_color_select:n \color_select:n
+    \cs_set_eq:NN \cus_color_select:nn \color_select:nn
+    % \cs_set_eq:NN \cus_color_set:nn \color_set:nn
+    % \cs_set_eq:NN \cus_color_set:nnn \color_set:nnn
+    \cs_set_protected:Npn \cus_color_set:nn { \colorlet }
+    \cs_set_protected:Npn \cus_color_set:nnn { \definecolor }
+  }
+\cus_pkg_code:nnn { hyperref } { }
+  {
+    \cs_set_nopar:Npn \cus@colorfile { \cus_color_select:n { hyp/color/file } }
+    \cs_set_nopar:Npn \cus@colorlink { \cus_color_select:n { hyp/color/link } }
+    \cs_set_nopar:Npn \cus@colorcite { \cus_color_select:n { hyp/color/cite } }
+    \cs_set_nopar:Npn \cus@colorurl { \cus_color_select:n { hyp/color/url } }
+  }

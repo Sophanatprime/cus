@@ -1,0 +1,827 @@
+\CUSDependency{ module={util}, package={multicol, rotating, lscape, (ROTpdf)pdflscape} }
+\CUSProvideExplModule{box}{\cus@d@te}{\cus@versi@n}{box, breakable box}
+
+% modify framed.sty 
+\skip_new:N \l__cus_box_outer_skip 
+\skip_set:Nn \l__cus_box_outer_skip \c_max_dim
+\dim_new:N \l__cus_box_width_dim % width be to align
+\dim_set_eq:NN \l__cus_box_width_dim \c_max_dim
+\fp_new:N \l__cus_box_ratio_fp % width to total frame ratio, text:frame 
+\fp_set:Nn \l__cus_box_ratio_fp { 1 }
+
+
+% cannot be used in math mode!
+\cs_new_protected:Npn \cus_box_start:nn #1#2
+  {
+    \par
+    \nointerlineskip 
+    \group_begin:
+    \cs_set:Npn \footnotemark 
+      { \msg_warning:nn { cus } { box-footnote } \__cus_use_none_o:w }
+    \cs_set:Npn \footnotetext 
+      { \msg_warning:nn { cus } { box-footnote } \__cus_use_none_om:w }
+    \cs_set:Npn \footnote 
+      { \msg_warning:nn { cus } { box-footnote } \__cus_use_none_om:w }
+    \if_dim:w \l__cus_box_width_dim = \c_max_dim
+      \dim_set_eq:NN \l__cus_box_width_dim \textwidth
+    \fi:
+    \if_dim:w \l__cus_box_outer_skip = \c_max_dim
+      \skip_set:Nn \l__cus_box_outer_skip { 8pt plus 8pt minus 6pt }
+    \fi:
+    \keys_set:nn { cus/frame } {#1}
+    \dim_set:Nn \tex_hsize:D { \fp_use:N \l__cus_box_ratio_fp \l__cus_box_width_dim }
+    \__cus_box_frame_measure:N \__cus_box_frame_nosplit:n 
+    \cs_set_eq:NN \width \l__cus_box_wd_dim
+    \cs_set_eq:NN \height \l__cus_box_ht_dim
+    % insert pre-penalties and skips
+    \group_begin:
+    \skip_set_eq:NN \skip@ \lastskip
+    \if@nobreak \else
+      \tex_penalty:D 9999 ~ % updates \page parameters
+      \ifdim\pagefilstretch=\z@ \ifdim\pagefillstretch=\z@
+        % not infinitely stretchable, so encourage a page break here 
+        \str_if_eq:eeTF { \skip_use:N \skip@ } { \skip_use:N \c_zero_skip }
+          { \tex_penalty:D -30 ~ }
+          { \tex_vskip:D -\skip@ \tex_penalty:D -30 ~ \skip_vertical:N \skip@ }
+      \fi:\fi:
+      \tex_penalty:D \c_zero_int
+      % Give a stretchy breakpoint that will always be taken in preference
+      % to the \penalty 9999 used to update page parameters.  The cube root
+      % of 10000/100 indicates a multiplier of 0.21545, but the maximum 
+      % calculated badness is really 8192, not 10000, so the multiplier
+      % is 0.2301.
+      \skip_add:Nn \skip@ 
+        {
+            \c_zero_dim plus -.5\baselineskip
+          + \c_zero_dim plus -.231\height
+          + \c_zero_dim plus -.231\skip@
+          + \c_zero_dim plus -.231\l__cus_box_outer_skip
+        }
+      \tex_vskip:D -\skip@ \tex_penalty:D 1800 ~ \skip_vertical:N \skip@
+    \fi:
+    \addvspace { \l__cus_box_outer_skip }
+    \group_end:
+    % clear out pending page break
+    \tex_penalty:D \@M \tex_vskip:D 2\baselineskip \tex_vskip:D \height
+    \tex_penalty:D 9999 ~ \tex_vskip:D -2\baselineskip \tex_vskip:D -\height
+    \tex_penalty:D 9999~ % updates \pagetotal
+    \__cus_box_adjust_height: 
+    \vbox_set:Nw \@tempboxa 
+      #2 % Modifications to \hsize (can use \width and \height)
+      \dim_set_eq:NN \textwidth \tex_hsize:D 
+      \dim_set_eq:NN \columnwidth \tex_hsize:D
+      \l__cus_box_init_tl
+  }
+
+\cs_new_protected:Npn \cus_box_stop: 
+  {
+      \par 
+      \tex_kern:D \c_zero_dim 
+      \tex_hrule:D \@width\tex_hsize:D \@height\c_zero_dim % possibly bad
+      \tex_penalty:D -100 ~ % (\hrule moves depth into height)
+    \vbox_set_end:
+    \group_begin: 
+      \__cus_box_put:NNN \@tempboxa \__cus_box_frame_nosplit:n \__cus_box_frame_first:n 
+    \group_end:
+    \nointerlineskip
+    \group_end:
+    \@minipagefalse % In case it was set and not cleared 
+  }
+
+% \__cus_box_put:NNN takes the contents of box #1 and puts all, or a piece,
+% of it on the page with a frame (\__cus_box_frame:n , \__cus_box_frame_first:n ,
+% \__cus_box_frame_middle:n , or \__cus_box_frame_last:n ).  It recurses until all of 
+% box #1 has been used up. (box #1 must have zero depth.)
+% #2 = attempted framing command, if no split
+% #3 = framing command if split
+% First iteration: Try to fit with \__cus_box_frame_nosplit:n . If it does not fit,
+% split for \__cus_box_frame_first:n .
+% Later iteration: Try to fit with \__cus_box_frame_last:n . If it does not
+% fit, split for \__cus_box_frame_middle:n .
+\cs_new_nopar:Npn \__cus_box_put:NNN #1 #2 #3
+  {
+    \scan_stop:
+    \if_dim:w \tex_pagegoal:D = \c_max_dim \tex_pagegoal:D \tex_vsize:D \fi: 
+    \if_mode_inner:
+      \__cus_box_put_aux:NN #1#2%
+      \__cus_box_after: 
+    \else:
+      % natural space left on page
+      \dim_set:Nn \dimen@ { \tex_pagegoal:D - \tex_pagetotal:D } 
+      \if_dim:w \dimen@ < 2\baselineskip % Too little room on page
+        \eject \__cus_box_adjust_height: \__cus_box_put:NNN #1#2#3
+      \else % there's appreciable room left on the page
+        \__cus_box_frame_measure:N #2
+        \group_begin: % temporarily set \dimen@ to be...
+        % maximum space available on page for content 
+        \dim_add:Nn \dimen@ { 0.8 \tex_pageshrink:D - \l__cus_box_ht_dim }
+        %%% LOOKS SUBTRACTED AND ADDED, SO DOUBLE ACCOUNTING!
+        \exp_after:wN \group_end:
+        % expand \ifdim, then restore \dimen@ to real room left on page
+        \if_dim:w \dimen@ > \box_ht:N #1 % whole box does fit
+          % ToDo: Change this to use vsplit anyway to capture the marks
+          % MERGE THIS WITH THE else CLAUSE!!!
+          \__cus_box_put_aux:NN #1#2%
+          \__cus_box_after: 
+        \else % box must be split
+          % update frame measurement to use \__cus_box_frame_first:n or \__cus_box_frame_middle:n 
+          \__cus_box_frame_measure:N #3
+          \vbox_set:Nn #1
+            {% simulate frame and flexiblity of the page:
+              \tex_vskip:D \l__cus_box_ht_dim \@plus\tex_pagestretch:D \@minus0.8\tex_pageshrink:D 
+              \tex_kern:D 137sp \tex_kern:D -137sp \tex_penalty:D -30 ~
+              \vbox_unpack_drop:N #1
+            }
+          \cs_set_nopar:Npx \__cus_box_restore:
+            {
+              \tex_boxmaxdepth:D = \dim_use:N \tex_boxmaxdepth:D 
+              \tex_splittopskip:D = \skip_use:N \tex_splittopskip:D 
+            }
+          \dim_zero:N \tex_boxmaxdepth:D 
+          \skip_zero:N \tex_splittopskip:D 
+          \vbox_set_split_to_ht:NNn \tw@ #1 \dimen@
+  %%      \toks99\expandafter{\splitfirstmark}%
+  %%      \toks98\expandafter{\splitbotmark}%
+          \vbox_set:Nn \tw@ { \vbox_unpack_drop:N \tw@ } % natural-sized 
+          % If the split-to width > (\vsize-\topskip), then set box to full width.
+          \dim_compare:nNnTF { \dimen@ + \tex_topskip:D } > { \tex_pagegoal:D }
+            { 
+              \dim_set:Nn \dimen@ii 
+                { \tex_pagegoal:D - \tex_topskip:D + \l__cus_box_adjust_height_tl  } 
+            }
+            {% suspect this is implemented incorrectly:
+              % If the split-to width > feasible room_on_page, rebox it smaller.
+              \tex_advance:D \dimen@ .8\pageshrink
+              \if_dim:w \box_ht:N \tw@ > \dimen@
+                \dimen@ii = \dimen@
+              \else: % use natural width
+                \dimen@ii = \box_ht:N \tw@
+              \fi:
+            }
+          % Re-box contents to desired width \dimen@ii
+          \dim_add:Nn \dimen@ii { -\l__cus_box_ht_dim }
+          \vbox_set_to_ht:Nnw \tw@ { \dimen@ii }
+            % remove simulated frame and page flexibility:
+            \tex_vskip:D -\l__cus_box_ht_dim \@plus-\pagestretch \@minus-.8\pageshrink
+            \vbox_unpack_drop:N \tw@ 
+            \tex_unpenalty:D \tex_unpenalty:D 
+          \if_dim:w \tex_lastkern:D = -137sp % whole box went to next page
+            % need work here???
+            \vbox_set_end: 
+            \__cus_box_restore: 
+            \eject % (\vskip for frame width was discarded) 
+            \__cus_box_adjust_height: 
+            \__cus_box_put:NNN #1#2#3 % INSERTED ???
+          \else: % Got material split off at the head
+            \vbox_set_end:
+            \__cus_box_restore:
+            \if_box_empty:N #1 % it all fit after all 
+              \box_set_eq:NN #1 \tw@ 
+              \__cus_box_put_aux:NN #1#2
+              \__cus_box_after: 
+            \else: % it really did split
+              \if_dim:w \box_wd:N \tw@ > \c_zero_dim 
+                \box_set_wd:Nn \tw@ { \box_wd:N #1 }
+                \__cus_box_put_aux:NN \tw@ #3
+              \else:
+                \box_use_drop:N \tw@
+              \fi:
+              \tex_hrule:D \@height\z@ \@width\tex_hsize:D 
+              \eject
+              \__cus_box_adjust_height: 
+              \__cus_box_put:NNN #1 \__cus_box_frame_last:n \__cus_box_frame_middle:n 
+      \fi:\fi:\fi:\fi:\fi:
+  }
+
+\cs_new:Npn \__cus_box_hbox_center:n #1
+  { \hbox_to_wd:nn \l__cus_box_width_dim { \tex_hss:D #1 \tex_hss:D } }
+\cs_new:Npn \__cus_box_hbox_left:n #1
+  { \hbox_to_wd:nn \l__cus_box_width_dim { #1 \tex_hss:D } }
+\cs_new:Npn \__cus_box_hbox_right:n #1
+  { \hbox_to_wd:nn \l__cus_box_width_dim { \tex_hss:D #1 } }
+\cs_new:Npn \__cus_box_hbox_outer:n
+  { 
+    \if_int_odd:w \c@page \exp_after:wN \__cus_box_hbox_right:n 
+    \else: \exp_after:wN \__cus_box_hbox_left:n 
+    \fi:
+  }
+\cs_new:Npn \__cus_box_hbox_inner:n
+  { 
+    \if_int_odd:w \c@page \exp_after:wN \__cus_box_hbox_left:n 
+    \else: \exp_after:wN \__cus_box_hbox_right:n 
+    \fi:
+  }
+\cs_new:Npn \__cus_box_hbox_absouter:n
+  { 
+    \if_int_odd:w \g_shipout_readonly_int \exp_after:wN \__cus_box_hbox_left:n 
+    \else: \exp_after:wN \__cus_box_hbox_right:n 
+    \fi:
+  }
+\cs_new_eq:cN { __cus_box_hbox_outer*:n } \__cus_box_hbox_absouter:n 
+\cs_new:Npn \__cus_box_hbox_absinner:n
+  { 
+    \if_int_odd:w \g_shipout_readonly_int \exp_after:wN \__cus_box_hbox_right:n 
+    \else: \exp_after:wN \__cus_box_hbox_left:n 
+    \fi:
+  }
+\cs_new_eq:cN { __cus_box_hbox_inner*:n } \__cus_box_hbox_absinner:n 
+\cs_new_eq:NN \__cus_box_hbox:n \__cus_box_hbox_center:n 
+\cs_new_nopar:Npn \__cus_box_put_aux:NN #1#2
+  {
+    \if_box_empty:N #1
+    \else:
+      \__cus_box_hbox:n 
+        {
+          \cs_set:Npx \height { \dim_eval:n { \box_ht:N #1 } }
+          \cs_set:Npx \width { \dim_eval:n { \box_wd:N #1 } }
+          \cs_set:Npx \depth { \dim_eval:n { \box_dp:N #1 } }
+          \cs_set:Npx \totalheight { \dim_eval:n { \box_ht_plus_dp:N #1 } }
+          #2 { \box_use_drop:N #1 }
+        }
+    \fi:
+  }
+
+\cs_new_nopar:Npn \__cus_box_after: 
+  {
+    \nointerlineskip \null
+    \tex_penalty:D -30 ~ 
+    \skip_vertical:N \l__cus_box_outer_skip
+  }
+
+% measure width and height added by frame (#1 = frame command)
+% call results \l__cus_box_wd_dim and \l__cus_box_ht_dim
+% todo: a mechanism to handle wide frame titles 
+\dim_new:N \l__cus_box_wd_dim
+\dim_new:N \l__cus_box_ht_dim
+\cs_new_protected_nopar:Npn \__cus_box_frame_measure:N #1
+  {
+    \group_begin:
+    \vbox_set:Nn \z@ 
+      {
+        \skip_vertical:n { -5in }
+        \hbox:n 
+          { 
+            \cs_set:Npn \height { 5in }
+            \cs_set:Npn \width { 5in }
+            \cs_set:Npn \depth { 0pt }
+            \cs_set:Npn \totalheight { 5in }
+            \skip_horizontal:n { -5in }
+            #1 { \hbox:n { \tex_vrule:D \@height 4.7in \@depth.3in \@width 5in } } 
+          }
+        \skip_vertical:N \c_zero_skip
+      }
+    \dim_gset:Nn \l__cus_box_wd_dim { \box_wd:N \z@ }
+    \dim_gset:Nn \l__cus_box_ht_dim { \box_ht:N \z@ }
+    \group_end:
+  }
+
+\cs_new:Npn \__cus_box_adjust_height: 
+  {
+    \vbox_to_ht:nn \l__cus_box_adjust_height_tl { } % get proper baseline skip from above.
+    \tex_penalty:D \@M 
+    \nointerlineskip
+    \tex_vskip:D -\l__cus_box_adjust_height_tl 
+    \tex_penalty:D \@M
+  } % useful for tops of pages
+
+\cs_new_protected:Npn \__cus_box_frame:nnn #1#2#3
+  {
+    \group_begin:
+      \hbox_set:Nn \l__box_internal_box {#3}
+      \hbox:n
+        {
+          \__cus_kern:n { #1 + #2 } % l sep 
+          \box_use:N \l__box_internal_box
+          \__cus_kern:n { - \box_wd:N \l__box_internal_box - #2 - #1 } % l 
+          \box_move_down:nn { \box_dp:N \l__box_internal_box + #2 + #1 }
+            {
+              \vbox:n
+                {
+                  \cus_rule_horizontal:nn {#1} { \c_zero_dim }
+                  \hbox:n
+                    {
+                      \cus_rule_vertical:n {#1}
+                      \__cus_kern:n { #2 * 2 + \box_wd:N \l__box_internal_box }
+                      \vbox:n
+                        {
+                          \__cus_kern:n 
+                            {
+                                  #2 * 2
+                              + \box_dp:N \l__box_internal_box
+                              + \box_ht:N \l__box_internal_box
+                            }
+                        }
+                      \cus_rule_vertical:n {#1}
+                    }
+                  \cus_rule_horizontal:nn {#1} { \c_zero_dim }
+                }
+            }
+        }
+    \group_end:
+  }
+\cs_new_protected:Npn \__cus_box_frame:NNNNnnn #1#2#3#4#5#6#7 % l, b, r, t, 
+  {
+    \group_begin:
+      \hbox_set:Nn \l__box_internal_box {#7}
+      \hbox:n
+        {
+          \__cus_kern:n { \if_int_odd:w #1 \exp_stop_f: #5 + #6 \else: 0pt \fi: }
+          \box_use:N \l__box_internal_box
+          \__cus_kern:n { - \box_wd:N \l__box_internal_box \if_int_odd:w #1 - #6 - #5 \fi: }
+          \box_move_down:nn { \box_dp:N \l__box_internal_box \if_int_odd:w #4 + #6 + #5 \fi: }
+            {
+              \vbox:n
+                {
+                  \cus_rule_horizontal:nn { \if_int_odd:w #2 \exp_stop_f: #5 \else: 0pt \fi: } { \c_zero_dim }
+                  \hbox:n
+                    {
+                      \cus_rule_vertical:n { \if_int_odd:w #1 \exp_stop_f: #5 \else: 0pt \fi: }
+                      \__cus_kern:n { \if_int_odd:w #1 + #6 \fi: \if_int_odd:w #3 + #6 \fi: + \box_wd:N \l__box_internal_box }
+                      \vbox:n
+                        {
+                          \__cus_kern:n 
+                            {
+                              + \if_int_odd:w #2 \exp_stop_f: #6 \fi:
+                              + \if_int_odd:w #4 \exp_stop_f: #6 \fi:
+                              + \box_dp:N \l__box_internal_box
+                              + \box_ht:N \l__box_internal_box
+                            }
+                        }
+                      \cus_rule_vertical:n { \if_int_odd:w #3 \exp_stop_f: #5 \else: 0pt \fi:}
+                    }
+                  \cus_rule_horizontal:nn { \if_int_odd:w #4 \exp_stop_f: #5 \else: 0pt \fi: } { \c_zero_dim }
+                }
+            }
+        }
+    \group_end:
+  }
+\cs_new_protected:Npn \__cus_box_frame:ffn #1#2
+  { \exp_args:Nff \__cus_box_frame:nnn { \dim_eval:n {#1} } { \dim_eval:n {#2} } }
+% Provide configuration commands:
+\cs_new_protected:Npn \__cus_box_frame:n 
+  { \__cus_box_frame:nnn \cusframerule \cusframesep }
+\cs_new_nopar:Npn \cusborderframe { \__cus_box_frame:NNNNn }
+\cs_new_protected:Npn \__cus_box_frame:NNNNn #1#2#3#4
+  { \__cus_box_frame:NNNNnnn #1#2#3#4 \cusframerule \cusframesep }
+\dim_new:N \cusframerule
+\dim_set:Nn \cusframerule { \fboxrule }
+\dim_new:N \cusframesep
+\dim_set:Nn \cusframesep { 3\fboxsep }
+\cs_new_protected:Npn \__cus_box_frame_first:n   { \__cus_box_frame:n }
+\cs_new_protected:Npn \__cus_box_frame_middle:n  { \__cus_box_frame:n }
+\cs_new_protected:Npn \__cus_box_frame_last:n    { \__cus_box_frame:n }
+\cs_new_protected:Npn \__cus_box_frame_nosplit:n { \__cus_box_frame:n }
+
+% Height of frame above first baseline when frame starts a page:
+\tl_set:Nn \l__cus_box_adjust_height_tl { 6pt }
+
+% \__cus_box_init: has parts of \@parboxrestore, performing a similar but 
+% less complete restoration of the default layout.  See how it is used in
+% the "settings" argument of \MakeFrame.  Though not a parameter, \hsize 
+% should be set to the desired total line width available inside the
+% frame before invoking \__cus_box_init:.  
+\cs_new_protected:Npn \__cus_box_init:
+  {
+    \cs_set_eq:NN \if@nobreak \if_false:
+    \cs_set_eq:NN \if@noskipsec \if_false:
+    \cs_set_eq:NN \- \@dischyph
+    \cs_set_eq:NN \' \@acci \cs_set_eq:NN \` \@accii \cs_set_eq:NN \= \@acciii
+    % Test if we are in a list (or list-like paragraph)
+    \if_int_compare:w
+        \if_dim:w \@totalleftmargin>\z@ 1\fi:
+        \if_dim:w \rightmargin>\z@ 1\fi:
+        \if_dim:w \@listdepth\p@ >\c_zero_dim 1\fi: 
+        0 > \c_zero_int
+      \@setminipage % snug fit around the item.  I would like this to be non-global.
+      % Now try to propageate changes of width from \hsize to list parameters.
+      % This is deficient, but a more advanced way to indicate modification to text 
+      % dimensions is not (yet) provided; in particular, no separate left/right
+      % adjustment.
+      \dim_add:Nn \linewidth { \tex_hsize:D - \columnwidth }
+      \tex_parshape:D \@ne \@totalleftmargin \linewidth
+    \else: % Not in list 
+      \dim_set_eq:NN \linewidth \tex_hsize:D 
+    \fi:
+    \sloppy
+  }
+
+\msg_new:nnn { cus } { box-footnote } { Footnote~in~framed~box,~I'm~going~to~ignore~it. }
+
+\keys_define:nn { cus } { frame .meta:nn = { cus/frame } {#1} }
+\keys_define:nn { cus/frame }
+  {
+    outer-sep .skip_set:N = \l__cus_box_outer_skip ,
+    sep .dim_set:N = \cusframesep ,
+    rule-width .dim_set:N = \cusframerule ,
+    frame .cs_set:Np = \__cus_box_frame:n ,
+    frame* .cs_set:Np = \__cus_box_frame:n #1 ,
+    first .cs_set:Np = \__cus_box_frame_first:n ,
+    first* .cs_set:Np = \__cus_box_frame_first:n #1 ,
+    middle .cs_set:Np = \__cus_box_frame_middle:n ,
+    middle* .cs_set:Np = \__cus_box_frame_middle:n #1 ,
+    last .cs_set:Np = \__cus_box_frame_last:n ,
+    last* .cs_set:Np = \__cus_box_frame_last:n #1 ,
+    whole .cs_set:Np = \__cus_box_frame_nosplit:n ,
+    whole* .cs_set:Np = \__cus_box_frame_nosplit:n # ,
+    width .dim_set:N = \l__cus_box_width_dim ,
+    ratio .fp_set:N = \l__cus_box_ratio_fp , % width be to align
+    ratio .initial:n = 1 ,
+    init .tl_set:N = \l__cus_box_init_tl ,
+
+    % alignment 
+    align .code:n = \cs_set_eq:Nc \__cus_box_hbox:n { __cus_box_hbox_ #1:n } ,
+    left   .meta:n = { align = left   } ,
+    center .meta:n = { align = center } ,
+    right  .meta:n = { align = right  } ,
+    inner  .meta:n = { align = inner  } ,
+    outer  .meta:n = { align = outer  } ,
+    absinner .meta:n = { align = absinner  } ,
+    absouter .meta:n = { align = absouter  } ,
+    inner* .meta:n = { align = absinner  } ,
+    outer* .meta:n = { align = absouter  } ,
+
+    ignore-warnings .code:n = 
+      {
+        \int_set:Nn \tex_vbadness:D { 10000 }
+        \int_set:Nn \tex_tolerance:D { 10000 }
+        \dim_set_eq:NN \tex_vfuzz:D \c_max_dim 
+      } ,
+    ignore-warnings .value_forbidden:n = true ,
+  }
+
+% \NewDocumentEnvironment { Framed } { O{} }
+\newenvironment{ Framed } [1] []
+  { \cus_box_start:nn {#1} { \dim_sub:Nn \tex_hsize:D { \width } \__cus_box_init: } } 
+  { \cus_box_stop: }
+
+
+
+\hook_gput_code:nnn { package/xcolor/after } { cus/pkg/after } { \cus_color_set:nn { cusfiller } { black } }
+\cus_color_set:nn { cusfiller } { black }
+\skip_new:N \l__cus_filler_skip
+\skip_set:Nn \l__cus_filler_skip { 0pt plus 1fill }
+\dim_new:N \l__cus_filler_sep_dim
+\bool_new:N \l__cus_filler_full_bool
+\box_new:N \l__cus_filler_box
+\tl_new:N \l__cus_filler_space_tl
+\dim_new:N \l__cus_filler_rule_width_dim
+\keys_define:nn { cus/filler }
+  {
+    size .skip_set:N = \l__cus_filler_skip ,
+    size* .code:n = \skip_set:Nn \l__cus_filler_skip { 0pt plus #1 } ,
+    size* .default:n = 1fill ,
+
+    dash .dim_set:N = \l__cus_filler_sep_dim ,
+    dash .default:n = 0.44em ,
+    sep .meta:n = { dash = {#1} } ,
+    rule .dim_set:N = \l__cus_filler_rule_width_dim ,
+    rule .initial:n = 0.4pt ,
+    full .bool_set:N = \l__cus_filler_full_bool ,
+    raise .dim_set:N = \l__cus_filler_raise_dim ,
+    is-dash .meta:n = { not-box , not-content } ,
+    is-dash .value_forbidden:n = true ,
+
+    content .tl_set:N = \l__cus_filler_content_tl ,
+    box .code:n = \hbox_set:Nn \l__cus_filler_box {#1} , % do not set color
+    box* .code:n = \hbox_set_to_wd:Nnn \l__cus_filler_box #1 ,
+    clear-content .code:n = \tl_clear:N \l__cus_filler_content_tl ,
+    clear-content .value_forbidden:n = true ,
+    clear-box .code:n = \box_clear:N \l__cus_filler_box ,
+    clear-box .value_forbidden:n = true ,
+    not-content .meta:n = { clear-content , clear-box } ,
+    not-content .value_forbidden:n = true ,
+
+    space .tl_set:N = \l__cus_filler_space_tl ,
+    space .default:n = \tex_hfill:D ,
+    hspace .code:n = \tl_set:Nx \l__cus_filler_space_tl 
+      { \exp_not:N \hspace { \skip_eval:n {#1} } } ,
+    hspace* .code:n = \tl_set:Nn \l__cus_filler_space_tl 
+      { \exp_not:N \hspace* { \skip_eval:n {#1} } } ,
+    vspace .code:n = \tl_set:Nx \l__cus_filler_space_tl 
+      { \exp_not:N \vspace { \skip_eval:n {#1} } } ,
+    vspace* .code:n = \tl_set:Nn \l__cus_filler_space_tl 
+      { \exp_not:N \vspace* { \skip_eval:n {#1} } } ,
+    not-space .code:n = \tl_clear:N \l__cus_filler_space_tl ,
+    not-space .value_forbidden:n = true ,
+    
+    solid .meta:n = { not-space , not-content , dash = 0pt } ,
+    dashed .meta:n = { not-space , not-content , dash = {#1} } ,
+    dashed .default:n = { 0.5ex } ,
+    dotted .meta:n = 
+      { 
+        not-space , 
+        content = 
+          { \hbox_to_wd:nn {#1} { \tex_hss:D . \tex_hss:D } } 
+      } ,
+    dotted .default:n = { 0.44em } ,
+    cdotted .meta:n = 
+      { 
+        not-space , 
+        content = 
+          { \hbox_to_wd:nn {#1} { \tex_hss:D $ \cdot $ \tex_hss:D } } 
+      } ,
+    cdotted .default:n = { 0.44em } ,
+
+    type .choice: ,
+    type / align .code:n = \cs_set:Npn \__cus_filler_aux:nn { \cus_align_leaders:nn } ,
+    type / center .code:n = \cs_set:Npn \__cus_filler_aux:nn { \cus_center_leaders:nn } ,
+    type / spread .code:n = \cs_set:Npn \__cus_filler_aux:nn { \cus_spread_leaders:nn } ,
+    align  .meta:n = { type = align  } ,
+    center .meta:n = { type = center } ,
+    spread .meta:n = { type = spread } ,
+    color .code:n = \cus_color_set:nn { cusfiller } {#1} ,
+  }
+\cs_new_protected_nopar:Npn \cus_filler:n #1
+  {
+    \group_begin:
+    \keys_set:nn { cus/filler } {#1}
+    \tl_if_empty:NTF \l__cus_filler_space_tl
+      { 
+        \if_mode_math: \exp_after:wN \__cus_filler_math: 
+        \else: \exp_after:wN \__cus_filler: 
+        \fi: 
+      } 
+      { \l__cus_filler_space_tl }
+    \group_end:
+  }
+\cs_new:Npn \__cus_filler:
+  {
+    \__cus_leave_vertical:
+    \if_box_empty:N \l__cus_filler_box
+      \tl_if_empty:NTF \l__cus_filler_content_tl
+        {
+          \if_dim:w \l__cus_filler_sep_dim = \c_zero_dim
+            \cus_color_select:n { cusfiller }
+            \__cus_filler_aux:nn 
+              { 
+                \cus_rule_horizontal:nn 
+                  { \l__cus_filler_rule_width_dim + \l__cus_filler_raise_dim } 
+                  { -\l__cus_filler_raise_dim }
+              }
+              { \l__cus_filler_skip }
+          \else:
+            \bool_if:NTF \l__cus_filler_full_bool
+              {
+                \dim_set:Nn \l__cus_tmpa_dim 
+                  { 
+                    \skip_if_finite:nTF { \l__cus_filler_skip } 
+                      { \l__cus_filler_skip + \tex_gluestretch:D \l__cus_filler_skip - \tex_glueshrink:D \l__cus_filler_skip }
+                      { \linewidth }
+                  }
+                \cus_dash_approx:nnnn \l__cus_filler_raise_dim
+                  \l__cus_tmpa_dim
+                  \l__cus_filler_rule_width_dim
+                  \l__cus_filler_sep_dim
+              }
+              {
+                \hbox_set:Nn \l__cus_filler_box 
+                  { 
+                    \cus_color_select:n { cusfiller }
+                    \cus_rule:nnn { \l__cus_filler_sep_dim }
+                      { \l__cus_filler_rule_width_dim + \l__cus_filler_raise_dim } 
+                      { - \l__cus_filler_raise_dim }
+                    \skip_horizontal:N \l__cus_filler_sep_dim 
+                  }
+                \__cus_filler_aux:nn { \box_use_drop:N \l__cus_filler_box } { \l__cus_filler_skip }
+              }
+          \fi:
+        }
+        { 
+          \hbox_set:Nn \l__cus_filler_box 
+            { \cus_color_select:n { cusfiller } \l__cus_filler_content_tl } 
+          \__cus_filler_aux:nn { \box_use_drop:N \l__cus_filler_box } { \l__cus_filler_skip }
+        }
+    \else:
+      \__cus_filler_aux:nn { \box_use_drop:N \l__cus_filler_box } { \l__cus_filler_skip }
+    \fi:
+    \tex_kern:D \c_zero_dim
+  }
+\cs_new_protected_nopar:Npn \cus_dash_approx:nnnn #1#2#3#4 % raise, width, rule, sep 
+  {
+    \__cus_leave_vertical:
+    \hbox_to_wd:nn {#2}
+      {
+        \cus_color_select:n { cusfiller }
+        \int_set:Nn \l_tmpa_int 
+          { 
+            2 * \int_div_round:nn { \int_value:w \tex_dimexpr:D #2 } 
+                                  { 2 * \int_value:w \tex_dimexpr:D #4 } + 1
+          }
+        \dim_set:Nn \l_tmpa_dim { \dim_eval:n {#2} / \l_tmpa_int }
+        \cus_align_leaders:nn 
+          { \hbox:n { \cus_rule:nnn { \l_tmpa_dim } { #3+#1+0pt } { -#1+0pt } \skip_horizontal:N \l_tmpa_dim } } 
+          {#2}
+        \hbox_overlap_left:n { \cus_rule:nnn { \l_tmpa_dim } { #3 + #1 + 0pt } { -#1+0pt } }
+      }
+  }
+\cs_new_eq:NN \__cus_filler_math: \__cus_filler:
+\cs_new:Npn \__cus_filler_aux:nn { \cus_align_leaders:nn }
+\NewDocumentCommand \filler { O{} } { \cus_filler:n {#1} }
+\NewDocumentCommand \dashfiller { O{0pt} G{\linewidth} !O{1ex} !O{0.4pt} } % r, w, s, ru
+  { \exp_args:Nnff \cus_dash_approx:nnnn {#1} { \dim_eval:n {#2} } { \dim_eval:n {#4} } {#3} }
+\NewDocumentCommand \atleastfiller { O{} m } % filler at least #2 width
+  { 
+    \cus_filler:n { #1, size*=#2 } 
+    \tex_penalty:D -100~ 
+    \hbox:n { } \cus_filler:n {#1} 
+  }
+\NewDocumentCommand \breakablefiller { O{} }
+  {
+    \tex_unskip:D
+    \cus_filler:n { #1, size*=1fill }
+    \tex_penalty:D 500~ \hbox:n { } \nobreak
+    \cus_filler:n { #1, size*=10000fil }
+    \tex_ignorespaces:D
+  }
+
+
+\cs_new:Npn \__cus_align_leaders:nn  #1 { \tex_leaders:D  #1 }
+\cs_new:Npn \__cus_center_leaders:nn #1 { \tex_cleaders:D #1 }
+\cs_new:Npn \__cus_spread_leaders:nn #1 { \tex_xleaders:D #1 }
+\cs_new:Npn \__cus_kern:n #1 { \tex_kern:D \dim_eval:n {#1} \exp_stop_f: }
+\cs_new:Npn \__cus_leave_vertical:
+  { \if_mode_vertical: \exp_after:wN \tex_noindent:D \fi: }
+
+\cs_new_protected:Npn \cus_align_leaders:nn #1#2
+  { \__cus_leave_vertical: \tex_leaders:D #1 \tex_hskip:D \skip_eval:n {#2} \exp_stop_f: \scan_stop: }
+\cs_new_protected:Npn \cus_center_leaders:nn #1#2
+  { \__cus_leave_vertical: \tex_cleaders:D #1 \tex_hskip:D \skip_eval:n {#2} \exp_stop_f: \scan_stop: }
+\cs_new_protected:Npn \cus_spread_leaders:nn #1#2
+  { \__cus_leave_vertical: \tex_xleaders:D #1 \tex_hskip:D \skip_eval:n {#2} \exp_stop_f: \scan_stop: }
+\cs_new_protected:Npn \cus_kern_horizontal:n #1
+  {
+    \mode_leave_vertical:
+    \__cus_kern:n {#1}
+  }
+\cs_new_protected:Npn \cus_kern_vertical:n #1
+  {
+    \mode_if_vertical:F { \par }
+    \__cus_kern:n {#1}
+  }
+\cs_new_protected:Npn \cus_rule:nnn #1#2#3
+  {
+    \tex_vrule:D
+      height \dim_eval:n {#2} \exp_stop_f:
+      depth  \dim_eval:n {#3} \exp_stop_f:
+      width  \dim_eval:n {#1} \exp_stop_f:
+      \scan_stop:
+  }
+\cs_new_protected:Npn \cus_rule_horizontal:nn #1#2
+  {
+    \tex_hrule:D
+      height \dim_eval:n {#1} \exp_stop_f:
+      depth  \dim_eval:n {#2} \exp_stop_f:
+      \scan_stop:
+  }
+\cs_new_protected:Npn \cus_rule_vertical:n #1
+  { \tex_vrule:D width \dim_eval:n {#1} \exp_stop_f: \scan_stop: }
+
+
+% multicol
+\keys_define:nn { cus } { multicolumns .meta:nn = { cus/multicolumns } {#1} }
+\keys_define:nn { cus/multicolumns } 
+  {
+    columns .code:n = \tl_set:Nx \l__cus_multicolumns_cols_tl { \int_eval:n {#1} } ,
+    columns .initial:n = 2 ,
+    cols .meta:n = { columns = {#1} } ,
+    first-minimal .dim_set:N = \premulticols ,
+    last-minimal .dim_set:N = \postmulticols ,
+    outer-skip .skip_set:N = \multicolsep ,
+    outer-sep .meta:n = { outer-skip = {#1} } ,
+    column-sep .dim_set:N = \columnsep ,
+    sep .meta:n = { column-sep = {#1} } ,
+    heading .tl_set:N = \l__cus_multicolumns_heading_tl ,
+    rule .dim_set:N = \columnseprule ,
+    rule-color .code:n = 
+      \tl_set:Nn \columnseprulecolor { \__cus_key_color_select:n {#1} } ,
+    ragged .code:n = \raggedcolumns ,
+    ragged .value_forbidden:n = true ,
+    not-aligned .meta:n = { ragged } ,
+    not-aligned .value_forbidden:n = true ,
+    flush .code:n = \flushcolumns ,
+    flush .value_forbidden:n = true ,
+    aligned .meta:n = { flush } ,
+    aligned .value_forbidden:n = true ,
+    balanced .code:n = 
+      {
+        \cs_set_protected_nopar:Npn \cus@startmulticolumns { \begin{multicols} }
+        \cs_set_protected_nopar:Npn \cus@stopmulticolumns  { \end{multicols} }
+      } ,
+    balanced .value_forbidden:n = true ,
+    not-balanced .code:n = 
+      {
+        \cs_set_protected_nopar:Npn \cus@startmulticolumns { \begin{multicols*} }
+        \cs_set_protected_nopar:Npn \cus@stopmulticolumns { \end{multicols*} } ,
+      } ,
+    not-balanced .value_forbidden:n = true ,
+    columns* .meta:n = { not-balanced , columns = {#1} } ,
+    cols*    .meta:n = { columns* = {#1} } ,
+
+    % be careful to use
+    addto-baselineskip .dim_set:N = \multicolbaselineskip ,
+    tolerance .int_set:N = \multicoltolerance , % 9999
+    pretolerance .int_set:N = \multicolpretolerance ,
+    collectmore .int_set:N = \c@collectmore ,
+    minrows .int_set:N = \c@minrows , % 1
+    unbalance .int_set:N = \c@unbalance ,
+    column-badness .int_set:N = \c@columnbadness ,
+    final-column-badness .int_set:N = \c@finalcolumnbadness , % 9999
+    top-fuzz .dim_set:N = \multicolovershoot , % 0pt 
+    bottom-fuzz .dim_set:N = \multicolundershoot , % 2pt 
+    bot-fuzz .meta:n = { bottom-fuzz = {#1} } ,
+    v-fuzz .meta:n = { top-fuzz = {#1} , bottom-fuzz = {#1} } ,
+    h-fuzz .dim_set:N = \tex_hfuzz:D ,
+    overflow .dim_set:N = \maxbalancingoverflow , % 12pt 
+    right-to-left .code:n = \RLmulticolcolumns ,
+    right-to-left .value_forbidden:n = true ,
+    RL .meta:n = { right-to-left } ,
+    RL .value_forbidden:n = true ,
+    left-to-right .code:n = \LRmulticolcolumns ,
+    left-to-right .value_forbidden:n = true ,
+    LR .meta:n = { left-to-right } ,
+    LR .value_forbidden:n = true ,
+
+    unknown .code:n = 
+      { 
+        \cus_if_head_int:fTF { \l_keys_key_str } 
+          { \tl_set:Nx \l__cus_multicolumns_cols_tl { \int_eval:n { \l_keys_key_str } } } 
+          { \msg_error:nnxx { cus } { unknown-key } { multicolumns } { \l_keys_key_str } }
+      } ,
+  }
+\cs_new_protected_nopar:Npn \cus@startmulticolumns { \begin{multicols} }
+\cs_new_protected_nopar:Npn \cus@stopmulticolumns  { \end{multicols} }
+\NewDocumentCommand \startmulticolumns { O{} }
+  {
+    \group_begin:
+    \keys_set:nn { cus/multicolumns } {#1}
+    \int_compare:nNnTF \l__cus_multicolumns_cols_tl < 2
+      { 
+        \cs_set_eq:NN \cus@stopmulticolumns \prg_do_nothing: 
+        \l__cus_multicolumns_heading_tl
+      }
+      {
+        \tl_if_empty:NTF \l__cus_multicolumns_heading_tl
+          { \cus@startmulticolumns{\l__cus_multicolumns_cols_tl}\relax }
+          { \cus@startmulticolumns{\l__cus_multicolumns_cols_tl}[\l__cus_multicolumns_heading_tl]\relax }
+      }
+  }
+\cs_new_protected_nopar:Npn \stopmulticolumns { \cus@stopmulticolumns \group_end: }
+
+
+
+\keys_define:nn { cus } { rotate .meta:nn = { cus/rotate } {#1} }
+\keys_define:nn { cus/rotate }
+  {
+    sideways .code:n = 
+      \cs_set_eq:NN \__cus_rotate_start:w \sideways
+      \cs_set_eq:NN \__cus_rotate_stop:w \endsideways ,
+    turn .code:n = 
+      \cs_set_nopar:Npn \__cus_rotate_start:w { \turn { \fp_eval:n {#1} } }
+      \cs_set_eq:NN \__cus_rotate_stop:w \endturn ,
+    turn .default:n = 90 ,
+    rotate .code:n = 
+      \cs_set_nopar:Npn \__cus_rotate_start:w 
+        { \Grot@setangle{ \fp_eval:n {#1} } \setbox\z@\color@hbox\ignorespaces } 
+      \cs_set_eq:NN \__cus_rotate_stop:w \endrotate ,
+    rotate .default:n = 90 ,
+    nospaceturn .meta:n = { rotate = {#1} } ,
+    nospaceturn .default:n = 90 ,
+    float .code:n = 
+      \cs_set_nopar:Npn \__cus_rotate_start:w { \@rotfloat {#1} }
+      \cs_set_eq:NN \__cus_rotate_stop:w \end@rotfloat ,
+    float* .code:n = 
+      \cs_set_nopar:Npn \__cus_rotate_start:w { \@rotdblfloat {#1} }
+      \cs_set_eq:NN \__cus_rotate_stop:w \end@rotdblfloat ,
+    table .meta:n = { float = table } ,
+    table* .meta:n = { float* = table } ,
+    figure .meta:n = { float = figure } ,
+    figure* .meta:n = { float* = figure } ,
+    unknown .code:n = 
+      {
+        \cus_if_endstar:NTF \l_keys_key_str
+          {
+            \cs_set_nopar:Npx \__cus_rotate_start:w 
+              { \exp_not:N \@rotdblfloat { \cus_unstar:N \l_keys_key_str } }
+            \cs_set_eq:NN \__cus_rotate_stop:w \end@rotdblfloat
+          }
+          {
+            \cs_set_nopar:Npx \__cus_rotate_start:w 
+              { \exp_not:N \@rotfloat { \l_keys_key_str } }
+            \cs_set_eq:NN \__cus_rotate_stop:w \end@rotfloat
+          }
+      } ,
+  }
+\cs_new:Npn \__cus_rotate_start:w { \sideways }
+\cs_new:Npn \__cus_rotate_stop:w { \endsideways }
+
+\NewDocumentCommand \startrotate { O{sideways} }
+  {
+    \keys_set:nn { cus/rotate } {#1}
+    \__cus_rotate_start:w 
+  }
+\cs_new_protected_nopar:Npn \stoprotate { \__cus_rotate_stop:w }
+\NewDocumentCommand \Rotate { O{rotate} +m }
+  {
+    \keys_set:nn { cus/rotate } {#1}
+    \__cus_rotate_start:w #1 \__cus_rotate_stop:w 
+  }

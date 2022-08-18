@@ -1,0 +1,17 @@
+\CUSDependency{package={paracol,longfbox}}
+\CUSProvideExplLibrary{box}{\cus@d@te}{\cus@versi@n}{much more box and multicols}
+
+\dim_new:N \@tempdimd
+\keys_define:nn { cus/frame }
+  {
+    lfbox-frame  .meta:n = { frame  = { \lfbox [{#1}] } } ,
+    lfbox-frame .default:n = solid ,
+    lfbox-first  .meta:n = { first  = { \lfbox [{#1}] } } ,
+    lfbox-first .default:n = solid ,
+    lfbox-middle .meta:n = { middle = { \lfbox [{#1}] } } ,
+    lfbox-middle .default:n = solid ,
+    lfbox-last   .meta:n = { last   = { \lfbox [{#1}] } } ,
+    lfbox-last .default:n = solid ,
+    lfbox-whole  .meta:n = { whole  = { \lfbox [{#1}] } } ,
+    lfbox-whole .default:n = solid ,
+  }

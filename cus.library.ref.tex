@@ -1,0 +1,42 @@
+\CUSProvideExplLibrary{ref}{\cus@d@te}{\cus@versi@n}{cross reference}
+
+\int_new:N \g__cus_ref_record_page_int 
+\cs_gset_protected:Npn \ifPageOdd { \__cus_ref_if_page_odd:N \c@page }
+\cs_gset_protected:Npn \ifAbsPageOdd 
+  { \__cus_ref_if_page_odd:N \g_shipout_readonly_int }
+\cs_gset_protected:Npn \__cus_ref_if_page_odd:N #1
+  {
+    \int_gincr:N \g__cus_ref_record_page_int
+    \cus_newlabel_shipout_x:xxxxxx 
+      { cus@ref/pageodd/cnt/ \int_use:N \g__cus_ref_record_page_int }
+      { } { \exp_not:N \int_value:w #1 } { } { } { }
+    \cus_label_if_exist:nTF 
+      { cus@ref/pageodd/cnt/ \int_use:N \g__cus_ref_record_page_int }
+      {
+        \int_if_odd:nTF { \int_value:w \__cus_get_label_page:n { cus@ref/pageodd/cnt/ \int_use:N \g__cus_ref_record_page_int } }
+          { \use_i:nn } { \use_ii:nn }
+      }
+      { \G@refundefinedtrue \use_ii:nn }
+  }
+\cs_new_protected:Npn \ifLabelOdd #1
+  {
+    \tl_if_blank:nTF {#1} 
+      { \__cus_ref_if_label_odd_aux:n { \@currentlabel } }
+      { \__cus_ref_if_label_odd_aux:n {#1} }
+  }
+\cs_new:Npn \__cus_ref_if_label_odd_aux:n #1
+  {
+    \cus_label_if_exist:nTF {#1}
+      {
+        \exp_args:Nf \cus_if_head_int:nTF 
+          { \__cus_get_label_page:n {#1} \exp_stop_f: \exp_stop_f: }
+          {
+            \if_int_odd:w \__cus_get_label_page:n {#1} \exp_stop_f: 
+              \exp_after:wN \use_i:nn
+            \else: \exp_after:wN \use_ii:nn
+            \fi:
+          }
+          { \use_ii:nn }
+      }
+      { \G@refundefinedtrue \use_ii:nn }
+  }
