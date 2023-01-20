@@ -1,4 +1,5 @@
-\CUSDependency{ disable={titlesec,titletoc,tocloft,etoc,placeins}, module={util} }
+\CUSDependency{ disable={titlesec,titletoc,tocloft,etoc,placeins,multitoc}, 
+  module={util} }
 \CUSProvideExplModule{struct}{\cus@d@te}{\cus@versi@n}{structures of document}
 
 %SEE: ctexheading (ctexbook.cls), titlesec, titletoc, etoc, etc. 
@@ -9,22 +10,44 @@
 \tl_new:N \g__cus_cbl_after_load_tl
 
 \keys_define:nn { cus } { cbl-setup .meta:nn = { cus/cbl-setup } {#1} }
-\keys_define:nn { cus/cbl-setup } { }
+\keys_define:nn { cus/cbl-setup } 
+  {
+    from .tl_gset_x:N = \g__cus_cbl_file_tl ,
+    from .initial:n = \c_sys_jobname_str ,
+    write .bool_gset:N = \g__cus_cbl_write_bool ,
+    write .initial:n = true ,
+    to  .tl_gset_x:N = \g__cus_cbl_to_tl ,
+    to    .initial:n = \exp_not:N \q_no_value ,
+  }
 \NewDocumentCommand \enablecombinedlist { !O{} }
   {
+    \if_int_compare:w \g__cus_cbl_count_int < \c_zero_int
     \cus_if_preamble_test:TF { \cus_hook_gput_ds:n } { \use:n }
       { 
-        \tl_if_empty:nF {#1} { \keys_set:nn { cus/cbl-setup } {#1} }
+        \tl_if_blank:nF {#1} { \keys_set:nn { cus/cbl-setup } {#1} }
         \g__cus_cbl_before_load_tl
         \int_gzero:N \g__cus_cbl_count_int
-        \@input { \c_sys_jobname_str .toc } 
+        \@input { \g__cus_cbl_file_tl .toc } 
         \g__cus_cbl_after_load_tl
-        \iow_new:N \tf@toc 
-        \iow_open:Nn \tf@toc { \c_sys_jobname_str .toc }
+        \bool_if:NT \g__cus_cbl_write_bool 
+          {
+            \iow_new:N \tf@toc 
+            \iow_open:Nn \tf@toc 
+              { 
+                \quark_if_no_value:NTF \g__cus_cbl_to_tl 
+                  \c_sys_jobname_str \g__cus_cbl_to_tl .toc 
+              }
+          }
       }
+    \fi:
   }
+\int_new:N \g_cus_document_cbl_index_int 
 \cs_new_protected:Npn \cus_gput_contents:nn #1#2
   {
+    % 为了防止出现 \protect\addvspace{length} 的情况，目录项必须大于 3
+    % 如 \protect\contentsline{type}{text}{page}{anchor}，至少有 6 项
+    \if_int_compare:w \tl_count:n {#2} > 3 \exp_stop_f:
+    \int_gincr:N \g_cus_document_cbl_index_int 
     \protected@write \@auxout
       {
         \cs_set_eq:NN \label \use_none:n 
@@ -32,9 +55,15 @@
         \cs_set_eq:NN \glossary \__cus_use_none_exp_om:w 
       }
       {
-        \token_to_str:N \@writefile { toc } { \exp_after:wN \use:nn \cus_shift_i:nnn {#1} #2 }
+        \token_to_str:N \@writefile { toc } 
+          { \__cus_gput_contents:nnn {#1} #2 }
       }
+    \else:
+      \protected@wlog { Abort~contents~entry:~`#2' }
+    \fi:
   }
+\cs_new:Npn \__cus_gput_contents:nnn #1#2#3
+  { \token_if_eq_meaning:NNTF #2 \protect { #2#3{#1} } { #2{#1}{#3} } }
 % 保存数据，并不执行，cbl结构为：\.{type}{type count}{tags}{level}{entry}{page}{anchor}\@
 % 保存数据，并不执行，type结构为：\.{type}{cbl count}{tags}{level}{entry}{page}{anchor}\@
 % type, level, data, page, anchor 
@@ -42,21 +71,32 @@
   {
     \int_gincr:N \g__cus_cbl_count_int
     \int_gincr:c { g__cus_cbl_type~#1_count_int }
+    \tl_set:Nx \l__cus_cbl_heading_level_tl { \cus_heading_level:n { #1-#2 } }
     \tl_gset:cx 
-      { cus/cbl~/cbl~ /item [ \int_use:N \g__cus_cbl_count_int ] _tl }
+      { cus/cbl~/cbl~ /entry [ \int_use:N \g__cus_cbl_count_int ] _tl }
       {
         \exp_not:N \cus@cbl@contentsline {#1} 
           { \int_use:c { g__cus_cbl_type~#1_count_int } }
-          {#2} { \cus_heading_level:n { #1-#2 } }
+          {#2} { \l__cus_cbl_heading_level_tl }
           { \exp_not:n {#3} } {#4} {#5} \exp_not:N \cus@cbl@contentsline@
       }
     \tl_gset:cx 
-      { cus/cbl~/type~#1 /item [ \int_use:c { g__cus_cbl_type~#1_count_int } ] _tl }
+      { cus/cbl~/type~#1 /entry [ \int_use:c { g__cus_cbl_type~#1_count_int } ] _tl }
       {
         \exp_not:N \cus@type@contentsline {#1}
           { \int_use:N \g__cus_cbl_count_int }
-          {#2} { \cus_heading_level:n { #1-#2 } }
+          {#2} { \l__cus_cbl_heading_level_tl }
           { \exp_not:n {#3} } {#4} {#5} \exp_not:N \cus@type@contentsline@
+      }
+    \tl_gset:cx { cus/cbl~/type~#1 /lo_used_level_tl }
+      { 
+        \int_max:nn { \l__cus_cbl_heading_level_tl } 
+          { \use:c { cus/cbl~/type~#1 /lo_used_level_tl } }
+      }
+    \tl_gset:cx { cus/cbl~/type~#1 /hi_used_level_tl }
+      { 
+        \int_min:nn { \l__cus_cbl_heading_level_tl } 
+          { \use:c { cus/cbl~/type~#1 /hi_used_level_tl } }
       }
     \if_int_compare:w 
       \int_eval:w \cus_heading_level:n { #1-#2 } = \c_zero_int
@@ -73,90 +113,98 @@
       }
   }
 \cs_new_protected_nopar:Npn \cus_contents_get:nN #1#2 % cbl count, tl 
-  { \tl_set_eq:Nc #2 { cus/cbl~/cbl~ /item [ \int_eval:n {#1} ] _tl } }
-\cs_new_nopar:Npn \cus_contents_item:n #1 % cbl count 
-  { \exp_not:v { cus/cbl~/cbl~ /item [ \int_eval:n {#1} ] _tl } }
-\cs_new_protected_nopar:Npn \contents@item #1
-  { \cs:w cus/cbl~/cbl~ /item [ \int_eval:n {#1} ] _tl \cs_end: }
-\cs_new_nopar:Npn \cus_contents_item_of:nn #1 % of, count 
-  { \cs:w cus_contents_item_of_ #1 :n \cs_end: }
-\cs_new_nopar:Npn \cus_contents_item_of_type:n #1
   { 
-    \exp_last_unbraced:Ne 
-      \cus_exp_not_use_ii:nnnnnnnnn { \cus_contents_item:n {#1} } 
+    \tl_if_exist:cTF { cus/cbl~/cbl~ /entry [ \int_eval:n {#1} ] _tl }
+      { \tl_set_eq:Nc #2 { cus/cbl~/cbl~ /entry [ \int_eval:n {#1} ] _tl } }
+      { \tl_set_eq:NN #2 \q_no_value }
   }
-\cs_new_nopar:Npn \cus_contents_item_of_count:n #1
+\cs_new_nopar:Npn \cus_contents_entry:n #1 % cbl count 
+  { \exp_not:v { cus/cbl~/cbl~ /entry [ \int_eval:n {#1} ] _tl } }
+\cs_new_protected_nopar:Npn \contents@entry #1
+  { \cs:w cus/cbl~/cbl~ /entry [ \int_eval:n {#1} ] _tl \cs_end: }
+\cs_new_nopar:Npn \cus_contents_entry_of:nn #1 % of, count 
+  { \cs:w cus_contents_entry_of_ #1 :n \cs_end: }
+\cs_new_nopar:Npn \cus_contents_entry_of_type:n #1
   { 
     \exp_last_unbraced:Ne 
-      \cus_exp_not_use_iii:nnnnnnnnn { \cus_contents_item:n {#1} } 
+      \cus_exp_not_use_ii:nnnnnnnnn { \cus_contents_entry:n {#1} } 
   }
-\cs_new_nopar:Npn \cus_contents_item_of_tags:n #1
+\cs_new_nopar:Npn \cus_contents_entry_of_count:n #1
   { 
     \exp_last_unbraced:Ne 
-      \cus_exp_not_use_iv:nnnnnnnnn { \cus_contents_item:n {#1} } 
+      \cus_exp_not_use_iii:nnnnnnnnn { \cus_contents_entry:n {#1} } 
   }
-\cs_new_nopar:Npn \cus_contents_item_of_level:n #1
+\cs_new_nopar:Npn \cus_contents_entry_of_tags:n #1
   { 
     \exp_last_unbraced:Ne 
-      \cus_exp_not_use_v:nnnnnnnnn { \cus_contents_item:n {#1} } 
+      \cus_exp_not_use_iv:nnnnnnnnn { \cus_contents_entry:n {#1} } 
   }
-\cs_new_nopar:Npn \cus_contents_item_of_entry:n #1
+\cs_new_nopar:Npn \cus_contents_entry_of_level:n #1
   { 
     \exp_last_unbraced:Ne 
-      \cus_exp_not_use_vi:nnnnnnnnn { \cus_contents_item:n {#1} } 
+      \cus_exp_not_use_v:nnnnnnnnn { \cus_contents_entry:n {#1} } 
   }
-\cs_new_nopar:Npn \cus_contents_item_of_page:n #1
+\cs_new_nopar:Npn \cus_contents_entry_of_entry:n #1
   { 
     \exp_last_unbraced:Ne 
-      \cus_exp_not_use_vii:nnnnnnnnn { \cus_contents_item:n {#1} } 
+      \cus_exp_not_use_vi:nnnnnnnnn { \cus_contents_entry:n {#1} } 
   }
-\cs_new_nopar:Npn \cus_contents_item_of_anchor:n #1
+\cs_new_nopar:Npn \cus_contents_entry_of_page:n #1
   { 
     \exp_last_unbraced:Ne 
-      \cus_exp_not_use_viii:nnnnnnnnn { \cus_contents_item:n {#1} } 
+      \cus_exp_not_use_vii:nnnnnnnnn { \cus_contents_entry:n {#1} } 
+  }
+\cs_new_nopar:Npn \cus_contents_entry_of_anchor:n #1
+  { 
+    \exp_last_unbraced:Ne 
+      \cus_exp_not_use_viii:nnnnnnnnn { \cus_contents_entry:n {#1} } 
   }
 \cs_new_protected_nopar:Npn \cus_contents_type_get:nnN #1#2#3 % type, type count, tl 
-  { \tl_set_eq:Nc #3 { cus/cbl~/type~#1 /item [ \int_eval:n {#2} ] _tl } }
-\cs_new_nopar:Npn \cus_contents_type_item:nn #1#2 % type, type count 
-  { \exp_not:v { cus/cbl~/type~#1 /item [ \int_eval:n {#2} ] _tl } }
-\cs_new_protected_nopar:Npn \contents@typeitem #1#2
-  { \cs:w cus/cbl~/type~#1 /item [ \int_eval:n {#2} ] _tl \cs_end: }
-\cs_new_nopar:Npn \cus_contents_type_item_of:nnn #1#2 % type, of, count 
-  { \cs:w cus_contents_type_item_of_ #2 :nn \cs_end: {#1} }
-\cs_new_nopar:Npn \cus_contents_type_item_of_type:nn #1#2
   { 
-    \exp_last_unbraced:Ne 
-      \cus_exp_not_use_ii:nnnnnnnnn { \cus_contents_type_item:nn {#1} {#2} } 
+    \tl_if_exist:cTF { cus/cbl~/type~#1 /entry [ \int_eval:n {#2} ] _tl }
+      { \tl_set_eq:Nc #3 { cus/cbl~/type~#1 /entry [ \int_eval:n {#2} ] _tl } }
+      { \tl_set_eq:NN #3 \q_no_value }
   }
-\cs_new_nopar:Npn \cus_contents_type_item_of_count:nn #1#2
+\cs_new_nopar:Npn \cus_contents_type_entry:nn #1#2 % type, type count 
+  { \exp_not:v { cus/cbl~/type~#1 /entry [ \int_eval:n {#2} ] _tl } }
+\cs_new_protected_nopar:Npn \contents@typeentry #1#2
+  { \cs:w cus/cbl~/type~#1 /entry [ \int_eval:n {#2} ] _tl \cs_end: }
+\cs_new_nopar:Npn \cus_contents_type_entry_of:nnn #1#2 % type, of, count 
+  { \cs:w cus_contents_type_entry_of_ #2 :nn \cs_end: {#1} }
+\cs_new_nopar:Npn \cus_contents_type_entry_of_type:nn #1#2
   { 
     \exp_last_unbraced:Ne 
-      \cus_exp_not_use_iii:nnnnnnnnn { \cus_contents_type_item:nn {#1} {#2} } 
+      \cus_exp_not_use_ii:nnnnnnnnn { \cus_contents_type_entry:nn {#1} {#2} } 
   }
-\cs_new_nopar:Npn \cus_contents_type_item_of_tags:nn #1#2
+\cs_new_nopar:Npn \cus_contents_type_entry_of_count:nn #1#2
   { 
     \exp_last_unbraced:Ne 
-      \cus_exp_not_use_iv:nnnnnnnnn { \cus_contents_type_item:nn {#1} {#2} } 
+      \cus_exp_not_use_iii:nnnnnnnnn { \cus_contents_type_entry:nn {#1} {#2} } 
   }
-\cs_new_nopar:Npn \cus_contents_type_item_of_level:nn #1#2
+\cs_new_nopar:Npn \cus_contents_type_entry_of_tags:nn #1#2
   { 
     \exp_last_unbraced:Ne 
-      \cus_exp_not_use_v:nnnnnnnnn { \cus_contents_type_item:nn {#1} {#2} } 
+      \cus_exp_not_use_iv:nnnnnnnnn { \cus_contents_type_entry:nn {#1} {#2} } 
   }
-\cs_new_nopar:Npn \cus_contents_type_item_of_entry:nn #1#2
+\cs_new_nopar:Npn \cus_contents_type_entry_of_level:nn #1#2
   { 
     \exp_last_unbraced:Ne 
-      \cus_exp_not_use_vi:nnnnnnnnn { \cus_contents_type_item:nn {#1} {#2} } 
+      \cus_exp_not_use_v:nnnnnnnnn { \cus_contents_type_entry:nn {#1} {#2} } 
   }
-\cs_new_nopar:Npn \cus_contents_type_item_of_page:nn #1#2
+\cs_new_nopar:Npn \cus_contents_type_entry_of_entry:nn #1#2
   { 
     \exp_last_unbraced:Ne 
-      \cus_exp_not_use_vii:nnnnnnnnn { \cus_contents_type_item:nn {#1} {#2} } 
+      \cus_exp_not_use_vi:nnnnnnnnn { \cus_contents_type_entry:nn {#1} {#2} } 
   }
-\cs_new_nopar:Npn \cus_contents_type_item_of_anchor:nn #1#2
+\cs_new_nopar:Npn \cus_contents_type_entry_of_page:nn #1#2
   { 
     \exp_last_unbraced:Ne 
-      \cus_exp_not_use_viii:nnnnnnnnn { \cus_contents_type_item:nn {#1} {#2} } 
+      \cus_exp_not_use_vii:nnnnnnnnn { \cus_contents_type_entry:nn {#1} {#2} } 
+  }
+\cs_new_nopar:Npn \cus_contents_type_entry_of_anchor:nn #1#2
+  { 
+    \exp_last_unbraced:Ne 
+      \cus_exp_not_use_viii:nnnnnnnnn { \cus_contents_type_entry:nn {#1} {#2} } 
   }
 \cs_new_protected:Npn \cus_iterate_contents:n #1
   {
@@ -164,7 +212,7 @@
     \cs_set_eq:NN \cus@cbl@contentsline@ \prg_do_nothing:
     \cs_set:Npn \cus@cbl@contentsline ##1##2##3##4##5##6##7 {#1}
     \int_step_inline:nn { \g__cus_cbl_count_int }
-      { \cs:w cus/cbl~/cbl~ /item [##1] _tl \cs_end: {##1} }
+      { \cs:w cus/cbl~/cbl~ /entry [##1] _tl \cs_end: }
     \group_end:
   }
 \cs_new_protected:Npn \cus_iterate_contents_type:nn #1#2 % type, code 
@@ -172,8 +220,8 @@
     \group_begin:
     \cs_set_eq:NN \cus@type@contentsline@ \prg_do_nothing:
     \cs_set:Npn \cus@type@contentsline ##1##2##3##4##5##6##7 {#2}
-    \int_step_inline:nn { \g__cus_cbl_count_int }
-      { \cs:w cus/cbl~/type~#1 /item [##1] _tl \cs_end: {##1} }
+    \int_step_inline:nn { \int_use:c { g__cus_cbl_type~#1_count_int } }
+      { \cs:w cus/cbl~/type~#1 /entry [##1] _tl \cs_end: }
     \group_end:
   }
 \cs_new_protected:Npn \__cus_contents_line:nnnnnnn #1#2#3#4#5#6#7
@@ -182,7 +230,7 @@
   }
 \cs_new_protected:Npn \cus_cbl_fliter:nnnnnnnnn #1#2#3#4#5#6#7 % ,,,,,true,false 
   { \use_i:nn }
-\cs_new_protected_nopar:Npn \flitercombinedlistitem { \cus_cbl_fliter:nnnnnnnnn }
+\cs_new_protected_nopar:Npn \flitercombinedlistentry { \cus_cbl_fliter:nnnnnnnnn }
 \cs_new_protected:Npn \cus_set_filter:n #1 % must end with \if...
   {
     \cs_set_protected:Npn \cus_cbl_fliter:nnnnnnnnn ##1##2##3##4##5##6##7
@@ -202,6 +250,10 @@
       { \int_value:w #1 }
       { \__cus_heading_level:w #1 , \s_stop }
   }
+\cs_new_nopar:Npn \cus_heading_level:nn #1#2
+  { \int_eval:n { \prop_item:Ne \g__cus_heading_level_prop { #1-#2 } + 0 } }
+\cs_new_protected_nopar:Npn \cus_get_heading_level:nnN #1#2
+  { \exp_args:NNe \prop_get:NnN \g__cus_heading_level_prop { #1-#2 } }
 \cs_new:Npn \__cus_heading_level:w #1-#2, #3 \s_stop 
   { 
     \cus_if_head_int:nTF {#2} 
@@ -226,12 +278,14 @@
         \int_new:c { g__cus_cbl_type~#1_count_int }
         \cs_set_eq:cc { total@type#1@count } { g__cus_cbl_type~#1_count_int }
         \clist_new:c { cus/cbl~/type~#1 /default~level _count_clist }
+        \tl_gset:cx { cus/cbl~/type~#1 /hi_used_level_tl } { \int_use:N \c_max_int }
+        \tl_gset:cx { cus/cbl~/type~#1 /lo_used_level_tl } { -\int_use:N \c_max_int }
         \seq_put_right:Nx \g__cus_cbl_type_seq {#1}
       }
-      \keyval_parse:nnn 
-        { \__cus_cbl_add_aux:nn {#1} }
-        { \cus_gset_heading_level:nnn {#1} }
-        { main, #2 }
+    \keyval_parse:nnn 
+      { \__cus_cbl_add_aux:nn {#1} }
+      { \cus_gset_heading_level:nnn {#1} }
+      { main, #2 }
     \else:
       \msg_warning:nnn { cus } { struct-unused-cbl } {#1}
     \fi:
@@ -244,8 +298,8 @@
         \cus_exp_args:Nd \tex_unexpanded:D { \exp_after:wN \cus_unbracket:nw \tex_expanded:D { \cus_split_bracket_tail:n {#2} } }
       }
   }
-\cs_new_eq:NN \addcombinedlistitem \cus_cbl_add:nn 
-\cs_new_nopar:Npn \getcbltypelevel #1#2 { \cus_heading_level:n { #1 - #2 } }
+\cs_new_eq:NN \addcombinedlisttype \cus_cbl_add:nn 
+\cs_new_nopar:Npn \retcbltypelevel #1#2 { \cus_heading_level:n { #1 - #2 } }
 \cs_new:Npn \cus_cbl_get_total_count:n #1
   {
     \tl_if_empty:nTF {#1} { \int_use:N \g__cus_cbl_count_int }
@@ -258,21 +312,21 @@
           }
       }
   }
-\cs_new_nopar:Npn \getcbltotalcounts #1 
+\cs_new_nopar:Npn \retcbltotalcounts #1 
   { \exp_args:Ne \cus_cbl_get_total_count:n { \tl_trim_spaces:n {#1} } }
-\cs_new_nopar:Npn \getcblitemname #1#2
+\cs_new_nopar:Npn \retcblentryname #1#2
   {
     \tl_if_blank:nTF {#1} 
-      { cus/cbl~/cbl~/item[\int_eval:n{#2}] _tl }
-      { cus/cbl~/type~\tl_trim_spaces:n {#1}/item[\int_eval:n{#2}] _tl }
+      { cus/cbl~/cbl~/entry[\int_eval:n{#2}] _tl }
+      { cus/cbl~/type~\tl_trim_spaces:n {#1}/entry[\int_eval:n{#2}] _tl }
   }
-\cs_new_nopar:Npn \getcbldefaultlevellistname #1
+\cs_new_nopar:Npn \retcbldefaultlevellistname #1
   { cus/cbl~/type~ \tl_trim_spaces:n {#1} /default~level _count_clist }
-\cs_new_nopar:Npn \getcblitemdata #1#2#3
+\cs_new_nopar:Npn \retcblentrydata #1#2
   {
     \tl_if_blank:nTF {#1}
-      { \cus_contents_item_of:nn { \tl_trim_spaces:n {#2} } }
-      { \cus_contents_type_item_of:nnn { \tl_trim_spaces:n {#1} } { \tl_trim_spaces:n {#2} } }
+      { \cus_contents_entry_of:nn { \tl_trim_spaces:n {#2} } }
+      { \cus_contents_type_entry_of:nnn { \tl_trim_spaces:n {#1} } { \tl_trim_spaces:n {#2} } }
   }
 \cs_new_protected_nopar:Npn \iteratecontents #1#2
   {
@@ -339,8 +393,85 @@
     sub3section[4], sub4section[5], 
     paragraph[4], subparagraph[5], 
   }
-\cus_cbl_add:nn { lof } { figure }
-\cus_cbl_add:nn { lot } { table  }
+\cus_cbl_add:nn { lof } { figure=1 }
+\cus_cbl_add:nn { lot } { table=1 }
+\cus_pkg_code:nnn { algorithm2e } { } { \cus_cbl_add:nn { loa } { algocf=1 } }
+\cus_pkg_code:nnn { chemmacros } { } { \cus_cbl_add:nn { lor } { reaction=1 } }
+\cus_pkg_code:nnn { hypdvips } { } { \cus_cbl_add:nn { loa } { FileAttachment=1, EmbeddedFile=1 } }
+\cus_pkg_code:nnn { musical } { } 
+  {
+    \cus_cbl_add:nn { los } { section=1 }
+    \cus_cbl_add:nn { lod } { section=1 }
+  }
+\cus_pkg_code:nnn { listings } { } { \cus_cbl_add:nn { lol } { lol=1, lstlisting=1 } }
+\cus_pkg_code:nnn { pdfcomment } { } { \cus_cbl_add:nn { lpc } { lpcsec=1 } }
+\cus_pkg_code:nnn { poetry } { } { \cus_cbl_add:nn { lop } { poem=1, poemgroup=1 } }
+\cus_pkg_code:nnn { todonotes } { } { \cus_cbl_add:nn { tdo } { todo=1 } }
+\char_set_catcode_other:N \#
+\cus_pkg_code:nnn { float } { }
+  {
+    \ctex_patch_cmd:Nnn \newfloat { \floatplacement }
+      { \addcombinedlisttype{#3}{#1=1}\floatplacement }
+  }
+\cus_pkg_code:nnn { newfloat } { }
+  {
+    \ctex_patch_cmd:Nnn \@DeclareFloatingEnvironment 
+      { \newfloat@setoptions*{#2}{#1} }
+      { \newfloat@setoptions*{#2}{#1}\addcombinedlisttype{\@nameuse{ext@#2}}{#2=1} }
+  }
+\char_set_catcode_parameter:N \#
+\cus_pkg_code:nnn { floatrow } { }
+  {
+    \ctex_appto_cmd:NnnTF \DeclareNewFloatType { \ExplSyntaxOff \makeatletter }
+      { \addcombinedlisttype{\@nameuse{ext@\FB@captype}}{\FB@captype=1} } { }
+      { \cus_patch_failure:N \DeclareNewFloatType }
+  }
+\cus_pkg_code:nnn { tcolorbox } { }
+  {
+    \ctex_patch_cmd:Nnn \tcb@proc@options@init
+      { \ifx\kvtcb@new@listof\@empty\else }
+      { \ifx\kvtcb@new@listof\@empty\else
+        \addcombinedlisttype{\kvtcb@new@listof}{\kvtcb@new@listtype=1} }
+  }
+\cus_pkg_code:nnn { thmtools } { }
+  {
+    \addcombinedlisttype{loe}{}
+    \@ifpackageloaded{amsthm}
+      {
+        \use:e { \ctex_patch_cmd:Nnn \exp_not:N \@xnthm { \global } 
+          { \addcombinedlisttype { \c_hash_str 2 = 1 } \global } }
+      } { }
+    \def\thmt@mklistcmd{
+      \thmtlo@newentry 
+      \ifthmt@isstarred 
+        \@xa\def\csname ll@\thmt@envname\endcsname{
+          \protect\numberline{\relax\protect\let\protect\autodot\protect\@empty}{\thmt@thmname}
+          \ifx\@empty\thmt@shortoptarg\else\protect\thmtformatoptarg{\thmt@shortoptarg}\fi}
+      \else 
+        \@xa\def\csname ll@\thmt@envname\endcsname{
+          \protect\numberline{\ignorespaces\csname the\thmt@envname\endcsname}
+          {\thmt@thmname}
+          \ifx\@empty\thmt@shortoptarg\else\protect\thmtformatoptarg{\thmt@shortoptarg}\fi}
+      \@xa\gdef\csname thmt@contentsline@\thmt@envname\endcsname{\thmt@contentslineShow}}
+    \renewcommand\listoftheorems[1][]{
+      \begingroup \setlisttheoremstyle{#1}
+      \let\cus@type@contentsline@\@empty 
+      \let\thmt@numberline\numberline 
+      \def\cus@type@contentsline##1##2##3##4{
+        \exp_args:Ncf\empty{thmt@contentsline@ \clist_item:nn{##3} {1}}
+          {\clist_item:nn{##3}{1}}}
+      \ifthmt@listswap
+        \def\numberline##1##2
+          {\tl_if_head_eq_meaning:nNTF{##1}\relax{##2}
+            {\thmt@numberline{##2\nobreakspace}##1}}
+      \else \def\numberline{\thmt@numberline}
+      \fi 
+      \exp_last_unbraced:NNo \@for\thmt@envname {\string :=}\thmt@allenvs\do{\thmtlo@newentry}
+      \standardplaincombinedlist{\listtheoremname}{loe}
+      \endgroup}
+    \AtBeginDocument{\def\thmt@contentsline#1#2#3#4
+      {\cus_use_psr:n{toc/loe}{loe}{0}{#1}{1}{#2}{#3}{#4}}}
+  }
 
 \cs_new_protected_nopar:Npn \cus@cbl@contentsline@ { }
 \cs_new_protected_nopar:Npn \cus@type@contentsline@ { }
@@ -365,7 +496,7 @@
 \fi:
 
 \msg_new:nnnn { cus } { struct-unused-cbl }
-  { The~combinedlist~item~`#1'~will~never~be~used. }
+  { The~combinedlist~entry~`#1'~will~never~be~used. }
   { You~must~add~it~before~`\enablecombinedlist'. }
 \msg_new:nnn { cus } { struct-cbl-unknown }
   { The~combinedlist~type~`#1'~is~unknown. }
@@ -381,6 +512,604 @@
     \hbox_to_wd:nn \@tempdima { \hbox_unpack_drop:N \l__cus_tmpa_box \tex_hfil:D }
   }
 
+
+\cs_new_protected:Npn \cus_specified_cbl_style:nnnnnnn #1#2#3#4#5#6#7
+% type, level, list start, block start, block entry, block finish, list finish
+  {
+    \tl_set:cn { @toc@#1@#2@liststart } {#3}
+    \tl_set:cn { @toc@#1@#2@blockstart } {#4}
+    \tl_set:cn { @toc@#1@#2@blockitem } {#5}
+    \tl_set:cn { @toc@#1@#2@blockfinish } {#6}
+    \tl_set:cn { @toc@#1@#2@listfinish } {#7}
+  }
+\cs_new_protected:Npn \cus_specified_cbl:n #1
+  {
+    \group_begin:
+    \tl_if_empty:nTF {#1}
+      { 
+        \tl_set:Nx \toclolevel { -\int_use:N \c_max_int }
+        \tl_set:Nx \tochilevel { \int_use:N \c_max_int }
+        \seq_map_inline:Nn \g__cus_cbl_type_seq
+          {
+            \tl_set:Nx \toclolevel 
+              { \int_max:nn { \toclolevel } { \use:c { cus/cbl~/type~##1 /lo_used_level_tl } } }
+            \tl_set:Nx \tochilevel 
+              { \int_min:nn { \tochilevel } { \use:c { cus/cbl~/type~##1 /hi_used_level_tl } } }
+          }
+        \cs_set:Npn \__cus_specified_cbl_set_next_entry:
+          { \cus_contents_get:nN { \toctheindex+1 } \tocthenextentry }
+        \cs_set:Npn \__cus_specified_cbl_set_prev_entry:
+          { \cus_contents_get:nN { \toctheindex-1 } \tocthepreventry }
+      }
+      {
+        \tl_set:Nx \toclolevel { \use:c { cus/cbl~/type~#1 /lo_used_level_tl } }
+        \tl_set:Nx \tochilevel { \use:c { cus/cbl~/type~#1 /hi_used_level_tl } }
+        \cs_set:Npn \__cus_specified_cbl_set_next_entry:
+          { \cus_contents_type_get:nnN {#1} { \toctheindex+1 } \tocthenextentry }
+        \cs_set:Npn \__cus_specified_cbl_set_prev_entry:
+          { \cus_contents_type_get:nnN {#1} { \toctheindex-1 } \tocthepreventry }
+      }
+    \cus@toc@contentsline@begin 
+    \cs_set:Npn \cus@toc@contentsline ##1##2##3##4##5##6##7##8##9
+      {
+        \tl_gset:Nn \tocthetype {##1}
+        \tl_gset:Nn \tocthecount {##2}
+        \tl_gset:Nn \toctheindex {##9}
+        \__cus_specified_cbl_tags:w ##3, \s__cus_mark 
+        \tl_gset:Nn \tocthelevel {##4}
+        \__cus_specified_cbl_set_prev_entry:
+        \tl_gset_eq:NN \tocthepreventry \tocthepreventry 
+        \quark_if_no_value:NTF \tocthepreventry 
+          { 
+            \tl_gset:Nx \toctheprevlevel { - \int_use:N \c_max_int } 
+            \cs_gset_eq:NN \tocifheadentry \use_i:nn
+          }
+          { 
+            \tl_gset:Nx \toctheprevlevel { \tl_item:Nn \tocthepreventry { 5 } } 
+            \cs_gset_eq:NN \tocifheadentry \use_ii:nn
+          }
+        \__cus_specified_cbl_set_next_entry:
+        \tl_gset_eq:NN \tocthenextentry \tocthenextentry 
+        \quark_if_no_value:NTF \tocthenextentry 
+          { 
+            \tl_gset:Nx \tocthenextlevel { - \int_use:N \c_max_int } 
+            \cs_gset_eq:NN \tociftailentry \use_i:nn
+          }
+          { 
+            \tl_gset:Nx \tocthenextlevel { \tl_item:Nn \tocthenextentry { 5 } } 
+            \cs_gset_eq:NN \tociftailentry \use_ii:nn
+          }
+        \tl_if_head_eq_meaning:nNTF {##5} \numberline 
+        % \exp_args:Nne \tl_if_in:nnTF 
+        %   { \numberline\chapternumberline\partnumberline\booknumberline }
+        %   { \tl_head:n {##5} }
+          { \__cus_specified_cbl_split:nnw ##5 \s__cus_mark }
+          { \__cus_specified_cbl_split:nnw {} {} ##5 \s__cus_mark }
+        \tl_gset:Nn \tocthepage {##6}
+        \__cus_if_head_int_dec:nTF { \tocthepage }
+          { \cs_gset_eq:NN \tocifpageisnumber \use_i:nn }
+          { \cs_gset_eq:NN \tocifpageisnumber \use_ii:nn }
+        \tl_gset:Nn \toctheanchor {##7}
+        \__cus_specified_cbl_code: 
+      }
+    \cs_set_eq:NN \tocifheadentry \use_i:nn
+    \cs_set_eq:NN \tociftailentry \use_ii:nn
+    \cs_set_protected:Npn \toclink { \cus_ref_target:nn \toctheanchor }
+    \cs_set_protected:Npn \toclinkbox { \cus_ref_target_box:nn \toctheanchor }
+    \cs_set:Npn \cus@cbl@contentsline  { \cus@toc@contentsline }
+    \cs_set:Npn \cus@type@contentsline { \cus@toc@contentsline }
+    \int_step_inline:nn 
+      {
+        \tl_if_empty:nTF {#1} { \g__cus_cbl_count_int }
+          { \int_use:c { g__cus_cbl_type~#1_count_int } }
+      }
+      { \cs:w cus/cbl~ \tl_if_empty:nTF {#1} { /cbl~ } { /type~#1 } /entry [##1] _tl \cs_end: {##1} }
+    \cus@toc@contentsline@end 
+    \group_end:
+  }
+\cs_new_protected:Npn \cus_specified_cbl:nnn #1#2#3 % toc type, level, curr count
+  {
+    \group_begin:
+    \cs_set_eq:NN \? \g_cus_document_cbl_index_int 
+    \bool_lazy_or:nnTF
+      { \tl_if_empty_p:n {#3} }
+      { \tl_if_novalue_p:n {#3} }
+      { 
+        \int_compare:nNnTF { \g_cus_document_cbl_index_int } > { 0 }
+          {
+            \tl_if_novalue:nTF {#2}
+              { \__cus_specified_cbl_local:nnn {#1} {  } { \g_cus_document_cbl_index_int } }
+              { \__cus_specified_cbl_local:nnn {#1} {#2} { \g_cus_document_cbl_index_int } }
+          }
+          { \cus_specified_cbl:n {#1} }
+      }
+      {
+        \int_compare:nNnTF {#3} > { 0 }
+          {
+            \tl_if_novalue:nTF {#2}
+              { \__cus_specified_cbl_local:nnn {#1} {  } {#3} }
+              { \__cus_specified_cbl_local:nnn {#1} {#2} {#3} }
+          }
+          { \cus_specified_cbl:n {#1} }
+      }
+    \group_end:
+  }
+\cs_new_protected:Npn \__cus_specified_cbl_local:nnn #1#2#3
+  {
+    \tl_if_empty:nTF {#1}
+      { 
+        \tl_set:Nx \tochilevel { \int_use:N \c_max_int }
+        \seq_map_inline:Nn \g__cus_cbl_type_seq
+          {
+            \tl_set:Nx \tochilevel 
+              { \int_min:nn { \tochilevel } { \use:c { cus/cbl~/type~##1 /hi_used_level_tl } } }
+          }
+        \cs_set:Npn \__cus_specified_cbl_set_next_entry:
+          { \cus_contents_get:nN { \toctheindex+1 } \tocthenextentry }
+        \cs_set:Npn \__cus_specified_cbl_set_prev_entry:
+          { \cus_contents_get:nN { \toctheindex-1 } \tocthepreventry }
+      }
+      {
+        \tl_set:Nx \tochilevel { \use:c { cus/cbl~/type~#1 /hi_used_level_tl } }
+        \cs_set:Npn \__cus_specified_cbl_set_next_entry:
+          { \cus_contents_type_get:nnN {#1} { \toctheindex+1 } \tocthenextentry }
+        \cs_set:Npn \__cus_specified_cbl_set_prev_entry:
+          { \cus_contents_type_get:nnN {#1} { \toctheindex-1 } \tocthepreventry }
+      }
+    \cus_if_head_int:nTF {#2}
+      { 
+        \int_compare:nNnTF { \tochilevel } > {#2} 
+          { \cus_specified_cbl:n {#1} } 
+          { \exp_args:Nnf \__cus_specified_cbl_local_real:nnn {#1} { \int_eval:n {#2} } {#3} } 
+      }
+      { 
+        \int_compare:nNnTF { \tochilevel } >
+          { \tl_if_empty:nTF {#1} { 0 } { \cus_heading_level:nn {#1} {#2} } }
+          { \cus_specified_cbl:n {#1} } 
+          { \__cus_specified_cbl_local_real:nnn {#1} {#2} {#3} } 
+      }
+  }
+\cs_new_protected:Npn \__cus_specified_cbl_local_real:nnn #1#2#3
+  {
+    \tl_set:Nx \toclolevel { -\int_use:N \c_max_int }
+    \int_zero:N \l__cus_cbl_search_min_int
+    \int_zero:N \l__cus_cbl_search_max_int
+    \tl_if_empty:nTF {#1} 
+      { 
+        \int_compare:nNnTF {#3} > { \g__cus_cbl_count_int }
+          { 
+            \int_set:Nn \l__cus_cbl_search_min_int { \c_max_int }
+            \int_set:Nn \l__cus_cbl_search_max_int { -\c_max_int }
+          }
+          { \__cus_specified_cbl_search:n {#3} }
+      }
+      { 
+        \int_compare:nNnTF {#3} > { \use:c { g__cus_cbl_type~#1_count_int } }
+          {
+            \int_set:Nn \l__cus_cbl_search_min_int { \c_max_int }
+            \int_set:Nn \l__cus_cbl_search_max_int { -\c_max_int }
+          }
+          { \__cus_specified_cbl_search:nnn {#1} {#2} {#3} }
+      }
+    \cus@toc@contentsline@begin 
+    \cs_set:Npn \cus@toc@contentsline ##1##2##3##4##5##6##7##8##9
+      {
+        \tl_gset:Nn \tocthetype {##1}
+        \tl_gset:Nn \tocthecount {##2}
+        \tl_gset:Nn \toctheindex {##9}
+        \__cus_specified_cbl_tags:w ##3, \s__cus_mark 
+        \tl_gset:Nn \tocthelevel {##4}
+        \__cus_specified_cbl_set_prev_entry:
+        \tl_gset_eq:NN \tocthepreventry \tocthepreventry 
+        \quark_if_no_value:NTF \tocthepreventry 
+          { 
+            \tl_gset:Nx \toctheprevlevel { - \int_use:N \c_max_int } 
+            \cs_gset_eq:NN \tocifheadentry \use_i:nn
+          }
+          { 
+            \int_compare:nNnTF \toctheindex > \l__cus_cbl_search_min_int
+              {
+                \tl_gset:Nx \toctheprevlevel { \tl_item:Nn \tocthepreventry { 5 } } 
+                \cs_gset_eq:NN \tocifheadentry \use_ii:nn
+              }
+              {
+                \cs_gset_eq:NN \tocthepreventry \q_no_value
+                \tl_gset:Nx \toctheprevlevel { - \int_use:N \c_max_int } 
+                \cs_gset_eq:NN \tocifheadentry \use_i:nn
+              }
+          }
+        \__cus_specified_cbl_set_next_entry:
+        \tl_gset_eq:NN \tocthenextentry \tocthenextentry 
+        \quark_if_no_value:NTF \tocthenextentry 
+          { 
+            \tl_gset:Nx \tocthenextlevel { - \int_use:N \c_max_int } 
+            \cs_gset_eq:NN \tociftailentry \use_i:nn
+          }
+          { 
+            \int_compare:nNnTF \toctheindex < \l__cus_cbl_search_max_int
+              {
+                \tl_gset:Nx \tocthenextlevel { \tl_item:Nn \tocthenextentry { 5 } } 
+                \cs_gset_eq:NN \tociftailentry \use_ii:nn
+              }
+              {
+                \cs_gset_eq:NN \tocthenextentry \q_no_value
+                \tl_gset:Nx \tocthenextlevel { - \int_use:N \c_max_int } 
+                \cs_gset_eq:NN \tociftailentry \use_i:nn
+              }
+          }
+        \tl_if_head_eq_meaning:nNTF {##5} \numberline 
+        % \exp_args:Nne \tl_if_in:nnTF 
+        %   { \numberline\chapternumberline\partnumberline\booknumberline }
+        %   { \tl_head:n {##5} }
+          { \__cus_specified_cbl_split:nnw ##5 \s__cus_mark }
+          { \__cus_specified_cbl_split:nnw {} {} ##5 \s__cus_mark }
+        \tl_gset:Nn \tocthepage {##6}
+        \__cus_if_head_int_dec:nTF { \tocthepage }
+          { \cs_gset_eq:NN \tocifpageisnumber \use_i:nn }
+          { \cs_gset_eq:NN \tocifpageisnumber \use_ii:nn }
+        \tl_gset:Nn \toctheanchor {##7}
+        \__cus_specified_cbl_code: 
+      }
+    \cs_set_eq:NN \tocifheadentry \use_i:nn
+    \cs_set_eq:NN \tociftailentry \use_ii:nn
+    \cs_set_protected:Npn \toclink { \cus_ref_target:nn \toctheanchor }
+    \cs_set_protected:Npn \toclinkbox { \cus_ref_target_box:nn \toctheanchor }
+    \cs_set:Npn \cus@cbl@contentsline  { \cus@toc@contentsline }
+    \cs_set:Npn \cus@type@contentsline { \cus@toc@contentsline }
+    \int_step_inline:nnn \l__cus_cbl_search_min_int \l__cus_cbl_search_max_int
+      { \cs:w cus/cbl~ \tl_if_empty:nTF {#1} { /cbl~ } { /type~#1 } /entry [##1] _tl \cs_end: {##1} }
+    \cus@toc@contentsline@end 
+  }
+\cs_new:Npn \__cus_specified_cbl_split:nnw #1#2#3 \s__cus_mark 
+  {
+    \tl_gset:Nn \tocthenumber {#2}
+    \tl_if_empty:NTF \tocthenumber 
+      { \cs_gset_eq:NN \tocifnumbered \use_ii:nn }
+      { \cs_gset_eq:NN \tocifnumbered \use_i:nn }
+    \tl_gset:Nn \tocthename {#3}
+  }
+\cs_new:Npn \__cus_specified_cbl_tags:w #1 , #2 \s__cus_mark 
+  {
+    \tl_gset:Nn \toctheclass {#1}
+    \clist_gset:Nn \tocthetags {#2}
+  }
+\int_new:N \l__cus_cbl_search_min_int
+\int_new:N \l__cus_cbl_search_max_int
+\cs_new:Npn \__cus_specified_cbl_search:n #1
+  { \msg_error:nn {cus} {} } %!!TODO:
+\cs_new:Npn \__cus_specified_cbl_search_basic:nnn #1#2#3
+  {
+    \int_set:Nn \l__cus_tmpa_int {#3}
+    \bool_set_true:N \l__cus_tmpa_bool
+    \cs_set:Npn \cus@type@contentsline ##1##2##3##4##5##6##7##8
+      {
+        \int_compare:nNnTF {##4} > { \tochilevel }
+          {
+            \int_decr:N \l__cus_tmpa_int
+            \if_int_compare:w \l__cus_tmpa_int < \c_one_int
+              \int_set:Nn \l__cus_cbl_search_min_int \c_one_int
+              \bool_set_false:N \l__cus_tmpa_bool
+            \fi:
+          }
+          {
+            \int_compare:nNnTF {##4} = { \tochilevel }
+              {
+                \__cus_if_head_int_dec:nTF {#2}
+                  { \int_set_eq:NN \l__cus_cbl_search_min_int \l__cus_tmpa_int }
+                  {
+                    \str_if_eq:eeTF { \clist_item:nn {##3} {1} } {#2}
+                      { \int_set_eq:NN \l__cus_cbl_search_min_int \l__cus_tmpa_int }
+                      { \int_set:Nn \l__cus_cbl_search_min_int \c_max_int }
+                  }
+              }
+              {
+                \int_set:Nn \l__cus_cbl_search_min_int \c_max_int
+              }
+            \bool_set_false:N \l__cus_tmpa_bool
+          }
+      }
+    \bool_while_do:Nn \l__cus_tmpa_bool
+      { \tl_use:c { cus/cbl~/type~#1 /entry[\int_use:N \l__cus_tmpa_int]_tl } }
+
+    \int_set:Nn \l__cus_tmpa_int { #3+1 }
+    \bool_set_true:N \l__cus_tmpa_bool
+    \cs_set:Npn \cus@type@contentsline ##1##2##3##4##5##6##7##8
+      {
+        \int_compare:nNnTF {##4} > { \tochilevel }
+          {
+            \int_incr:N \l__cus_tmpa_int
+            \if_int_compare:w
+              \l__cus_tmpa_int > \use:c { g__cus_cbl_type~#1_count_int }
+              \bool_set_false:N \l__cus_tmpa_bool
+              \int_set:Nn \l__cus_cbl_search_max_int
+                { \use:c { g__cus_cbl_type~#1_count_int } }
+            \fi:
+          }
+          {
+            \int_compare:nNnTF {##4} = { \tochilevel }
+              {
+                \__cus_if_head_int_dec:nTF {#2}
+                  {
+                    \int_set:Nn \l__cus_cbl_search_max_int { \l__cus_tmpa_int - 1 }
+                    \bool_set_false:N \l__cus_tmpa_bool
+                  }
+                  {
+                    \str_if_eq:eeTF { \clist_item:nn {##3} {1} } {#2}
+                      {
+                        \int_set:Nn \l__cus_cbl_search_max_int { \l__cus_tmpa_int - 1 }
+                        \bool_set_false:N \l__cus_tmpa_bool
+                      }
+                      {
+                        \int_set:Nn \l__cus_cbl_search_max_int { -\c_max_int }
+                        \bool_set_false:N \l__cus_tmpa_bool
+                      }
+                  }
+              }
+              {
+                \int_set:Nn \l__cus_cbl_search_max_int { -\c_max_int }
+                \bool_set_false:N \l__cus_tmpa_bool
+              }
+          }
+      }
+    \int_compare:nNnTF 
+      { \l__cus_tmpa_int } > { \use:c { g__cus_cbl_type~#1_count_int } }
+      { \int_set:Nn \l__cus_cbl_search_max_int { -\c_max_int } }
+      {
+        \bool_while_do:Nn \l__cus_tmpa_bool
+          { \use:c { cus/cbl~/type~#1 /entry[\int_use:N \l__cus_tmpa_int]_tl } }
+      }
+    \int_compare:nNnTF \l__cus_cbl_search_min_int > {#3}
+      { \int_set:Nn \l__cus_cbl_search_max_int { -\c_max_int } }
+      { 
+        \int_compare:nNnT \l__cus_cbl_search_max_int < {#3}
+          { \int_set:Nn \l__cus_cbl_search_max_int {#3} }
+      }
+  }
+\cs_new:Npn \__cus_specified_cbl_search:nnn #1#2#3
+  {
+    \__cus_specified_cbl_search_basic:nnn {#1} {#2} {#3}
+    \cs_set:Npn \cus@type@contentsline ##1##2##3##4##5##6##7##8
+      { \tl_set:Nx \toclolevel { \int_max:nn { \toclolevel } {##4} } }
+    \int_step_inline:nnn \l__cus_cbl_search_min_int \l__cus_cbl_search_max_int
+      { \use:c { cus/cbl~/type~#1 /entry[##1]_tl } }
+  }
+\cs_new:Npn \__cus_specified_cbl_pos:n #1 % pos
+  {
+    \tl_if_exist:cTF { @toc@\tocthetype @\toctheclass @#1 }
+      { \use:c { @toc@\tocthetype @\toctheclass @#1 } }
+      { \use:c { @toc@\tocthetype @\tocthelevel @#1 } }
+  }
+\cs_new:Npn \__cus_specified_cbl_pos:nn #1#2 % level, pos
+  {
+    \int_compare:nNnTF { \cus_heading_level:nn { \tocthetype } { \toctheclass } }
+      = {#1}
+      { 
+        \tl_if_exist:cTF { @toc@\tocthetype @\toctheclass @#2 }
+          { \use:c { @toc@\tocthetype @\toctheclass @#2 } }
+          { \use:c { @toc@\tocthetype @#1 @#2 } }
+      }
+      { \use:c { @toc@\tocthetype @#1 @#2 } }
+  }
+\cs_new_protected:Npn \__cus_specified_cbl_ifcomplement:TF
+  { \exp_last_unbraced:Ne \tl_if_in:nnTF { { -1234567890 } { \tl_head:N \toctheclass } } }
+\cs_new_protected:Npn \__cus_specified_cbl_code: 
+  {
+    \int_compare:nNnTF { \tocthelevel - 1 } > \toctheprevlevel 
+      {
+        \tociffirsttrue \tocifcomplementtrue 
+        \tl_set_eq:NN \cus@toc@tmp \tocthelevel 
+        \tocifheadentry 
+          { \int_step_inline:nnn { \tochilevel } { \tocthelevel - 1 } }
+          { \int_step_inline:nnn { \toctheprevlevel + 1 } { \tocthelevel - 1 } }
+            {
+              \tl_gset:Nn \tocthelevel {##1}
+              \seq_gpush:Nn \toc@classes {##1}
+              \__cus_specified_cbl_pos:nn {##1} { liststart }
+              \seq_gpush:Nn \toc@classes {##1}
+              \__cus_specified_cbl_pos:nn {##1} { blockstart }
+              \__cus_specified_cbl_pos:nn {##1} { blockitem }
+              \toc@setif {first} {##1} {1}
+            }
+        \tl_gset_eq:NN \tocthelevel \cus@toc@tmp 
+        \tocifcomplementfalse 
+        \seq_gpush:No \toc@classes \toctheclass 
+        \__cus_specified_cbl_pos:n { liststart }
+        \seq_gpush:No \toc@classes \toctheclass 
+        \__cus_specified_cbl_pos:n { blockstart }
+        \__cus_specified_cbl_pos:n { blockitem }
+        \toc@setif {first} {\tocthelevel} {1}
+      }
+      { 
+        \tocifcomplementfalse
+        \int_compare:nNnTF { \tocthelevel - 1 } = \toctheprevlevel 
+          {
+            \tociffirsttrue 
+            \seq_gpush:No \toc@classes \toctheclass 
+            \__cus_specified_cbl_pos:n { liststart }
+            \seq_gpush:No \toc@classes \toctheclass 
+            \__cus_specified_cbl_pos:n { blockstart }
+            \__cus_specified_cbl_pos:n { blockitem }
+            \toc@setif {first} {\tocthelevel} {1}
+          }
+          {
+            \tociffirstfalse 
+            \seq_gpush:No \toc@classes \toctheclass 
+            \__cus_specified_cbl_pos:n { blockstart } 
+            \__cus_specified_cbl_pos:n { blockitem } 
+            \toc@setif {first} {\tocthelevel} {0}
+          }
+      }
+
+    \int_compare:nNnTF { \tocthelevel - 1 } > \tocthenextlevel 
+      {
+        \tocifcomplementfalse 
+        \toc@if {first} {\tocthelevel} { \tociffirsttrue } { \tociffirstfalse }
+        \seq_gpop:NN \toc@classes \toctheclass 
+        \__cus_specified_cbl_pos:n { blockfinish }
+        \tociffirstfalse 
+        \seq_gpop:NN \toc@classes \toctheclass 
+        \__cus_specified_cbl_ifcomplement:TF 
+          { \tocifcomplementtrue } { \tocifcomplementfalse }
+        \__cus_specified_cbl_pos:n { listfinish }
+        \toc@setif {first} {\tocthelevel} {0}
+        \tociftailentry 
+          { 
+            \int_step_inline:nnnn { \tocthelevel - 1 } { -1 } { \tochilevel }
+              {
+                \tl_gset:Nn \tocthelevel {##1}
+                \toc@if {first} {##1} { \tociffirsttrue } { \tociffirstfalse }
+                \seq_gpop:NN \toc@classes \toctheclass 
+                \__cus_specified_cbl_ifcomplement:TF 
+                  { \tocifcomplementtrue } { \tocifcomplementfalse }
+                  \__cus_specified_cbl_pos:nn {##1} { blockfinish }
+                \tociffirstfalse 
+                \seq_gpop:NN \toc@classes \toctheclass 
+                \__cus_specified_cbl_ifcomplement:TF 
+                  { \tocifcomplementtrue } { \tocifcomplementfalse }
+                \__cus_specified_cbl_pos:nn {##1} { listfinish }
+                \toc@setif {first} {##1} {0}
+              }
+          }
+          {
+            \int_step_inline:nnnn { \tocthelevel - 1 } { -1 } { \tocthenextlevel - 1 }
+              {
+                \tl_gset:Nn \tocthelevel {##1}
+                \toc@if {first} {##1} { \tociffirsttrue } { \tociffirstfalse }
+                \seq_gpop:NN \toc@classes \toctheclass 
+                \__cus_specified_cbl_ifcomplement:TF 
+                  { \tocifcomplementtrue } { \tocifcomplementfalse }
+                \__cus_specified_cbl_pos:nn {##1} { blockfinish }
+                \tociffirstfalse 
+                \seq_gpop:NN \toc@classes \toctheclass 
+                \__cus_specified_cbl_ifcomplement:TF 
+                  { \tocifcomplementtrue } { \tocifcomplementfalse }
+                \__cus_specified_cbl_pos:nn {##1} { listfinish }
+                \toc@setif {first} {##1} {0}
+              }
+            \tl_gset_eq:NN \tocthelevel \tocthenextlevel
+            \toc@if {first} {\tocthelevel} { \tociffirsttrue } { \tociffirstfalse }
+            \seq_gpop:NN \toc@classes \toctheclass 
+            \tocifcomplementfalse 
+            \__cus_specified_cbl_pos:n { blockfinish } 
+            \toc@setif {first} {\tocthelevel} {0}
+          }
+      }
+      {
+        \int_compare:nNnTF { \tocthelevel - 1 } = { \tocthenextlevel }
+          {
+            \toc@if {first} {\tocthelevel} { \tociffirsttrue } { \tociffirstfalse }
+            \seq_gpop:NN \toc@classes \toctheclass
+            \tocifcomplementfalse 
+            \__cus_specified_cbl_pos:n { blockfinish }
+            \tociffirstfalse 
+            \seq_gpop:NN \toc@classes \toctheclass
+            \__cus_specified_cbl_ifcomplement:TF 
+              { \tocifcomplementtrue } { \tocifcomplementfalse }
+            \__cus_specified_cbl_pos:n { listfinish }
+            \toc@setif {first} {\tocthelevel} {0}
+            \tl_gset_eq:NN \tocthelevel \tocthenextlevel 
+            \toc@if {first} {\tocthelevel} { \tociffirsttrue } { \tociffirstfalse }
+            \seq_gpop:NN \toc@classes \toctheclass 
+            \__cus_specified_cbl_ifcomplement:TF 
+              { \tocifcomplementtrue } { \tocifcomplementfalse }
+            \__cus_specified_cbl_pos:nn { \tocthenextlevel } { blockfinish }
+            \toc@setif {first} {\tocthelevel} {0}
+          }
+          {
+            \int_compare:nNnTF \tocthelevel = \tocthenextlevel 
+              {
+                \toc@if {first} {\tocthelevel} { \tociffirsttrue } { \tociffirstfalse }
+                \seq_gpop:NN \toc@classes \toctheclass 
+                \__cus_specified_cbl_pos:n { blockfinish }
+                \toc@setif {first} {\tocthelevel} {0}
+              }
+              { }
+          }
+      }
+  }
+\tl_const:Nn \cus@toc@contentsline@begin 
+  {
+    \cs_set_protected:Npn \tociffirsttrue { \cs_gset_eq:NN \tociffirst \use_i:nn }
+    \cs_set_protected:Npn \tociffirstfalse { \cs_gset_eq:NN \tociffirst \use_ii:nn }
+    \cs_set_protected:Npn \tocifcomplementtrue { \cs_gset_eq:NN \tocifcomplement \use_i:nn }
+    \cs_set_protected:Npn \tocifcomplementfalse { \cs_gset_eq:NN \tocifcomplement \use_ii:nn }
+    \tociffirsttrue 
+    \int_step_inline:nnn { \tochilevel } { \toclolevel }
+      { 
+        \bool_set_eq:cN { @toc@complement@ #1 } \c_false_bool 
+        \bool_set_eq:cN { @toc@first@ #1 } \c_true_bool
+      }
+    \cs_set:Npn \toc@if #1#2 { \bool_if:cTF { @toc@#1@#2 } }
+    \cs_set_protected:Npn \toc@setif #1#2#3 
+      { 
+        \int_if_odd:nTF {#3}
+          { \bool_gset_true:c { @toc@#1@#2 } }
+          { \bool_gset_false:c { @toc@#1@#2 } }
+      }
+    \seq_clear:N \toc@classes 
+  }
+\tl_const:Nn \cus@toc@contentsline@end 
+  {
+    \tl_map_function:nN
+      {
+        \tocthetype \tocthecount \tocthelevel \tocthepage \toctheanchor 
+        \tocthenumber \tocthename \toctheclass \tocthetags \toctheindex 
+        \tocthepreventry \toctheprevlevel \tocthenextentry \tocthenextlevel 
+        \toclink \toclinkbox \tocifcomplement 
+        \tociffirst \tocifnumbered \tocifpageisnumber \tocifheadentry \tociftailentry 
+        \cus@toc@contentsline 
+      }
+      \cs_undefine:N
+  }
+% 不准确
+\cs_new_protected_nopar:Npn \cus_get_cbl_level_distance:nnnN #1#2#3#4
+  {
+    \group_begin:
+    \tl_set:Nx \tochilevel { \use:c { cus/cbl~/type~#1 /hi_used_level_tl } }
+    \__cus_specified_cbl_search_basic:nnn {#1} {#2} {#3}
+    \use:e 
+      {
+        \group_begin:
+        \tl_set:Nx \exp_not:N #4
+          {
+            \int_compare:nNnTF \l__cus_cbl_search_min_int > \l__cus_cbl_search_max_int
+              { 0 }
+              { \int_eval:n { \l__cus_cbl_search_max_int - \l__cus_cbl_search_min_int } }
+          }
+      }
+  }
+\NewDocumentCommand \getcblleveldistance { m m O{} m }
+  {
+    \use:e 
+      {
+        \cus_get_cbl_level_distance:nnnN 
+          {#1} {#2} 
+          { \tl_if_empty:nTF {#3} { \CurrentCombinedListCount } {#3} }
+          \exp_not:N #4
+      }
+  }
+\NewDocumentCommand \SetSpecifiedCombinedListStyle { O{}+m+m+m+m+m+m }
+  {
+    \bool_lazy_or:nnTF { \tl_if_empty_p:n {#1} } { \str_if_eq_p:nn {#1} {*} }
+      { \seq_map_inline:Nn \g__cus_cbl_type_seq }
+      { \clist_map_inline:nn {#1} }
+        { 
+          \clist_map_inline:nn {#2}
+            { \cus_specified_cbl_style:nnnnnnn {##1} {####1} {#3} {#4} {#5} {#6} {#7} }
+        }
+  }
+\NewDocumentCommand \SpecifiedCombinedList { >{\TrimSpaces} O{} }
+  { \cus_specified_cbl:n {#1} }
+\NewDocumentCommand \LocalSpecifiedCombinedList 
+  { >{\TrimSpaces} O{} >{\SplitArgument{1}{,}} D(){,} }
+  { \cus_specified_cbl:nnn {#1} #2 }
+\cs_new_protected:Npn \tocsetstyle { \SetSpecifiedCombinedListStyle [toc] }
+\cs_new_protected:Npn \specifiedtoc { \SpecifiedCombinedList [toc] }
+\cs_new_protected:Npn \localspecifiedtoc { \LocalSpecifiedCombinedList [toc] }
+\cs_new_protected:Npn \lofsetstyle { \SetSpecifiedCombinedListStyle [lof] {figure} }
+\cs_new_protected:Npn \specifiedlof { \SpecifiedCombinedList [lof] }
+\cs_new_protected:Npn \lotsetstyle { \SetSpecifiedCombinedListStyle [lot] {table} }
+\cs_new_protected:Npn \specifiedlot { \SpecifiedCombinedList [lot] }
 \ExplSyntaxOff
 
 \@namedef{l@toc/cbl/level -1}#1#2#3#4#5#6#7{%
@@ -448,12 +1177,12 @@
     \loop 
     \ifnum\@tempcnta<\total@cbl@count
       \advance\@tempcnta by\@ne
-      \contents@item{\the\@tempcnta}\repeat 
+      \contents@entry{\the\@tempcnta}\repeat 
   \else 
     \loop 
       \ifnum\@tempcnta<\csname total@type#1@count\endcsname
         \advance\@tempcnta by\@ne
-        \contents@typeitem{#1}{\the\@tempcnta}\repeat 
+        \contents@typeentry{#1}{\the\@tempcnta}\repeat 
   \fi
   \endgroup}
 \protected\def\standardplaincombinedlist#1#2{%
@@ -526,7 +1255,6 @@
 \msg_new:nnn { cus } { title-class-unknown } { The~title~class~`#1'~unknown. }
 \seq_new:N \g__cus_title_seq
 \cs_new_protected:Npn \IterateTitleList { \seq_map_inline:Nn \g__cus_title_seq }
-\cs_new_nopar:Npn \__cus_title_initial: { }
 \NewDocumentCommand \definetitle { m >{ \TrimSpaces } O{normal} +m } 
   { 
     \cs_if_exist:cF { title@class@ #2 }
@@ -539,7 +1267,7 @@
       {
         \exp_not:N \DeclareDocumentCommand \exp_not:N #1 { s +O{} O{} m }
           {
-            \exp_not:N \__cus_title_initial:
+            \exp_not:N \__cus_title_initial:n { \cs_to_str:N #1 }
             \exp_not:N \tl_if_blank:nTF {##3}
               { 
                 \exp_not:N \__cus_if_keyval:nTF {##2} 
@@ -548,7 +1276,7 @@
                     \cus_setup_title:nn { \cs_to_str:N #1 } {##2}
                     \exp_not:N \IfBooleanTF {##1} 
                       { \exp_not:c { title@class@ #2 } { \cs_to_str:N #1 } * } 
-                      { \exp_not:c { title@class@ #2 } { \cs_to_str:N #1 } } 
+                      { \exp_not:c { title@class@ #2 } { \cs_to_str:N #1 } \scan_stop: } 
                       {##4} {##4}
                   }
                   {
@@ -556,12 +1284,12 @@
                       {
                         \exp_not:N \IfBooleanTF {##1}
                           { \exp_not:c { title@class@ #2 } { \cs_to_str:N #1 } * {##4} {##4} }
-                          { \exp_not:c { title@class@ #2 } { \cs_to_str:N #1 } {##4} {##4} }
+                          { \exp_not:c { title@class@ #2 } { \cs_to_str:N #1 } \scan_stop: {##4} {##4} }
                       }
                       {
                         \exp_not:N \IfBooleanTF {##1}
                           { \exp_not:c { title@class@ #2 } { \cs_to_str:N #1 } * {##2} {##4} }
-                          { \exp_not:c { title@class@ #2 } { \cs_to_str:N #1 } {##2} {##4} }
+                          { \exp_not:c { title@class@ #2 } { \cs_to_str:N #1 } \scan_stop: {##2} {##4} }
                       }
                   }
               }
@@ -570,10 +1298,11 @@
                 \cus_setup_title:nn { \cs_to_str:N #1 } {##2}
                 \exp_not:N \IfBooleanTF {##1}
                   { \exp_not:c { title@class@ #2 } { \cs_to_str:N #1 } * } 
-                  { \exp_not:c { title@class@ #2 } { \cs_to_str:N #1 } } 
+                  { \exp_not:c { title@class@ #2 } { \cs_to_str:N #1 } \scan_stop: } 
                 {##3} {##4}
               }
             \__cus_restore_title_setting:n { \cs_to_str:N #1 }
+            \ignorespaces
           }
       }
   }
@@ -635,7 +1364,8 @@
 \cs_new_protected:Npn \__cus_define_title_keys:n #1
   {
     \cus_set_title_key_special_store_restore:nn {#1}
-      { name, number-from, number-within, number-without, number }
+      { name, number-from, number-within, number-without, number, 
+        bookmark, bookmark* }
     \keys_define:nn { cus/title } { #1 .meta:nn = { cus/title/#1 } {##1} }
     \keys_define:nn { cus/title/ #1 }
       {
@@ -651,23 +1381,26 @@
         number-without  .code:n = 
           \__cus_title_keys_preamble_set:nn { number-without }
             { \counterwithout {#1} {##1} \scan_stop: } ,
-        beforeskip    .tl_set:c = title~parameter@#1@beforeskip ,
-        afterskip     .tl_set:c = title~parameter@#1@afterskip ,
-        indent        .tl_set:c = title~parameter@#1@indent ,
+        beforeskip  .skip_set:c = title~parameter@#1@beforeskip ,
+        afterskip   .skip_set:c = title~parameter@#1@afterskip ,
+        leftskip    .skip_set:c = title~parameter@#1@leftskip ,
+        rightskip   .skip_set:c = title~parameter@#1@rightskip ,
+        indent       .dim_set:c = title~parameter@#1@indent ,
         numbering .switch_set:c = title~parameter@#1@numbering ,
         numbering    .initial:n = true ,
         beforeskip   .initial:n = \c_zero_skip ,
         afterskip    .initial:n = \c_zero_skip ,
+        leftskip     .initial:n = \c_zero_skip ,
+        rightskip    .initial:n = \c_zero_skip ,
         indent       .initial:n = \c_zero_dim ,
         afterindent .switch_set:c = title~parameter@#1@afterindent ,
         fixskip     .switch_set:c = title~parameter@#1@fixskip ,
+        ensureskip  .switch_set:c = title~parameter@#1@ensureskip ,
         hang        .switch_set:c = title~parameter@#1@hang ,
         hang           .initial:n = true ,
         runin       .switch_set:c = title~parameter@#1@runin ,
-        % floatbarrier .switch_set:c = title~parameter@#1@floatbarrier ,
-        % floatbarrier / on .code:n = \tl_set:cn { title~parameter@#1@floatbarrier } { } ,
-        % floatbarrier / off .code:n = \tl_set:cn { title~parameter@#1@floatbarrier } { } ,
-        pagestyle     .tl_set:c = title~parameter@#1@pagestyle ,
+        float-barrier .switch_set:c = title~parameter@#1@floatbarrier ,
+        pagestyle   .tl_set_x:c = title~parameter@#1@pagestyle ,
         pagestyle    .initial:n = plain ,
         mark          .tl_set:c = title~parameter@#1@mark ,
         mark         .initial:n = \use_none:n ,
@@ -676,6 +1409,10 @@
             { \cus_assign_heading_level:nn {#1} {##1} } ,
         tocline      .cs_set:cp = { title~parameter@#1@tocline } ##1##2 ,
         tocline      .initial:n = \titlenumberline{##1}##2 ,
+        bookmark        .code:n = \cus_gset_next_bookmark_text:n {##1} ,
+        bookmark*       .code:n = 
+          \cus_gset_next_bookmark_text:n 
+            { \legacy_if:nT { BKM@numbered } { \tl_use:c { titlethe #1 } ~ } ##1 } ,
         break         .tl_set:c = title~parameter@#1@break ,
         break+          .code:n = \tl_put_right:cn { title~parameter@#1@break } {##1} ,
         format        .tl_set:c = title~parameter@#1@format ,
@@ -699,8 +1436,12 @@
 %    titleformat, aftername, aftertitle
 %  }
 \seq_new:N \l__cus_title_restore_key_seq
-\tl_put_right:Nn \__cus_title_initial:
-  { \seq_clear:N \l__cus_title_restore_key_seq }
+\cs_new_protected:Npn \__cus_title_initial:n #1
+  { 
+    \seq_clear:N \l__cus_title_restore_key_seq 
+    \tl_gset:Nx \CurrentTitleLevel { \tl_use:c { title~parameter@ #1 @level } }
+  }
+\tl_gset:Nx \CurrentTitleLevel { -10001 }
 \cs_new_protected:Npn \__cus_store_title_setting:nn #1#2
   {
     \seq_clear:N \l__cus_title_restore_key_seq
@@ -772,6 +1513,8 @@
 \cus_ignore_title_key_store_restore:n { @number-from } 
 \cus_ignore_title_key_store_restore:n { @number-within } 
 \cus_ignore_title_key_store_restore:n { @number-without } 
+\cus_ignore_title_key_store_restore:n { @bookmark } 
+\cus_ignore_title_key_store_restore:n { @bookmark* } 
 \cs_new_protected:Npn \cus_set_title_key_special_store:nn #1#2
   {
     \clist_map_inline:nn {#2}
@@ -824,13 +1567,17 @@
       }
   }
 \NewDocumentCommand \setsecnumberdepth { >{\TrimSpaces} m }
-  { \exp_args:Nnf \setcounter { secnumdepth } { \cus_heading_level:n { toc-#1 } } }
+  { 
+    \cus_if_head_int:nTF {#1} { \setcounter { secnumdepth } { \int_eval:n {#1} } }
+      { \exp_args:Nnf \setcounter { secnumdepth } { \cus_heading_level:n { toc-#1 } } }
+  }
 \cs_new_protected_nopar:Npn \setsecnumdepth { \setsecnumberdepth }
 
 \msg_new:nnn { cus } { document-reset-value } { Cannot~set~#1~after~preamble. }
 
+\cs_new_eq:NN \CurrentCombinedListCount \g_cus_document_cbl_index_int 
 \int_new:N \g__cus_curr_toc_default_level_count_int
-\cs_set_eq:NN \c@CurrentTocDefaultLevelCount \g__cus_curr_toc_default_level_count_int
+\cs_new_eq:NN \CurrentTocDefaultLevelCount \g__cus_curr_toc_default_level_count_int
 \cs_new_protected:Npn \cus@updatedefaultlevel #1#2
   {
     \str_if_eq:eeT {#1} { toc }
@@ -855,11 +1602,16 @@
 \cs_new:Npn \title@floatbarrier #1 { }
 \cs_new:Npn \title@break #1 { \cs:w title~parameter@ #1 @break \cs_end: }
 \cs_new:Npn \title@pagestyle #1 
-  { \exp_args:Nv \usethispagestyle { title~parameter@ #1 @pagestyle } }
+  { 
+    \tl_if_empty:cF { title~parameter@ #1 @pagestyle } 
+      { \exp_args:Nv \usethispagestyle { title~parameter@ #1 @pagestyle } }
+  }
 \cs_new:Npn \title@setheadingskip #1#2
   { \skip_set:Nn \title@headingskip { \tl_use:c { title~parameter@#1@#2skip } } }
 \cs_new:Npn \title@iffixskip #1
   { \bool_if:cTF { title~parameter@ #1 @fixskip } }
+\cs_new:Npn \title@ifensureskip #1
+  { \bool_if:cTF { title~parameter@ #1 @ensureskip } }
 \cs_new:Npn \title@fixheadingskip
   {
     \par 
@@ -874,6 +1626,7 @@
   }
 \cs_new:Npn \title@ifnumbering #1
   { \bool_if:cTF { title~parameter@ #1 @numbering } }
+% \cs_new_protected:Npn \title@makeanchor { \cus_make_unique_target:n }
 \cs_new:Npn \title@makeanchor #1 { }
 \cus_pkg_code:nnn { hyperref } { }
   { 
@@ -901,6 +1654,9 @@
 \cs_new:Npn \titleifname #1#2 {#2}
 \cs_new:Npn \title@ifnametrue { \cs_set_eq:NN \titleifname \use_i:nn }
 \cs_new:Npn \title@ifnamefalse { \cs_set_eq:NN \titleifname \use_ii:nn }
+\cs_new:Npn \titleifmeasuring #1#2 {#2}
+\cs_new:Npn \title@ifmeasuringtrue { \cs_set_eq:NN \titleifmeasuring \use_i:nn }
+\cs_new:Npn \title@ifmeasuringfalse { \cs_set_eq:NN \titleifmeasuring \use_ii:nn }
 \cs_new:Npn \title@format #1 { \cs:w title~parameter@ #1 @format \cs_end: }
 \cs_new:Npn \title@headinghang #1#2
   {
@@ -932,6 +1688,8 @@
 \cs_new:Npn \title@getlevel #1 { \cs:w title~parameter@ #1 @level \cs_end: }
 \cs_new:Npn \title@ifrunin #1
   { \bool_if:cTF { title~parameter@ #1 @runin } }
+\cs_new:Npn \title@iffloatbarrier #1
+  { \bool_if:cTF { title~parameter@ #1 @floatbarrier } }
 \cs_new:Npn \title@indentbox #1
   {
     \dim_set:Nn \tex_parindent:D {#1}
@@ -939,13 +1697,27 @@
   }
 \cs_new:Npn \title@getindent #1 { \cs:w title~parameter@#1@indent \cs_end: }
 
+\cus_add_pdf_disable:n
+  {
+    \cs_set_eq:NN \par \c_space_tl
+    \cs_set_eq:NN \\ \c_space_tl
+  }
+\cs_new_protected:Npn \title@setvarwidth #1#2#3
+  { \cus_set_vbox_varwidth:Nnw #1 {#2} #3 \cus_set_vbox_varwidth_end: }
 \ExplSyntaxOff
+
+\let\hyper@nopatch@sectioning\@empty 
+\let\NR@nopatch@sectioning\@empty
+
+\def\title@ifstar#1{\ifx*#1\@empty \expandafter\@firstoftwo \else \expandafter\@secondoftwo\fi}
+\newbox\title@box 
+\newdimen\titlewidth 
 
 % 例如：\part
 \def\title@classinitial@page{pagestyle=plain,level=part,hang=false,}
 \def\title@classhook@pagebegin{}
 \def\title@classhook@pageend{}
-\protected\def\title@class@page #1{%
+\protected\def\title@class@page #1#2{%
   \title@break{#1}%
   \title@classhook@pagebegin
   \title@pagestyle{#1}%
@@ -958,7 +1730,7 @@
   \title@setheadingskip{#1}{before}%
   \title@iffixskip{#1}{\title@fixtopskip}{}%
   \vspace*{\title@headingskip}%
-  \@ifstar{\title@class@page@@{#1}}{\title@class@page@{#1}}}
+  \title@ifstar{#2}{\title@class@page@@}{\title@class@page@}{#1}}
 \protected\def\title@class@page@ #1#2#3{%
   \ifnum \c@secnumdepth >-2\relax
     \title@ifnumbering{#1}
@@ -1006,13 +1778,13 @@
 \def\title@classinitial@top{pagestyle=plain,level=chapter,hang=false}
 \def\title@classhook@topbegin{}
 \def\title@classhook@topend{}
-\protected\def\title@class@top #1{%
+\protected\def\title@class@top #1#2{%
   \title@break{#1}%
   \title@classhook@topbegin
   \title@pagestyle{#1}%
   \global\@topnum\z@ 
   \title@ifafterindent{#1}{\@afterindenttrue}{\@afterindentfalse}%
-  \@ifstar{\title@class@top@@{#1}}{\title@class@top@{#1}}}
+  \title@ifstar{#2}{\title@class@top@@}{\title@class@top@}{#1}}
 \protected\def\title@class@top@ #1#2#3{
   \ifnum \c@secnumdepth >\m@ne
     \if@mainmatter 
@@ -1082,8 +1854,14 @@
 % 例如：\section 
 \def\title@classinitial@normal{}
 \def\title@classhook@normalbegin{}
-\def\title@classhook@normalend{}
-\protected\def\title@class@normal #1{%
+\def\title@classhook@normalend{\title@floatbarrier@hook}
+\let\title@floatbarrier@hook\@empty 
+\protected\def\title@class@normal #1#2{%
+  \title@iffloatbarrier{#1}
+    {\FloatBarrier
+      \gdef\title@floatbarrier@hook{\@fb@topbarrier 
+        \gdef\title@floatbarrier@hook{}}}
+    {}%
   \if@noskipsec \leavevmode \fi 
   \par 
   \title@ifafterindent{#1}{\@afterindenttrue}{\@afterindentfalse}%
@@ -1092,10 +1870,11 @@
     \title@break{#1}%
     \title@classhook@normalbegin 
     \title@setheadingskip{#1}{before}%
-    \title@iffixskip{#1}{\title@fixheadingskip}{}%
+    \title@iffixskip{#1}{\title@fixtopskip}{}%
+    \title@ifensureskip{#1}{\hrule\@height\z@\relax \par}{}%
     \addvspace{\title@headingskip}%
   \fi 
-  \@ifstar{\title@class@normal@@{#1}}{\title@class@normal@{#1}}}
+  \title@ifstar{#2}{\title@class@normal@@}{\title@class@normal@}{#1}}
 \protected\def\title@class@normal@ #1#2#3{%
   \ifnum\title@getlevel{#1}>\c@secnumdepth
     \title@ifnamefalse
@@ -1167,6 +1946,136 @@
       \@afterheading}%
   \title@classhook@normalend 
   \ignorespaces}
+\def\title@classinitial@free{}
+\def\title@classhook@freebegin{}
+\def\title@classhook@freeend{}
+\protected\def\title@class@free #1#2{%
+  \title@iffloatbarrier{#1}
+    {\FloatBarrier
+      \gdef\title@floatbarrier@hook{\@fb@topbarrier 
+        \gdef\title@floatbarrier@hook{}}}
+    {}%
+  \if@noskipsec \leavevmode \fi
+  \par 
+  \title@ifafterindent{#1}{\@afterindenttrue}{\@afterindentfalse}%
+  \if@nobreak \title@classhook@freebegin \everypar{}%
+  \else 
+    \title@break{#1}%
+    \title@classhook@freebegin 
+    \title@setheadingskip{#1}{before}%
+    \title@iffixskip{#1}{\title@fixtopskip}{}%
+    \title@ifensureskip{#1}{\hrule\@height\z@\relax \par}{}%
+    \addvspace{\title@headingskip}%
+  \fi 
+  \title@ifstar{#2}{\title@class@free@@}{\title@class@free@}{#1}}
+\protected\def\title@class@free@ #1#2#3{%
+  \ifnum\title@getlevel{#1}>\c@secnumdepth 
+    \title@ifnamefalse 
+    \title@makeanchor{#1*}%
+    \let\@svsec\@empty 
+  \else 
+    \title@ifnumbering{#1}
+      {\title@ifnametrue \refstepcounter{#1}%
+        \protected@edef\@svsec{\title@name{#1}\title@aftername{#1}}\relax}
+      {\title@ifnamefalse \title@makeanchor{#1*}%
+        \let\@svsec\@empty}%
+  \fi
+  \title@gettitle{#1}%
+  \title@mark{#1}{#2}%
+  \title@addtocline{#1}{#2}%
+  \title@heading@format@initial 
+  {\title@format{#1}{%
+    \@svsec%
+    \title@titleformat{#1}{#3}%
+    \title@aftertitle{#1}}}%
+  \title@class@endfree{#1}}
+\protected\def\title@class@free@@ #1#2#3{%
+  \title@ifnamefalse 
+  \title@makeanchor{#1*}%
+  \title@gettitle{#2}%
+  \title@heading@format@initial 
+  {\title@format{#1}{%
+    \@svsec%
+    \title@titleformat{#1}{#3}%
+    \title@aftertitle{#1}}}%
+  \title@class@endfree{#1}}
+\protected\def\title@class@endfree #1{%
+  \ifvmode 
+    \title@setheadingskip{#1}{after}%
+    \title@iffixskip{#1}{\title@fixheadingskip}{}%
+    \vskip\title@headingskip 
+    \@afterheading 
+  \fi 
+  \title@classhook@freeend 
+  \ignorespaces}
+\def\title@classinitial@wrap{}
+\def\title@classhook@wrapbegin{}
+\def\title@classhook@wrapend{}
+\protected\def\title@class@wrap #1#2#3#4{%
+  \title@iffloatbarrier{#1}
+    {\FloatBarrier
+      \gdef\title@floatbarrier@hook{\@fb@topbarrier 
+        \gdef\title@floatbarrier@hook{}}}
+    {}%
+  \if@noskipsec \leavevmode \fi
+  \par 
+  \title@ifafterindent{#1}{\@afterindenttrue}{\@afterindentfalse}%
+  {\title@ifmeasuringtrue 
+    \title@setvarwidth\@tempboxa{.4\textwidth}{%
+      \title@ifstar{#2}{%
+        \title@ifnamefalse 
+        \title@makeanchor{#1*}%
+        \let\@svsec\@empty}{%
+        \ifnum\title@getlevel{#1}>\c@secnumdepth 
+          \title@ifnamefalse 
+          \title@makeanchor{#1*}%
+          \let\@svsec\@empty
+        \else 
+          \title@ifnumbering{#1}
+            {\title@ifnametrue \refstepcounter{#1}%
+              \protected@edef\@svsec{\title@name{#1}\title@aftername{#1}}\relax}
+            {\title@ifnamefalse \title@makeanchor{#1*}%
+              \let\@svsec\@empty}%
+        \fi 
+      }%
+      \title@gettitle{#1}%
+      \title@heading@format@initial 
+      \title@format{#1}{%
+        \@svsec
+        \title@titleformat{#1}{#4}%
+        \title@aftertitle{#1}}\par\@@par
+      \title@setheadingskip{#1}{after}%
+      \title@iffixskip{#1}{\title@fixheadingskip}{}%
+      \vskip\title@headingskip}%
+    \global\setbox\@ne\vtop{\unvbox\@tempboxa}}
+  \@tempdima\ht\@ne \advance\@tempdima\dp\@ne 
+  \@tempdimb\@tempdima \advance\@tempdimb\baselineskip
+  \divide\@tempdima\baselineskip \count@\@tempdima 
+  \advance\count@
+    \ifdim\@tempdimb<\the\count@.5\baselineskip\@ne\else\tw@\fi
+  \setbox\title@box\hbox{%
+    \title@setheadingskip{#1}{left}\hskip\title@headingskip
+    \raise\fpeval{.825*\f@size}\p@ \hbox{\box\@ne}%
+    \title@setheadingskip{#1}{right}\hskip\title@headingskip}%
+  \dp\title@box\z@ 
+  \needspace{\@tempdimb}%
+  \title@ifmeasuringfalse
+  \if@nobreak \title@classhook@wrapbegin \everypar{}%
+  \else 
+    \title@break{#1}%
+    \title@classhook@wrapbegin 
+    \title@setheadingskip{#1}{before}%
+    \title@iffixskip{#1}{\title@fixtopskip}{}%
+    \title@ifensureskip{#1}{\hrule\@height\z@\relax \par}{}%
+    \addvspace{\title@headingskip}%
+  \fi 
+  \title@mark{#1}{#3}%
+  \title@addtocline{#1}{#3}%
+  \hangindent\wd\title@box \hangafter-\count@ 
+  \noindent\llap{\box\title@box}%
+  \let\cus@tmp\ignorespaces
+  \def\ignorespaces{\let\ignorespaces\cus@tmp\cus@ignorepars}} % 这里暂时使用 \ignorepars，另见 titlesec 的 \ttlhx@wrap
+
 
 \definetitle\part[page]{
   name={第,部分},

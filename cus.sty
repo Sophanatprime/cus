@@ -22,18 +22,80 @@
 \NeedsTeXFormat{LaTeX2e}[2021/06/01]
 \RequirePackage{l3keys2e,xtemplate}
 \def\cus@d@te{2022/07/10}
-\def\cus@versi@n{0.0.1}
+\def\cus@versi@n{0.0.2}
 \ProvidesExplPackage{cus}{\cus@d@te}{\cus@versi@n}{Chinese User Scheme (CUS) basic file}
 
 \def\CusTeX{C\kern-.12em \raise.0466ex\hbox{u}\kern-.1em\lower .4ex\hbox{S}\kern-.15em\TeX}
 \def\CusLaTeX{C\kern-.12em \raise.0466ex\hbox{u}\kern-.1em\lower .4ex\hbox{S}\kern-.1em\LaTeX}
 
-\cs_new_eq:NN \BKP \tl_show:n
+\cs_new_eq:NN \BKP \tl_show:n %%TODO
+
+%% primitive alternative and latex3 adding
+\cs_new_eq:NN \__cus_strcmp:ww \tex_strcmp:D 
+\cs_new_eq:NN \__cus_int_let:Nw \tex_mathchardef:D 
+\cs_new_eq:NN \__cus_expanded:w \tex_expanded:D
+\cs_new_eq:NN \__cus_unexpanded:w \tex_unexpanded:D
+\cs_new_eq:NN \__cus_dimexpr:w \tex_dimexpr:D 
+\cs_new_eq:NN \__cus_intexpr:w \tex_intexpr:D 
+
+\cs_new:Npn \__cus_e:w { \__cus_expanded:w }
+\cs_new:Npn \__cus_o:w { \exp:w \exp_after:wN \exp_end: }
+\cs_new:Npn \__cus_f:w { \exp:w \exp_end_continue_f:w }
+
+\cs_set_eq:NN \c__cus_mone_int \m@ne
+\__cus_int_let:Nw \c__cus_zero_int 0~
+\__cus_int_let:Nw \c__cus_one_int 1~
+\__cus_int_let:Nw \c__cus_two_int 2~
+\__cus_int_let:Nw \c__cus_three_int 3~
+\__cus_int_let:Nw \c__cus_four_int 4~
+\__cus_int_let:Nw \c__cus_five_int 5~
+\__cus_int_let:Nw \c__cus_six_int 6~
+\__cus_int_let:Nw \c__cus_seven_int 7~
+\__cus_int_let:Nw \c__cus_eight_int 8~
+\__cus_int_let:Nw \c__cus_nine_int 9~
+\__cus_int_let:Nw \c__cus_ten_int 10~
+\__cus_int_let:Nw \c__cus_eleven_int 11~
+\__cus_int_let:Nw \c__cus_twelve_int 12~
+\__cus_int_let:Nw \c__cus_thirteen_int 13~
+\__cus_int_let:Nw \c__cus_fourteen_int 14~
+\__cus_int_let:Nw \c__cus_fifteen_int 15~
+\__cus_int_let:Nw \c__cus_sixteen_int 16~
+
+\cs_if_free:NT \token_if_cs_word:NTF 
+  {
+    \prg_new_conditional:Npnn \token_if_cs_word:N #1 { p, T, F, TF }
+      {
+        \if_catcode:w \exp_not:N #1 \scan_stop:
+          \if:w 0 \__cus_strcmp:ww { \exp_not:N #1 } { \token_to_str:N #1 }
+            \prg_return_false: \else: \prg_return_true: \fi:
+        \else: 
+          \prg_return_false:
+        \fi:
+      }
+  }
+\group_begin:
+\cs_set_eq:NN \c_parameter_token \scan_stop:
+\cs_if_free:NT \token_if_control_word:NTF 
+  {
+    \prg_new_conditional:Npnn \token_if_control_word:N #1 { p, T, F, TF }
+      {
+        \if:w 0 \__cus_strcmp:ww { \exp_not:N #1 } { \token_to_str:N #1 }
+          \prg_return_false:
+        \else:
+          \if_catcode:w \exp_not:N #1 \c_parameter_token
+            \prg_return_false: \else: \prg_return_true: \fi:
+        \fi:
+      }
+  }
+\group_end: 
+%%
 
 \RequirePackage{xparse}
-\RequirePackage{ctexhook}
+\RequirePackage{ctexhook,ctexpatch}
+\RequirePackage{etl}
 
-\sys_if_engine_luatex:T
+\sys_if_engine_xetex:TF 
+  { \tex_chardef:D \cus@TATE = \c_zero_int }
   {
     \cs_if_exist:NF \cus@TATE 
       {
@@ -75,11 +137,17 @@
 \prop_new:N \l__cus_tmpa_prop
 \prop_new:N \l__cus_tmpb_prop
 \prop_new:N \l__cus_tmpc_prop
+\bool_new:N \l__cus_tmpa_bool
+\bool_new:N \l__cus_tmpb_bool
+\bool_new:N \l__cus_tmpc_bool
 
 \int_new:N \l__cus_nest_int 
 \tl_new:N \g__cus_pdfstring_disable_tl 
-\hook_gput_code:nnn { pkg/hyperref/after } { cus/disable }
-  { } %{ \pdfstringdefDisableCommands { \g__cus_pdfstring_disable_tl } }
+\hook_gput_code:nnn { begindocument } { cus/disable }
+  { 
+    \cs_if_exist:NT \pdfstringdefDisableCommands
+      { \pdfstringdefDisableCommands { \g__cus_pdfstring_disable_tl } }
+  }
 \cs_new_protected:Npn \cus_add_pdf_disable:n 
   { \tl_gput_right:Nn \g__cus_pdfstring_disable_tl }
 
@@ -129,9 +197,10 @@
     \ProvidesExplFile {#1} {#2} {#3} {#4}
     \str_gset:cx { cus/module~#1 } {#2}
   }
+\cs_new:Npn \cus@ifmoduleloaded #1 { \cs_if_exist:cTF { cus/module~#1 } }
 \NewDocumentCommand \CUSLoadModule { m O{0000/00/00} }
   {
-    \cs_if_exist:cTF { cus/module~#1 } { \use:n }
+    \cus@ifmoduleloaded {#1} { \use:n }
       { 
         \file_if_exist:nTF { cus.module.#1.tex }
           { \cus_file_input:n { cus.module.#1.tex }          \use:n      }
@@ -159,9 +228,10 @@
     \ProvidesExplFile {#1} {#2} {#3} {#4}
     \str_gset:cx { cus/library~#1 } {#2}
   }
+\cs_new:Npn \cus@iflibraryloaded #1 { \cs_if_exist:cTF { cus/library~#1 } }
 \NewDocumentCommand \CUSLoadLibrary { m O{0000/00/00} }
   {
-    \cs_if_exist:cTF { cus/library~#1 } { \use:n }
+    \cus@iflibraryloaded {#1} { \use:n }
       { 
         \file_if_exist:nTF { cus.library.#1.tex }
           { \cus_file_input:n { cus.library.#1.tex }          \use:n      }
@@ -281,6 +351,15 @@
 
 
 \CUSLoadModule { util }
+
+\cus_toks_new:N \g__cus_preamble_package_toks
+\hook_gput_code:nnn {begindocument/before} {cus/document} 
+  { \cus_toks_use:N \g__cus_preamble_package_toks }
+\cs_new_protected:Npn \cus_hook_gput_pk:n 
+  { \cus_toks_gput_right:Nn \g__cus_preamble_package_toks }
+\cs_new_protected:Npn \cus_hook_gput_pk:w #1 \cus_hook_end:
+  { \cus_toks_gput_right:Nn \g__cus_preamble_package_toks {#1} }
+
 \group_begin:
 \cs_set:Npn \__cus_latex_hook_new:nnNn #1#2#3#4
   {
@@ -344,6 +423,7 @@
 \NewDocumentCommand \MakePerPage { s O{\c_zero_int} m }
   { \IfBooleanTF {#1} { \cus_gput_reset:nn } { \cus_gput_reset_counter:nn } {#3} {#2} }
 
+\CUSLoadModule { counter }
 \CUSLoadModule { space }
 \CUSLoadModule { bgfg }
 \CUSLoadModule { layout }
@@ -352,7 +432,7 @@
 \CUSLoadModule { box }
 \CUSLoadModule { index }
 \CUSLoadModule { struct }
-\cs_if_exist:NT \DocumentMetadata { \CUSLoadModule { pdfmana } }
+\CUSLoadModule { pdfmana }
 
 \keys_define:nn { cus/option }
   {

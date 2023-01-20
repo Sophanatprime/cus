@@ -18,6 +18,8 @@
 \tl_gset:Nn \g__cus_paperorientation_tl {  }
 \tl_gset:Nn \g__cus_paperwidth_tl { 21cm }
 \tl_gset:Nn \g__cus_paperheight_tl { 29.7cm }
+\tl_gset:Nn \g__cus_layoutwidth_tl { 21cm }
+\tl_gset:Nn \g__cus_layoutheight_tl { 29.7cm }
 \msg_new:nnn { cus } { layout-not-exist } { layout~preset~`#1'~does~not~exist. }
 \cs_new_protected:Npn \cus_set_layout:n #1 
   { 
@@ -170,8 +172,32 @@
     direction / normal    .meta:n = { paperorientation = portrait } ,
     direction / inverse   .meta:n = { paperorientation = landscape } ,
 
-    layoutname .code:n = \__cus_set_layout_name:n {#1} ,
+    layoutname .code:n = 
+      {
+        \__cus_set_layout_name:n {#1} 
+        \str_if_eq:eeT { \g__cus_paperorientation_tl } { landscape }
+          { \cus_gswap:NN \g__cus_layoutwidth_tl \g__cus_layoutheight_tl }
+      } ,
     layout .meta:n = { layoutname = {#1} } ,
+    centerlayout .code:n = 
+      {
+        \str_if_eq:eeTF { \g__cus_paperorientation_tl } { landscape }
+          {
+            \clist_gput_right:Nn \g__cus_layout_geometry_clist 
+              { 
+                layouthoffset = \dim_eval:n { (\g__cus_paperwidth_tl-\g__cus_layoutheight_tl)/2 } ,
+                layoutvoffset = \dim_eval:n { (\g__cus_paperheight_tl-\g__cus_layoutwidth_tl)/2 }
+              }
+          }
+          {
+            \clist_gput_right:Nn \g__cus_layout_geometry_clist 
+              {
+                layouthoffset = \dim_eval:n { (\g__cus_paperwidth_tl-\g__cus_layoutwidth_tl)/2 } ,
+                layoutvoffset = \dim_eval:n { (\g__cus_paperheight_tl-\g__cus_layoutheight_tl)/2 }
+              }
+          }
+      } ,
+    centerlayout .value_forbidden:n = true ,
 
     hfoffset .code:n = 
       { 
@@ -290,14 +316,16 @@
       }
       {
         \msg_warning:nnx { cus } { papername-unknown } { \l__cus_papername_str }
-        \clist_put_right:Nn \g__cus_layout_geometry_clist
-          { layoutwidth = 21cm , layoutheight = 29.7cm }
+        \tl_gset:Nn \g__cus_layoutwidth_tl { 21cm }
+        \tl_gset:Nn \g__cus_layoutheight_tl { 29.7cm }
       }
+    \clist_gput_right:Nn \g__cus_layout_geometry_clist
+      { layoutwidth = \g__cus_layoutwidth_tl , layoutheight = \g__cus_layoutheight_tl }
   }
 \use:e { \cs_new:Npn \exp_not:N \__cus_set_layout_name_aux:w #1 \token_to_str:N \Gm@setsize #2 (#3,#4) \c_left_brace_str #5 \c_right_brace_str #6 \s__cus_stop }
   {
-    \clist_put_right:Nn \g__cus_layout_geometry_clist
-      { layoutwidth = { #3#5 } , layoutheight = { #4#5 } }
+    \tl_gset:Nn \g__cus_layoutwidth_tl { #3#5 }
+    \tl_gset:Nn \g__cus_layoutheight_tl { #4#5 }
   }
 \cs_new:Npn \__cus_make_papername_gm:n #1 
   {
