@@ -1,0 +1,46 @@
+\CUSProvideExplLibrary{counter}{\cus@d@te}{\cus@versi@n}{counter misc}
+
+\cs_new_nopar:Npn \@fwarabic { \cus_int_to_fw_arabic:n }
+\cs_new_nopar:Npn \@fwalph { \cus_int_to_fw_alph:n }
+\cs_new_nopar:Npn \@fwAlph { \cus_int_to_fw_Alph:n }
+\cs_new_protected_nopar:Npn \fwarabic #1 { \@fwarabic { \csname c@#1\endcsname } }
+\cs_new_protected_nopar:Npn \fwalph #1 { \@fwalph { \csname c@#1\endcsname } }
+\cs_new_protected_nopar:Npn \fwAlph #1 { \@fwAlph { \csname c@#1\endcsname } }
+\cs_new_nopar:Npn \@twodigits #1
+  {
+    \__cus_expanded:w 
+      {
+        \if_int_compare:w \int_eval:w #1 < 10 \exp_stop_f: 0 \fi:
+        \int_eval:n {#1}
+      }
+  }
+\cs_new_protected_nopar:Npn \ensuretwodigits #1 { \@twodigits { \csname c@#1\endcsname } }
+\cs_new_nopar:Npn \@threedigits #1
+  {
+    \__cus_expanded:w 
+      {
+        \if_int_compare:w \int_eval:w #1 < 100 \exp_stop_f: 0 \fi:
+        \if_int_compare:w \int_eval:w #1 < 10  \exp_stop_f: 0 \fi:
+        \int_eval:n {#1}
+      }
+  }
+\cs_new_protected_nopar:Npn \ensurethreedigits #1 { \@threedigits { \csname c@#1\endcsname } }
+\cs_new_nopar:Npn \@fourdigits #1
+  {
+    \__cus_expanded:w 
+      {
+        \if_int_compare:w \int_eval:w #1 < 1000 \exp_stop_f: 0 \fi:
+        \if_int_compare:w \int_eval:w #1 < 100  \exp_stop_f: 0 \fi:
+        \if_int_compare:w \int_eval:w #1 < 10   \exp_stop_f: 0 \fi:
+        \int_eval:n {#1}
+      }
+  }
+\cs_new_protected_nopar:Npn \ensurefourdigits #1 { \@fourdigits { \csname c@#1\endcsname } }
+
+\cus_pkg_code:nnn { enumitem } { }
+  {
+    \AddEnumerateCounter*{\fwarabic}{\@fwarabic}{1}
+    \AddEnumerateCounter*{\fwAlph}{\@fwAlph}{1}
+    \AddEnumerateCounter*{\fwalph}{\@fwalph}{1}
+    \AddEnumerateCounter*{\ensuretwodigits}{\@arabic}{99}
+  }

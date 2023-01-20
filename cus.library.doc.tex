@@ -20,10 +20,11 @@
   exec={makeindex~-s~gind.ist~-o~\jobname.docusage.ind~\jobname.docusage.idx},
   title={代码索引}, heading*={\section}, auto=true, 
   multi={ragged,sep=1em,outer-skip=0pt},
-  init={\def\+{+}\linespread{1}\selectfont},
+  init={\def\+{+}\lineskip\z@},
 ]{docusage}
 %\setindexprologue[docusage]{{\normalfont\itshape 意大利体的数字表示描述对应索引项的页码；带下划线的数字表示定义对应索引项的代码行号；罗马字体的数字表示使用对应索引项的代码行号。}}
-\def\PrintIndex{\printindex[docusage]}
+\setindexprologue[docusage]{{\normalfont\itshape 粗体的数字表示描述对应索引项的页码；意大利体的数字表示使用对应索引项的页码。}}
+\def\PrintUsages{\printindex[docusage]}
 
 \newindextype[filename=\jobname.docchange.glo,output=\jobname.docchange.gls,
   exec={makeindex~-s~gglo.ist~-o~\jobname.docchange.gls~\jobname.docchange.glo},
@@ -34,6 +35,7 @@
 \def\PrintChanges{\printindex[docchange]}
 
 \colorlet { cus/color/doc~cs } { red }
+\colorlet { cus/color/doc~env } { red }
 \colorlet { cus/color/doc~key } { red }
 \colorlet { cus/color/doc~frame } { black }
 \colorlet { cus/color/doc~fill } { white }
@@ -75,6 +77,11 @@
 \cs_if_exist:NF \verbatimchar { \tl_set:Nn \verbatimchar {+} }
 \cs_if_exist:NF \bslash 
   { \tl_set:Nx \bslash { \char_generate:nn { `\\ } { 12 } } }
+
+\cs_new:Npn \DocUsageuse #1 { \textit {#1} } % 正文中使用
+\cs_new:Npn \DocUsageusage #1 { \textbf {#1} }   % 说明处
+\cs_new:Npn \DocUsagemain #1 { \underline {#1} } % 定义处
+\cs_new:Npn \DocUsagecode #1 { {#1} } % 代码中使用
 
 \tl_new:N \cus@doc@ttfont \tl_set:Nn \cus@doc@ttfont { \ttfamily }
 \tl_new:N \cus@doc@itfont \tl_set:Nn \cus@doc@itfont { \normalfont\itshape }
@@ -189,12 +196,18 @@
       { module = TeX , replace = false , #1 }
       { \c_backslash_str #2 }
   }
+\DeclareDocumentCommand \key { O{} m }
+  { \__cus_doc_cmd:nn {#1} {#2} }
 \DeclareDocumentCommand \meta { m }
   { \__cus_doc_meta:n {#1} }
+\DeclareDocumentCommand \veta { m }
+  { \__cus_doc_veta:n {#1} }
 \DeclareExpandableDocumentCommand
   { \__cus_doc_pdfstring_cmd:w } { o m } { \token_to_str:N #2 }
 \DeclareExpandableDocumentCommand
   { \__cus_doc_pdfstring_cs:w  } { o m } { \c_backslash_str \tl_to_str:n {#2} }
+\DeclareExpandableDocumentCommand
+  { \__cus_doc_pdfstring_key:w } { o m } { \tl_to_str:n {#2} }
 \cs_new:Npn \__cus_doc_pdfstring_meta:w #1
   { < \tl_to_str:n {#1} > }
 \cus_add_pdf_disable:n 
@@ -202,7 +215,9 @@
     \cs_set_eq:NN \cmd  \__cus_doc_pdfstring_cmd:w
     \cs_set_eq:NN \cs   \__cus_doc_pdfstring_cs:w
     \cs_set_eq:NN \tn   \__cus_doc_pdfstring_cs:w
+    \cs_set_eq:NN \key  \__cus_doc_pdfstring_key:w 
     \cs_set_eq:NN \meta \__cus_doc_pdfstring_meta:w
+    \cs_set_eq:NN \veta \use:n
     \cs_set_eq:NN \env  \use:n
     \cs_set_eq:NN \pkg  \use:n
     \cs_set_eq:NN \cls  \use:n
@@ -287,13 +302,23 @@
               { \l__cus_doc_index_key_tl }
               { \l__cus_doc_index_macro_tl }
               { \l__cus_doc_index_module_tl }
-              { usage }
+              { use }
               \l__cus_doc_index_internal_bool
           }
       }
   }
 \cs_generate_variant:Nn \__cus_doc_cmd:nn { no }
 \cs_new_protected:Npn \__cus_doc_meta:n #1
+  {
+    \__cus_doc_meta_init:n {#1}
+    \exp_args:NV \__cus_doc_meta_original:n \l__cus_doc_tmpa_tl
+  }
+\cs_new_protected:Npn \__cus_doc_veta:n #1
+  {
+    \__cus_doc_meta_init:n {#1}
+    \exp_args:NV \__cus_doc_meta_original_var:n \l__cus_doc_tmpa_tl 
+  }
+\cs_new_protected:Npn \__cus_doc_meta_init:n #1
   {
     \tl_set:Nn \l__cus_doc_tmpa_tl {#1}
     \tl_map_inline:nn
@@ -304,13 +329,17 @@
         \tl_replace_all:Non \l__cus_doc_tmpa_tl \l__cus_doc_tmpb_tl
           { \__cus_doc_ensuremath_sb:n }
       } 
-    \exp_args:NV \__cus_doc_meta_original:n \l__cus_doc_tmpa_tl
   }
 \cs_new_protected:Npn \__cus_doc_ensuremath_sb:n #1
   { \ensuremath { \sb {#1} } }
 \cs_new_protected:Npn \__cus_doc_meta_original:n #1
   {
     \ensuremath \langle
+    \__cus_doc_meta_original_var:n {#1}
+    \ensuremath \rangle
+  }
+\cs_new_protected:Npn \__cus_doc_meta_original_var:n #1
+  {
     \mode_if_math:T { \nfss@text }
       {
         \meta@font@select
@@ -321,7 +350,6 @@
         \kern\z@ #1 \kern\z@ 
         \meta@hyphen@restore
       }
-    \ensuremath \rangle
   }
 \cs_set:Npn \meta@font@select { \cus@doc@itfont }
 \use:x
@@ -606,31 +634,50 @@
           \tl_if_empty:nTF {#3}
             { { } { } { } }
             {
-              \str_if_eq:nnTF {#3} { TeX }
-                {
-                  { TeX~and~LaTeX2e }
-                  { \string\TeX{}~and~\string\LaTeXe{} }
+              \cs_if_exist:cTF { __cus_doc_special_index_module_#3:NNn }
+                { 
+                  \use:c { __cus_doc_special_index_module_#3:NNn } 
+                    #5 \l__cus_doc_keyval_bool {#3}
                 }
                 {
-                  {#3}
-                  { \string\pkg{#3} }
+                  \__cus_doc_special_index_module_DEFAULT:NNn #5
+                    \l__cus_doc_keyval_bool {#3}
                 }
-              { 
-                \bool_if:NT #5 { ~internal } 
-                \bool_if:NTF \l__cus_doc_keyval_bool
-                  { ~options: } { ~commands: }
-              }
             }
       }
           {#4}
   }
+\cs_new:Npn \__cus_doc_special_index_module_TeX:NNn #1#2#3
+  { 
+    { TeX~and~LaTeX2e } { \string\TeX{}~and~\string\LaTeXe{} } 
+    {
+      的 \bool_if:NT #1 { 内部 }
+      \bool_if:NTF #2 { 选项： } { 命令： }
+    }
+  }
+\cs_new:Npn \__cus_doc_special_index_module_DEFAULT:NNn #1#2#3
+  {
+    {#3} { \string\pkg{#3} }
+    {
+      的 \bool_if:NT #1 { 内部 }
+      \bool_if:NTF #2 { 选项： } { 命令： }
+    }
+  }
+\cs_new_protected:Npn \cus_doc_gset_special_index_print:nn #1
+  { \cs_gset:cpn { __cus_doc_special_index_module_#1:NNn } ##1##2##3 }
+\cus_doc_gset_special_index_print:nn { hook }
+  { { Hook } { \bool_if:NT #1 { 内部 } 钩子： } { } }
+\cus_doc_gset_special_index_print:nn { color~name }
+  { { ColorName } { 颜色名称： } { } }
 \cs_generate_variant:Nn \__cus_doc_special_index_module:nnnnN { ooo }
 \cs_new_protected:Npn \__cus_doc_special_index_aux:nnnnnn #1#2#3#4#5#6
   {
     \tl_set:Nn \l__cus_doc_index_escaped_key_tl {#1}
     \__cus_doc_quote_special_char:N \l__cus_doc_index_escaped_key_tl
     \__cus_doc_special_index_set:Nn \l__cus_doc_index_escaped_macro_tl {#2}
-    \str_if_eq:eeTF {#6} { usage } 
+    \bool_lazy_or:nnTF 
+      { \str_if_eq_p:ee {#6} { usage } }
+      { \str_if_eq_p:ee {#6} { use } }
       { \__cus_doc_index_page_hc:nn }
       { \__cus_doc_target: \__cus_doc_index_page_hc:nn }
       {
@@ -699,9 +746,9 @@
 \char_set_active_eq:NN - \scan_stop:
 \tl_const:Nx \c__cus_doc_active_minus_tl { \char_generate:nn { `- } { 13 } }
 \group_end:
-\cs_new_nopar:Npn\__cus_doc_old_hdpindex:nn #1#2
+\cs_new_nopar:Npn \__cus_doc_old_hdpindex:nn #1#2
   {
-    \use:c { \tl_if_empty:nTF {#1} { relax } {#1} } { \hyperpage {#2} }
+    \use:c { \tl_if_empty:nTF {#1} { relax } { DocUsage #1 } } { \hyperpage {#2} }
   }
 \cs_gset_protected:Npn \hdpindex #1
   { \__cus_doc_hdindex:nn { \__cus_doc_old_hdpindex:nn {#1} } }
@@ -749,8 +796,8 @@
     \let\ori@bfseries\bfseries
     \let\bfseries\index@versionbfseries
     \def\efill{\hfill\nopagebreak}
-    \def\dotfill{\leaders\hbox to.6em{\hss .\hss}\hskip\z@ plus 1fill\kern\z@}
-    \def\dotfil{\leaders\hbox to.6em{\hss .\hss}\hfil\kern\z@}
+    \def\dotfill{\leaders\hbox to.6em{\hss .\hss}\hskip\z@ plus 9999fill\kern\z@}
+    \def\dotfil{\leaders\hbox to.6em{\hss .\hss}\hskip\z@ plus 1fill\kern\z@}
     \def\pfill{\unskip~\dotfill\penalty500\strut\nobreak\dotfil~\ignorespaces}
   }
 \tl_set:cn { @index@basic~docchange@init }
@@ -758,8 +805,8 @@
     \linespread{1.15}\selectfont
     \let\item\changes@versionitem 
     \def\efill{\hfill\nopagebreak}
-    \def\dotfill{\leaders\hbox to.6em{\hss .\hss}\hskip\z@ plus 1fill\kern\z@}
-    \def\dotfil{\leaders\hbox to.6em{\hss .\hss}\hfil\kern\z@}
+    \def\dotfill{\leaders\hbox to.6em{\hss .\hss}\hskip\z@ plus 9999fill\kern\z@}
+    \def\dotfil{\leaders\hbox to.6em{\hss .\hss}\hskip\z@ plus 1fill\kern\z@}
     \def\pfill{\unskip~\dotfill\penalty500\strut\nobreak\dotfil~\ignorespaces}
   }
 \prop_new:N \g__cus_doc_version_date_prop
@@ -1110,10 +1157,11 @@
         \clist_set:Nn \l__cus_doc_function_label_clist {#1}
         \bool_set_false:N \l__cus_doc_no_label_bool
       } ,
+    no-label .code:n = \bool_set_true:N \l__cus_doc_no_label_bool ,
     verb .value_forbidden:n = true ,
     verb .bool_set:N = \l__cus_doc_names_verb_bool ,
     module .tl_set:N = \l__cus_doc_override_module_tl ,
-    type .tl_set:N = \l__cus_doc_type_tl ,
+    type .tl_set:N = \l__cus_doc_type_tl , % label type 
     keyval .bool_set:N = \l__cus_doc_keyval_bool ,
     path .tl_set:N = \l__cus_doc_key_path_tl ,
     frame .clist_set:N = \l__cus_doc_framed_setting_tl ,
@@ -1163,12 +1211,15 @@
   {
     \vspace{3mm}
   }
-\NewDocumentCommand \csref { O{function} m } % type , cs name 
+\NewDocumentCommand \csref { O{function} D(){#3} m } % type , label , cs name 
   {
     \group_begin:
     \__kernel_tl_set:Nx \l__cus_doc_type_tl { \tl_trim_spaces:n {#1} }
-    \__cus_doc_get_hyper_target:nN {#2} \l__cus_doc_tmpa_tl 
-    \hyperref [ \l__cus_doc_tmpa_tl ] { \color{cus/color/doc~cs} \cs [no-index] {#2} }
+    \__kernel_tl_set:Nx \l__cus_doc_tmpa_tl { \exp_not:n {#2} }
+    \tl_remove_all:Nn \l__cus_doc_tmpa_tl { \- }
+    \__cus_doc_get_hyper_target:oN \l__cus_doc_tmpa_tl \l__cus_doc_tmpa_tl 
+    \hypersetup { linkcolor=cus/color/doc~cs }
+    \hyperref [ \l__cus_doc_tmpa_tl ] { \cs {#3} }
     \group_end:
   }
 \NewDocumentCommand \csreflist { O{function} m }
@@ -1176,21 +1227,25 @@
     \group_begin:
     \__kernel_tl_set:Nx \l__cus_doc_type_tl { \tl_trim_spaces:n {#1} }
     \seq_clear:N \l__cus_tmpa_seq
+    \hypersetup { linkcolor=cus/color/doc~cs }
     \clist_map_inline:nn {#2}
       {
         \__cus_doc_get_hyper_target:nN {##1} \l__cus_doc_tmpa_tl
         \seq_put_right:Nx \l__cus_tmpa_seq
-          { \exp_not:N \hyperref [ \l__cus_doc_tmpa_tl ] { \exp_not:n { \color{cus/color/doc~cs} \cs[no-index]{##1} } } }
+          { \exp_not:N \hyperref [ \l__cus_doc_tmpa_tl ] { \cs {##1} } }
       }
     \exp_last_unbraced:NNo \seq_use:Nnnn \l__cus_tmpa_seq \cus@doc@refrange
     \group_end:
   }
-\NewDocumentCommand \envref { O{environment} m } % type , env name
+\NewDocumentCommand \envref { O{environment} D(){#3} m } % type , label , env name
   {
     \group_begin:
     \__kernel_tl_set:Nx \l__cus_doc_type_tl { \tl_trim_spaces:n {#1} }
-    \__cus_doc_get_hyper_target:nN {#2} \l__cus_doc_tmpa_tl 
-    \hyperref [ \l__cus_doc_tmpa_tl ] { \color{cus/color/doc~cs} \env {#2} }
+    \__kernel_tl_set:Nx \l__cus_doc_tmpa_tl { \exp_not:n {#2} }
+    \tl_remove_all:Nn \l__cus_doc_tmpa_tl { \- }
+    \__cus_doc_get_hyper_target:oN \l__cus_doc_tmpa_tl \l__cus_doc_tmpa_tl 
+    \hypersetup { linkcolor=cus/color/doc~env }
+    \hyperref [ \l__cus_doc_tmpa_tl ] { \env {#3} }
     \group_end:
   }
 \NewDocumentCommand \envreflist { O{environment} m }
@@ -1198,41 +1253,50 @@
     \group_begin:
     \__kernel_tl_set:Nx \l__cus_doc_type_tl { \tl_trim_spaces:n {#1} }
     \seq_clear:N \l__cus_tmpa_seq
+    \hypersetup { linkcolor=cus/color/doc~env }
     \clist_map_inline:nn {#2}
       {
         \__cus_doc_get_hyper_target:nN {##1} \l__cus_doc_tmpa_tl
         \seq_put_right:Nx \l__cus_tmpa_seq
-          { \exp_not:N \hyperref [ \l__cus_doc_tmpa_tl ] { \exp_not:n { \color{cus/color/doc~cs} \env {##1} } } }
+          { \exp_not:N \hyperref [ \l__cus_doc_tmpa_tl ] { \env {##1} } }
       }
     \exp_last_unbraced:NNo \seq_use:Nnnn \l__cus_tmpa_seq \cus@doc@refrange
     \group_end:
   }
-\NewDocumentCommand \keyref { >{\TrimSpaces} O{} m } % key path , key 
+\NewDocumentCommand \keyref { s >{\TrimSpaces} O{} D(){#4} m } % key path , key 
   {
     \group_begin:
     \__kernel_tl_set:Nx \l__cus_doc_type_tl { keyval }
     \__cus_doc_get_hyper_target:xN 
-      { #1 \tl_if_empty:nF {#1} / \exp_not:n {#2} } \l__cus_doc_tmpa_tl
+      { #2 \tl_if_empty:nF {#2} / \exp_not:n {#3} } \l__cus_doc_tmpa_tl
+    \hypersetup { linkcolor=cus/color/doc~key }
     \use:e 
       {
         \exp_not:N \hyperref [ \l__cus_doc_tmpa_tl ] 
-          { \exp_not:N \color{cus/color/doc~cs} \exp_not:N \opt { #1 \tl_if_empty:nF {#1} / \exp_not:n {#2} } }
+          { 
+            \exp_not:N \key 
+              { \IfBooleanF {#1} { #2 \tl_if_empty:nF {#2} / } \exp_not:n {#4} } 
+          }
       }
     \group_end:
   }
-\NewDocumentCommand \keyreflist { >{\TrimSpaces} O{} m }
+\NewDocumentCommand \keyreflist { s >{\TrimSpaces} O{} m }
   {
     \group_begin:
     \__kernel_tl_set:Nx \l__cus_doc_type_tl { keyval }
     \seq_clear:N \l__cus_tmpa_seq
-    \clist_map_inline:nn {#2}
+    \hypersetup { linkcolor=cus/color/doc~key }
+    \clist_map_inline:nn {#3}
       {
         \__cus_doc_get_hyper_target:xN 
-          { #1 \tl_if_empty:nF {#1} / \exp_not:n {##1} } \l__cus_doc_tmpa_tl
+          { #2 \tl_if_empty:nF {#2} / \exp_not:n {##1} } \l__cus_doc_tmpa_tl
         \seq_put_right:Nx \l__cus_tmpa_seq
           {
             \exp_not:N \hyperref [ \l__cus_doc_tmpa_tl ]
-              { \exp_not:N \color{cus/color/doc~cs} \exp_not:N \opt { #1 \tl_if_empty:nF {#1} / \exp_not:n {##1} } }
+              { 
+                \exp_not:N \key 
+                  { \IfBooleanF {#1} { #2 \tl_if_empty:nF {#2} / } \exp_not:n {##1} } 
+              }
           }
       }
     \exp_last_unbraced:NNo \seq_use:Nnnn \l__cus_tmpa_seq \cus@doc@refrange
@@ -1243,7 +1307,7 @@
   {
     \__cus_doc_function_typeset_start:
     \__cus_doc_function_init:
-    \bool_set_false:N \l__cus_doc_allow_indexing_bool
+    % \bool_set_false:N \l__cus_doc_allow_indexing_bool
     \tl_set:Nn \l__cus_doc_macro_argument_tl {#2}
     \keys_set:nn { cus/doc/function } {#1}
     \__cus_doc_names_get_seq:nN {#2} \l__cus_doc_names_seq
@@ -1307,8 +1371,8 @@
 \cs_new_protected:Npn \__cus_doc_function_descr_start:w
   {
     \vcoffin_set:Nnw \l__cus_doc_descr_coffin { \textwidth }
-      \noindent \ignorespaces
       \cs_set_eq:NN \V \Verbatimize
+      \noindent \ignorespaces
   }
 \cs_new_protected:Npn \__cus_doc_function_descr_stop:
   { \vcoffin_set_end: }

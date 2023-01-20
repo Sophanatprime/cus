@@ -40,3 +40,30 @@
       }
       { \G@refundefinedtrue \use_ii:nn }
   }
+
+\NewDocumentCommand \HyperRef { s m O{} }
+  {
+    \tl_if_blank:nTF {#3} 
+      { \IfBooleanTF {#1} \cus_ref_label_box:nn \cus_ref_label:nn {#2} }
+      { \exp_last_unbraced:Ne \HyperBoxRef { \IfBooleanT {#1} {*} } {#2} {#3} }
+  }
+\NewDocumentCommand \HyperBoxRef { s m m O{c} O{\relax} O{s} }
+  {
+    \IfBooleanTF{#1} \cus_peek_varwidth:Nnnnnnw \cus_peek_minipage:Nnnnnnw 
+      \l__cus_tmpc_box
+      { \cus_ref_label:nn {#2} { \XeTeXLinkBox { \box_use_drop:N \l__cus_tmpc_box } } }
+      {#4} {#5} {#6} {#3}
+  }
+\NewDocumentCommand \HyperLink { s m O{} }
+  {
+    \tl_if_blank:nTF {#3} 
+      { \IfBooleanTF {#1} \cus_ref_target_box:nn \cus_ref_target:nn {#2} }
+      { \exp_last_unbraced:Ne \HyperBoxLink { \IfBooleanT {#1} {*} } {#2} {#3} }
+  }
+\NewDocumentCommand \HyperBoxLink { s m m O{c} O{\relax} O{s} }
+  {
+    \IfBooleanTF{#1} \cus_peek_varwidth:Nnnnnnw \cus_peek_minipage:Nnnnnnw 
+      \l__cus_tmpc_box
+      { \cus_ref_target:nn {#2} { \XeTeXLinkBox { \box_use_drop:N \l__cus_tmpc_box } } }
+      {#4} {#5} {#6} {#3}
+  }

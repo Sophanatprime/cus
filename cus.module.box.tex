@@ -1,4 +1,4 @@
-\CUSDependency{ module={util}, package={multicol, rotating, lscape, (ROTpdf)pdflscape} }
+\CUSDependency{ module={util}, package={multicol, varwidth, rotating, lscape, (ROTpdf)pdflscape} }
 \CUSProvideExplModule{box}{\cus@d@te}{\cus@versi@n}{box, breakable box}
 
 % modify framed.sty 
@@ -8,6 +8,217 @@
 \dim_set_eq:NN \l__cus_box_width_dim \c_max_dim
 \fp_new:N \l__cus_box_ratio_fp % width to total frame ratio, text:frame 
 \fp_set:Nn \l__cus_box_ratio_fp { 1 }
+
+\cs_new_protected_nopar:Npn \cus_varwidth:nnw #1#2 % pos, max width
+  { \group_begin: \varwidth [#1] { \dim_eval:n {#2} } }
+\cs_new_protected_nopar:Npn \cus_varwidth_end: { \endvarwidth \group_end: }
+\cs_new_protected_nopar:Npn \cus_set_varwidth:Nnnw #1#2#3
+  { \hbox_set:Nw #1 \varwidth [#2] { \dim_eval:n {#3} } }
+\cs_new_protected_nopar:Npn \cus_set_varwidth_end: { \endvarwidth \hbox_set_end: }
+
+\cs_new_protected:Npn \cus_set_vbox_width:Nnw #1#2 % box num, width
+  {
+    \vbox_set:Nw #1 
+    \dim_set:Nn \tex_hsize:D {#2}
+    \textwidth\tex_hsize:D \columnwidth\tex_hsize:D
+    \legacy_if:nTF { @in@minipage@env }
+      {
+        \box_if_empty:NF \@mpfootins 
+          { \@latex@warning { Nested~minipage:~footnotes~may~be~misplaced } }
+      }
+      { \legacy_if_set_true:n { @in@minipage@env } }
+    \@parboxrestore 
+    \tl_set:Nn \@mpfn { mpfootnote }
+    \tl_set:Nn \thempfn { \thempfootnote }
+    \int_zero:N \c@mpfootnote 
+    \cs_set_eq:NN \@footnotetext \@mpfootnotetext 
+    \cs_set_eq:NN \@listdepth \@mplistdepth 
+    \int_zero:N \@mplistdepth
+    \@minipagerestore \@setminipage
+  }
+\cs_new_protected:Npn \cus_set_vbox_width_end:
+  {
+    \par \tex_unskip:D 
+    \box_if_empty:NF \@mpfootins 
+      {
+        \tex_vskip:D \tex_skip:D \@mpfootins 
+        \normalcolor \footnoterule 
+        \vbox_unpack_drop:N \@mpfootins 
+      }
+    \legacy_if_set_false:n { @minipage }
+    \vbox_set_end:
+  }
+\cs_new_protected:Npn \cus_set_vbox_varwidth:Nnw
+  {
+    \cs_set_eq:NN \@minipagerestore \@vwid@setup
+    \cus_set_vbox_width:Nnw 
+  }
+\cs_set_eq:NN \__cus_tmp: \endvarwidth 
+\ctex_patch_cmd_once:NnnnTF \__cus_tmp: 
+  { \makeatletter }
+  { \endminipage } 
+  { 
+    \cus_set_vbox_width_end: 
+    \cs_set_eq:NN \@minipagerestore \@@vwid@minipagerestore
+  } 
+  { } { \cus_patch_failure:N \endvarwidth }
+\cs_new_protected:Npx \cus_set_vbox_varwidth_end: { \exp_not:o \__cus_tmp: }
+
+
+% \cs_new_protected:Npn \cus_peek_minipage:Nnnnw #1#2#3#4 % box num, vpos, width, code, 
+%   {
+%     \tl_set:Nn \__cus_peek_minipage: { \minipage [#2] {#3} }
+%     \tl_set:Nn \__cus_peek_minipage_auxii: 
+%       { \endminipage \c_group_end_token #4 }
+%     \tex_afterassignment:D \__cus_peek_minipage_auxi:
+%     \tex_setbox:D #1 \tex_hbox:D 
+%   }
+% \cs_new:Npn \__cus_peek_minipage_auxi:
+%   {
+%     \__cus_peek_minipage: \c_group_begin_token
+%     \group_insert_after:N \__cus_peek_minipage_auxii:
+%   }
+\cs_new_protected:Npn \__cus_box_vb:N #1
+  { \vbox:n { \vbox_unpack_drop:N #1 } }
+\cs_new_eq:NN \__cus_box_v:N \__cus_box_vb:N 
+\cs_new_protected:Npn \__cus_box_vt:N #1
+  { \vbox_top:n { \vbox_unpack_drop:N #1 } }
+\cs_new_protected:Npn \__cus_box_vc:N #1
+  { \m@th $ \tex_vcenter:D { \vbox_unpack_drop:N #1 } $ }
+\cs_new_protected:Npn \cus_peek_minipage:Nnnnw #1#2#3#4 % box num, code, vpos, width, 
+  {
+    \cs_set:Npx \__cus_peek_minipage: 
+      { \cus_set_vbox_width:Nnw \l__cus_tmpa_box \exp_not:n { {#4} } }
+    \cs_set:Npx \__cus_peek_minipage_auxii: 
+      { 
+        \cus_set_vbox_width_end: 
+        \use:c { __cus_box_v#3:N } \l__cus_tmpa_box 
+        \c_group_end_token 
+        \exp_not:n {#2} 
+      }
+    \tex_afterassignment:D \__cus_peek_minipage_auxi:
+    \tex_setbox:D #1 \tex_hbox:D 
+  }
+\cs_new:Npn \__cus_peek_minipage_auxi:
+  {
+    \__cus_peek_minipage: \c_group_begin_token
+    \group_insert_after:N \__cus_peek_minipage_auxii:
+  }
+\cs_new:Npn \cus_peek_width:Nnnnw { \cus_peek_minipage:Nnnnw }
+% full version: box num, code, vpos, height, inner pos, width, 
+\cs_new_protected:Npn \cus_peek_minipage:Nnnnnnw #1#2#3#4#5#6
+  {
+    \cs_set:Npx \__cus_peek_minipage:
+      { \cus_set_vbox_width:Nnw \l__cus_tmpa_box \exp_not:n { {#6} } }
+    \cs_set:Npx \__cus_peek_minipage_auxii:
+      {
+        \cus_set_vbox_width_end: 
+        \exp_not:N \@iiiparbox 
+          {#3} {#4} [#5] { \dim_eval:n {#6} } { \vbox_unpack_drop:N \l__cus_tmpa_box }
+        \c_group_end_token
+        \exp_not:n {#2}
+      }
+    \tex_afterassignment:D \__cus_peek_minipage_auxi: 
+    \tex_setbox:D #1 \tex_hbox:D 
+  }
+\cs_new:Npn \cus_peek_width:Nnnnnnw { \cus_peek_minipage:Nnnnnnw }
+% \cs_new_protected:Npn \cus_peek_varwidth:Nnnnw #1#2#3#4 % box num, vpos, width, code, 
+%   {
+%     \tl_set:Nn \__cus_peek_varwidth: { \varwidth [#2] {#3} }
+%     \tl_set:Nn \__cus_peek_varwidth_auxii: 
+%       { \endvarwidth \c_group_end_token #4 }
+%     \tex_afterassignment:D \__cus_peek_varwidth_auxi:
+%     \tex_setbox:D #1 \tex_hbox:D 
+%   }
+% \cs_new:Npn \__cus_peek_varwidth_auxi:
+%   {
+%     \__cus_peek_varwidth: \c_group_begin_token
+%     \group_insert_after:N \__cus_peek_varwidth_auxii:
+%   }
+\cs_new_protected:Npn \cus_peek_varwidth:Nnnnw #1#2#3#4 % box num, code, vpos, width, 
+  {
+    \cs_set:Npx \__cus_peek_varwidth: 
+      { \cus_set_vbox_varwidth:Nnw \l__cus_tmpa_box \exp_not:n { {#4} } }
+    \cs_set:Npx \__cus_peek_varwidth_auxii: 
+      { 
+        \cus_set_vbox_varwidth_end: 
+        \use:c { __cus_box_v#3:N } \l__cus_tmpa_box 
+        \c_group_end_token 
+        \exp_not:n {#2} 
+      }
+    \tex_afterassignment:D \__cus_peek_varwidth_auxi:
+    \tex_setbox:D #1 \tex_hbox:D 
+  }
+\cs_new:Npn \__cus_peek_varwidth_auxi:
+  {
+    \__cus_peek_varwidth: \c_group_begin_token
+    \group_insert_after:N \__cus_peek_varwidth_auxii:
+  }
+% full version: box num, code, vpos, height, inner pos, width, 
+\cs_new_protected:Npn \cus_peek_varwidth:Nnnnnnw #1#2#3#4#5#6
+  {
+    \cs_set:Npx \__cus_peek_varwidth:
+      { \cus_set_vbox_varwidth:Nnw \l__cus_tmpa_box \exp_not:n { {#6} } }
+    \cs_set:Npx \__cus_peek_varwidth_auxii:
+      {
+        \cus_set_vbox_varwidth_end: 
+        \exp_not:N \@iiiparbox 
+          {#3} {#4} [#5] { \dim_eval:n {#6} } { \vbox_unpack_drop:N \l__cus_tmpa_box }
+        \c_group_end_token
+        \exp_not:n {#2}
+      }
+    \tex_afterassignment:D \__cus_peek_varwidth_auxi: 
+    \tex_setbox:D #1 \tex_hbox:D 
+  }
+
+\cs_new_protected_nopar:Npn \cus_ref_label_width:nnnn #1 % label, vpos, width, 
+  {
+    \cus_peek_minipage:Nnnnw \l__cus_tmpc_box
+      { 
+        \cus_ref_label:nn {#1} { \XeTeXLinkBox { \box_use_drop:N \l__cus_tmpc_box } }
+      }
+  }
+\cs_new_protected_nopar:Npn \cus_ref_label_varwidth:nnnn #1
+  {
+    \cus_peek_varwidth:Nnnnw \l__cus_tmpc_box
+      { 
+        \cus_ref_label:nn {#1} { \XeTeXLinkBox { \box_use_drop:N \l__cus_tmpc_box } }
+      }
+  }
+\cs_new_protected_nopar:Npn \cus_ref_target_width:nnnn #1 % target, vpos, width, 
+  {
+    \cus_peek_minipage:Nnnnw \l__cus_tmpc_box
+      { 
+        \cus_ref_target:nn {#1} { \XeTeXLinkBox { \box_use_drop:N \l__cus_tmpc_box } }
+      }
+  }
+\cs_new_protected_nopar:Npn \cus_ref_target_varwidth:nnnn #1
+  {
+    \cus_peek_varwidth:Nnnnw \l__cus_tmpc_box
+      { 
+        \cus_ref_target:nn {#1} { \XeTeXLinkBox { \box_use_drop:N \l__cus_tmpc_box } }
+      }
+  }
+
+
+\cs_new_protected:Npn \__cus_box_update_geometry:nN #1#2 % group end code, box num
+  {
+    \use:e 
+      {
+        \exp_not:n {#1}
+        \cs_set:Npn \exp_not:N \width { \dim_use:N \box_wd:N #2 }
+        \cs_set:Npn \exp_not:N \height { \dim_use:N \box_wd:N #2 }
+        \cs_set:Npn \exp_not:N \depth { \dim_use:N \box_wd:N #2 }
+        \cs_set:Npn \exp_not:N \totalheight { \dim_use:N \box_ht_plus_dp:N #2 }
+      }
+  }
+\cs_new_protected:Npn \__cus_box_update_geometry_x:N #1 % box num
+  {
+    \cs_set:Npx \height { \dim_use:N \box_ht:N #1 }
+    \cs_set:Npx \width { \dim_use:N \box_wd:N #1 }
+    \cs_set:Npx \depth { \dim_use:N \box_dp:N #1 }
+    \cs_set:Npx \totalheight { \dim_use:N \box_ht_plus_dp:N #1 }
+  }
 
 
 % cannot be used in math mode!
@@ -232,10 +443,7 @@
     \else:
       \__cus_box_hbox:n 
         {
-          \cs_set:Npx \height { \dim_eval:n { \box_ht:N #1 } }
-          \cs_set:Npx \width { \dim_eval:n { \box_wd:N #1 } }
-          \cs_set:Npx \depth { \dim_eval:n { \box_dp:N #1 } }
-          \cs_set:Npx \totalheight { \dim_eval:n { \box_ht_plus_dp:N #1 } }
+          \__cus_box_update_geometry_x:N #1
           #2 { \box_use_drop:N #1 }
         }
     \fi:
@@ -631,7 +839,7 @@
     \cus_filler:n { #1, size*=1fill }
     \tex_penalty:D 500~ \hbox:n { } \nobreak
     \cus_filler:n { #1, size*=10000fil }
-    \tex_ignorespaces:D
+    \cus@ignorespaces
   }
 
 
@@ -675,9 +883,183 @@
   }
 \cs_new_protected:Npn \cus_rule_vertical:n #1
   { \tex_vrule:D width \dim_eval:n {#1} \exp_stop_f: \scan_stop: }
+\cs_new_protected:Npn \cus_draw_rule:nnnn #1#2#3#4 { } % wd, ht, dp, color set
+
+
+\clist_map_inline:nn
+  { 
+    , width 
+    , height
+    , sep 
+    , rule 
+    , border-width
+    , border-left-width
+    , border-top-width
+    , border-right-width
+    , border-bottom-width
+    , border-style
+    , border-left-style
+    , border-top-style
+    , border-right-style
+    , border-bottom-style
+    , padding 
+    , padding-left 
+    , padding-top 
+    , padding-right 
+    , padding-bottom 
+    , size
+    , left
+    , top
+    , right
+    , bottom
+    , left*
+    , top*
+    , right*
+    , bottom*
+    , leftrule 
+    , toprule 
+    , rightrule 
+    , bottomrule 
+  }
+  { \tl_new:c { c__cus_registered_geometry_options_#1_tl } }
+\cs_new_protected:Npn \__cus_filter_geometry_options:NNN #1#2#3
+  { 
+    \clist_set_eq:NN \l__cus_filter_geometry_a_clist \c_empty_clist
+    \clist_set_eq:NN \l__cus_filter_geometry_b_clist \c_empty_clist
+    \keyval_parse:nno 
+      { \__cus_filter_geometry_options_aux:n }
+      { \__cus_filter_geometry_options_aux:nn }
+      #1
+    \clist_set_eq:NN #2 \l__cus_filter_geometry_a_clist
+    \clist_set_eq:NN #3 \l__cus_filter_geometry_b_clist
+  }
+\cs_new:Npn \__cus_filter_geometry_options_aux:n #1
+  {
+    \cs_if_exist:cTF { c__cus_registered_geometry_options_ #1 _tl }
+      { \clist_put_right:Nn \l__cus_filter_geometry_a_clist {#1} }
+      { \clist_put_right:Nn \l__cus_filter_geometry_b_clist {#1} }
+  }
+\cs_new:Npn \__cus_filter_geometry_options_aux:nn #1#2
+  {
+    \cs_if_exist:cTF { c__cus_registered_geometry_options_ #1 _tl }
+      { \clist_put_right:Nn \l__cus_filter_geometry_a_clist {#1={#2}} }
+      { \clist_put_right:Nn \l__cus_filter_geometry_b_clist {#1={#2}} }
+  }
 
 
 % multicol
+%% patch multicol
+\cs_new_protected:Npn \cus@update@multi@framedgeometry #1 { }
+\cs_new_protected:Npn \cus@update@multi@height #1 { }
+\cs_new_protected:Npn \cus@update@multi@width #1 { }
+\cs_new_protected:Npn \cus@update@multi@box #1 {#1}
+\cs_new_protected:Npn \cus@update@multi@boxes #1#2 { }
+\cs_new_protected:Npn \cus@update@multi@rule 
+  { \columnseprulecolor\vrule\@width\columnseprule }
+\cs_new_eq:NN \cus@multicol@drawrule \cus_draw_rule:nnnn 
+\cs_new_protected:Npn \cus@multicol@swapcolumninevenpages #1#2#3
+  {
+    \ifodd\cus@multicol@swapcolumn 
+      \if@twoside 
+        \ifodd\c@page #3
+        \else \ifx#3#1 #2\else #1\fi 
+        \fi 
+      \else #3
+      \fi 
+    \else #3
+    \fi 
+  }
+\cs_set_eq:NN \cus@update@multi@boxes \cus@multicol@swapcolumninevenpages 
+%% see multicolrule.sty
+\dim_new:N \l__cus_multicolumns_rule_extend_top_dim
+\dim_new:N \l__cus_multicolumns_rule_extend_bot_dim
+\cs_new_protected:Npn \cus@multicol@rule 
+  { 
+    \dim_set:Nn \l__cus_tmpa_dim 
+      {
+        \box_ht:N \mult@rightbox + % height
+        \dim_max:nn {\dimen\tw@} {\box_dp:N \mult@rightbox} + % depth
+        \dim_max:nn {\box_ht:N \mult@nat@firstbox - \box_ht:N \mult@rightbox} {0pt} % overflow
+      }
+    \box_move_down:nn 
+      { 
+        \dim_max:nn {\dimen\tw@} {\box_dp:N \mult@rightbox} + % depth
+        \dim_max:nn {\box_ht:N \mult@nat@firstbox - \box_ht:N \mult@rightbox} {0pt} % % overflow
+      }
+      {
+        \vbox_to_ht:nn \l__cus_tmpa_dim 
+          {
+            \tex_vss:D
+            \hbox:n
+              {
+                \use:e 
+                  {
+                    \exp_not:N \cus@multicol@drawrule 
+                      { \dim_use:N \columnseprule } 
+                      { \dim_eval:n { \l__cus_tmpa_dim + \l__cus_multicolumns_rule_extend_top_dim + \l__cus_multicolumns_rule_extend_bot_dim } } 
+                      { \dim_use:N \c_zero_dim } 
+                      { \exp_not:N \columnseprulecolor } 
+                  }
+              }
+            \tex_vss:D 
+          }
+      }
+  }
+%%
+% ref: https://tex.stackexchange.com/a/132461/232375
+% \cs_set:Npn \__cus_tmp:w #1\hbox to\full@width#2#3!!
+%   {
+%     \def\page@sofar{#1\cus@update@multi@box{\hbox to\full@width{#2}}#3}
+%   }
+% \exp_after:wN \__cus_tmp:w \page@sofar!!
+\ctex_patch_cmd:Nnn \page@sofar 
+  { \hbox to\full@width { \mc@align@columns \rlap{ \phantom p } } }
+  { 
+    \cus@update@multi@box 
+      {
+        \hbox to\full@width 
+          { \cus@update@multi@boxes\LR@column@boxes\RL@column@boxes\mc@align@columns 
+            \rlap{ \phantom p } }
+      }
+  }
+% \def\foo#1\hsize\linewidth#2!!{%
+%   \def\prepare@multicols{#1%
+%     \cus@update@multi@width\linewidth
+%     \hsize\linewidth#2}}
+% \expandafter\foo\prepare@multicols!!
+\ctex_patch_cmd:Nnn \prepare@multicols { \hsize\linewidth }
+  {
+    \cus@update@multi@width\linewidth
+    \hsize\linewidth
+  }
+% \def\foo#1\dimen@\@colroom#2!!{%
+%   \def\multi@column@out{#1%
+%     \cus@update@multi@height\@colroom
+%     \dimen@\@colroom#2}}
+% \expandafter\foo\prepare@multicols!!
+\ctex_patch_cmd:Nnn \multi@column@out { \dimen@\@colroom }
+  {
+    \cus@update@multi@height\@colroom 
+    \dimen@\@colroom 
+  }
+\cs_set_eq:NN \cus@restore@LR@column@boxes \LR@column@boxes
+\cs_set_eq:NN \cus@restore@RL@column@boxes \RL@column@boxes
+\ctex_patch_cmd:Nnn \LR@column@boxes 
+  { \columnseprulecolor\vrule\@width\columnseprule }
+  { \cus@update@multi@rule }
+\ctex_patch_cmd:Nnn \RL@column@boxes 
+  { \columnseprulecolor\vrule\@width\columnseprule }
+  { \cus@update@multi@rule }
+\cs_set_eq:NN \mc@align@columns \LR@column@boxes 
+\hook_gput_code:nnn { package/multicolrule/before } { cus/patch }
+  {
+    \cs_set_eq:NN \LR@column@boxes \cus@restore@LR@column@boxes
+    \cs_set_eq:NN \RL@column@boxes \cus@restore@RL@column@boxes
+  }
+\RequirePackage {adjmulticol}
+\tl_new:N \l__cus_multicolumns_adj_inner_tl 
+\tl_new:N \l__cus_multicolumns_adj_outer_tl 
+%%end-of patch
 \keys_define:nn { cus } { multicolumns .meta:nn = { cus/multicolumns } {#1} }
 \keys_define:nn { cus/multicolumns } 
   {
@@ -691,7 +1073,7 @@
     column-sep .dim_set:N = \columnsep ,
     sep .meta:n = { column-sep = {#1} } ,
     heading .tl_set:N = \l__cus_multicolumns_heading_tl ,
-    rule .dim_set:N = \columnseprule ,
+    rule-width .dim_set:N = \columnseprule ,
     rule-color .code:n = 
       \tl_set:Nn \columnseprulecolor { \__cus_key_color_select:n {#1} } ,
     ragged .code:n = \raggedcolumns ,
@@ -702,20 +1084,32 @@
     flush .value_forbidden:n = true ,
     aligned .meta:n = { flush } ,
     aligned .value_forbidden:n = true ,
-    balanced .code:n = 
-      {
-        \cs_set_protected_nopar:Npn \cus@startmulticolumns { \begin{multicols} }
-        \cs_set_protected_nopar:Npn \cus@stopmulticolumns  { \end{multicols} }
-      } ,
-    balanced .value_forbidden:n = true ,
-    not-balanced .code:n = 
-      {
-        \cs_set_protected_nopar:Npn \cus@startmulticolumns { \begin{multicols*} }
-        \cs_set_protected_nopar:Npn \cus@stopmulticolumns { \end{multicols*} } ,
-      } ,
+    balanced .bool_set:N = \l__cus_multicolumns_balanced_bool ,
+    balanced .initial:n = true ,
+    not-balanced .code:n = \bool_set_false:N \l__cus_multicolumns_balanced_bool ,
     not-balanced .value_forbidden:n = true ,
     columns* .meta:n = { not-balanced , columns = {#1} } ,
     cols*    .meta:n = { columns* = {#1} } ,
+
+    enable-swap-column .code:n = 
+      \cs_set_eq:NN \cus@update@multi@boxes \cus@multicol@swapcolumninevenpages ,
+    enable-swap-column .value_forbidden:n = true ,
+    disable-swap-column .code:n = \cs_set_eq:NN \cus@update@multi@boxes \use_none:nn ,
+    disable-swap-column .value_forbidden:n = true ,
+    swap-column .bool_set:N = \cus@multicol@swapcolumn ,
+
+    adj .bool_set:N = \l__cus_multicolumns_adj_bool ,
+    adj-inner .code:n = \bool_set_true:N \l__cus_multicolumns_adj_bool 
+      \tl_set:Nx \l__cus_multicolumns_adj_inner_tl { \dim_eval:n {#1} } ,
+    adj-outer .code:n = \bool_set_true:N \l__cus_multicolumns_adj_bool 
+      \tl_set:Nx \l__cus_multicolumns_adj_outer_tl { \dim_eval:n {#1} } ,
+    adj*      .meta:n = { adj , not-balanced } ,
+
+    framed .choice: ,
+    framed-options  .clist_set:N = \cus@multicol@framed@options ,
+    framed-options+ .clist_put_right:N = \cus@multicol@framed@options ,
+    rule-top .dim_set:N = \l__cus_multicolumns_rule_extend_top_dim ,
+    rule-bottom .dim_set:N = \l__cus_multicolumns_rule_extend_bot_dim ,
 
     % be careful to use
     addto-baselineskip .dim_set:N = \multicolbaselineskip ,
@@ -748,22 +1142,103 @@
           { \msg_error:nnxx { cus } { unknown-key } { multicolumns } { \l_keys_key_str } }
       } ,
   }
+\cs_new_protected:Npn \__cus_multicolumns_process_framedoptions: 
+  { 
+    \__cus_filter_geometry_options:NNN 
+      \cus@multicol@framed@options 
+      \cus@multicol@framedgeometry@options 
+      \cus@multicol@framed@options 
+    \exp_args:No \cus@update@multi@framedgeometry \cus@multicol@framedgeometry@options 
+  }
+\keys_define:nn { cus/multicolumns }
+  {
+    framed / fbox .code:n = 
+      {
+        \cs_set_protected:Npn \cus@update@multi@height ##1
+          { \advance##1-\dimexpr2\fboxrule+2\fboxsep\relax }
+        \cs_set_eq:NN \cus@update@multi@width \cus@update@multi@height 
+        \cs_set_protected:Npn \cus@update@multi@box ##1
+          { \hbox{\fbox{##1}} }
+        \cs_set_protected:Npn \cus@update@multi@framedgeometry ##1 
+          { \keyval_parse:nnn \scan_stop: \__cus_set_fbox_geometry:nn {##1} }
+      }
+  }
+\cs_new_protected:Npn \__cus_set_fbox_geometry:nn #1#2
+  {
+    \str_case:nn {#1}
+      {
+        { sep }  { \dim_set:Nn \fboxsep {#2} }
+        { rule } { \dim_set:Nn \fboxrule {#2} }
+        { border } { \dim_set:Nn \fboxrule {#2} }
+        { border-width } { \dim_set:Nn \fboxrule {#2} }
+        { padding } { \dim_set:Nn \fboxsep {#2} }
+      }
+  }
 \cs_new_protected_nopar:Npn \cus@startmulticolumns { \begin{multicols} }
 \cs_new_protected_nopar:Npn \cus@stopmulticolumns  { \end{multicols} }
 \NewDocumentCommand \startmulticolumns { O{} }
   {
     \group_begin:
     \keys_set:nn { cus/multicolumns } {#1}
+    \__cus_multicolumns_process_framedoptions: 
     \int_compare:nNnTF \l__cus_multicolumns_cols_tl < 2
       { 
-        \cs_set_eq:NN \cus@stopmulticolumns \prg_do_nothing: 
-        \l__cus_multicolumns_heading_tl
+        \bool_if:NTF \l__cus_multicolumns_adj_bool 
+          {
+            \cs_set:Npx \cus@startmulticolumns 
+              { 
+                \exp_not:N \begin
+                  {adjmulticols \bool_if:NF \l__cus_multicolumns_balanced_bool * }
+                  { 1 } 
+                  { \l__cus_multicolumns_adj_inner_tl }
+                  { \l__cus_multicolumns_adj_outer_tl }
+                  [ \exp_not:N \l__cus_multicolumns_heading_tl ]
+              }
+            \cs_set:Npx \cus@stopmulticolumns 
+              {
+                \exp_not:N \end 
+                  {adjmulticols \bool_if:NF \l__cus_multicolumns_balanced_bool * }
+              }
+          }
+          {
+            \cs_set:Npn \cus@startmulticolumns { \l__cus_multicolumns_heading_tl }
+            \cs_set_eq:NN \cus@stopmulticolumns \prg_do_nothing: 
+          }
       }
       {
-        \tl_if_empty:NTF \l__cus_multicolumns_heading_tl
-          { \cus@startmulticolumns{\l__cus_multicolumns_cols_tl}\relax }
-          { \cus@startmulticolumns{\l__cus_multicolumns_cols_tl}[\l__cus_multicolumns_heading_tl]\relax }
+        \bool_if:NTF \l__cus_multicolumns_adj_bool 
+          {
+            \cs_set:Npx \cus@startmulticolumns 
+              {
+                \exp_not:N \begin 
+                  { adjmulticols \bool_if:NF \l__cus_multicolumns_balanced_bool * }
+                  { \l__cus_multicolumns_cols_tl }
+                  { \l__cus_multicolumns_adj_inner_tl }
+                  { \l__cus_multicolumns_adj_outer_tl }
+                  [ \exp_not:N \l__cus_multicolumns_heading_tl ]
+              }
+            \cs_set:Npx \cus@stopmulticolumns 
+              {
+                \exp_not:N \end 
+                  { adjmulticols \bool_if:NF \l__cus_multicolumns_balanced_bool * }
+              }
+          }
+          {
+            \cs_set:Npx \cus@startmulticolumns 
+              {
+                \exp_not:N \begin 
+                  { multicols \bool_if:NF \l__cus_multicolumns_balanced_bool * }
+                  { \l__cus_multicolumns_cols_tl }
+                  [ \exp_not:N \l__cus_multicolumns_heading_tl ]
+              }
+            \cs_set:Npx \cus@stopmulticolumns 
+              {
+                \exp_not:N \end 
+                  { multicols \bool_if:NF \l__cus_multicolumns_balanced_bool * }
+              }
+          }
       }
+    \cus@startmulticolumns \relax 
   }
 \cs_new_protected_nopar:Npn \stopmulticolumns { \cus@stopmulticolumns \group_end: }
 
