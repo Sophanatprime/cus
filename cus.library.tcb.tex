@@ -1,0 +1,31 @@
+\CUSProvideLibrary{tcb}{\cus@d@te}{\cus@versi@n}{tcolorbox}
+\protected\def\cus@tcb@height{\dimexpr(\kvtcb@boxsep+\kvtcb@boxsep)+
+  (\kvtcb@top@rule@stand)+(\kvtcb@bottom@rule@stand)+(\kvtcb@top)+(\kvtcb@bottom)\relax}
+\protected\def\cus@tcb@width{\dimexpr(\kvtcb@boxsep+\kvtcb@boxsep)+
+  (\kvtcb@left@rule)+(\kvtcb@right@rule)+(\kvtcb@leftupper)+(\kvtcb@rightupper)\relax}
+
+\ExplSyntaxOn
+\keys_define:nn { cus/frame }
+  {
+    tcbox-frame  .meta:n = { frame  = { \tcbox [{#1}] } } ,
+    tcbox-frame .default:n = { } ,
+    tcbox-first  .meta:n = { first  = { \tcbox [{#1}] } } ,
+    tcbox-first .default:n = { } ,
+    tcbox-middle .meta:n = { middle = { \tcbox [{#1}] } } ,
+    tcbox-middle .default:n = { } ,
+    tcbox-last   .meta:n = { last   = { \tcbox [{#1}] } } ,
+    tcbox-last .default:n = { } ,
+    tcbox-whole  .meta:n = { whole  = { \tcbox [{#1}] } } ,
+    tcbox-whole .default:n = { } ,
+  }
+\keys_define:nn { cus/multicolumns }
+  {
+    framed / tcbox .code:n = 
+      {
+        \cs_set_protected:Npn \cus@update@multi@height ##1 { ##1=\cus@tcb@height }
+        \cs_set_protected:Npn \cus@update@multi@width ##1 { ##1=\cus@tcb@width }
+        \cs_set_protected:Npn \cus@update@multi@box ##1 
+          { \hbox { \exp_args:NNo \tcbox [ \cus@multicol@framed@options ] {##1} } }
+        \cs_set_protected:Npn \cus@update@multi@framedgeometry { \tcbset }
+      }
+  }

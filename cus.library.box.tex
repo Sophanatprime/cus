@@ -2,6 +2,13 @@
 \CUSProvideExplLibrary{box}{\cus@d@te}{\cus@versi@n}{much more box and multicols}
 
 \dim_if_exist:NF \@tempdimd { \dim_new:N \@tempdimd }
+
+\options{/longbox,
+  math/.new~style*={insert-before=$\displaystyle,insert-after=$},
+  highlight~math/.new~style*={}}
+\newcommand\lfboxmath[1][]{\lfbox[math,#1]}
+\newcommand\lfboxhighmath[1][]{\lfbox[highlight~math,math,#1]}
+
 \keys_define:nn { cus/frame }
   {
     lfbox-frame  .meta:n = { frame  = { \lfbox [{#1}] } } ,
@@ -21,13 +28,13 @@
       {
         \cs_set_protected:Npn \cus@update@multi@height ##1
           {
-            \advance##1-
+            ##1=
               \dimexpr(\option{/fbox/padding-top}+\option{/fbox/padding-bottom}
               +\option{/fbox/border-top-width}+\option{/fbox/border-bottom-width})\relax
           }
         \cs_set_protected:Npn \cus@update@multi@width ##1
           {
-            \advance##1-
+            ##1=
               \dimexpr(\option{/fbox/padding-left}+\option{/fbox/padding-right}
               +\option{/fbox/border-left-width}+\option{/fbox/border-right-width})\relax
           }
@@ -184,8 +191,8 @@
   }
 \cs_new_protected:Npn \__cus_paracol_columnwidth:nw #1 [#2]
   {
-    \__cus_paracol_columnratio_left:n {#1}
-    \__cus_paracol_columnratio_right:n {#2}
+    \__cus_paracol_columnwidth_left:n {#1}
+    \__cus_paracol_columnwidth_right:n {#2}
   }
 \cs_new_protected:Npn \__cus_paracol_marginpar_threshold_left:n #1
   { \tl_set:Nx \pcol@mpthreshold@l { \int_eval:n {#1} } }
@@ -203,7 +210,7 @@
     \cs_set_eq:NN \pcol@colwidthspecleft \scan_stop:
     \__cus_paracol_columnratio:nw {} []
   }
-\NewDocumentCommand \startparacol { O{} }
+\NewDocumentCommand \startparacol { +O{} }
   { 
     \group_begin: 
     \__cus_paracol_init: 

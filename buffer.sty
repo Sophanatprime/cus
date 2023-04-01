@@ -365,7 +365,7 @@
   }
 \group_begin:
 \char_set_catcode_active:n { 9 }
-\cs_new_protected:Npn \__buffer_save_line:n #1
+\cs_new_protected:Npn \__buffer_save_line:n #1 % gobble int <= 9
   {
     \__buffer_str_set:Nx \l__buffer_saved_line_tl
       {
@@ -373,11 +373,22 @@
           \__buffer_nothing: \__buffer_nothing: \__buffer_nothing:
           \__buffer_nothing: \__buffer_nothing: \__buffer_nothing:
           \__buffer_nothing: \__buffer_nothing: \__buffer_nothing:
-          \s_stop
+          \__buffer_nothing: \s_stop
       }
     \exp_args:NNno \tl_replace_all:Nnn \l__buffer_saved_line_tl 
       { ^^I } { \l__buffer_tab_tl } 
   }
+% \cs_new_protected:Npn \__buffer_save_line:n #1 % any integer
+%   {
+%     \buffer_exp_args:NNd \__buffer_str_set:Nn \l__buffer_saved_line_tl
+%       {
+%         \buffer_use_none_num:nw 
+%           { \int_min:nn { \l__buffer_gobble_int } { \tl_count:n {#1} } }
+%           #1
+%       }
+%     \exp_args:NNno \tl_replace_all:Nnn \l__buffer_saved_line_tl 
+%       { ^^I } { \l__buffer_tab_tl } 
+%   }
 \group_end:
 \cs_new_protected:Npn \__buffer_replace_space:
   {
@@ -985,6 +996,24 @@
   }
 \cs_generate_variant:Nn \__buffer_str_if_endswith:nnTF { oo }
 \cs_new_protected:Npn \__buffer_turn_true:w \if_false: { \if_true: }
+% copy from ltxcmds.sty, rewritten in LaTeX3, needs two expansion steps 
+\cs_new:Npn \buffer_use_none_num:nw #1
+  {
+    \exp:w \cs:w exp_end:
+    \exp_after:wN \__buffer_use_none_num_aux:n 
+    \tex_romannumeral:D \int_eval:n {#1} 000 { m \cs_end: }
+  }
+\cs_new:Npn \__buffer_use_none_num_aux:n #1
+  { \cs:w __buffer_use_none_aux_:_ #1 \__buffer_use_none_num_aux:n }
+\cs_new:Npn \__buffer_use_none_aux_:_m #1 { \cs_end: }
+\cs_new:Npn \buffer_exp_args:NNd #1#2#3
+  {
+    \exp_after:wN #1 \exp_after:wN #2 \exp_after:wN
+    { 
+      \exp:w \exp_end_continue_f:w 
+      \exp_after:wN \exp_after:wN \exp_after:wN \exp_stop_f: #3 
+    }
+  }
 \cs_new:Npn \__buffer_gobble:nw #1
   {
     % ignore explicit spaces 
@@ -1163,6 +1192,10 @@
           }
       }
   }
+\cs_new:Npn \__buffer_end_current_line: 
+  {
+    
+  }
 \cs_new:Npn \__buffer_grab_expand_to_output:Nn #1#2
   { 
     \exp_args:No \__buffer_add_to_output_normal:n { #1 {#2} } 
@@ -1264,11 +1297,13 @@
   }
 \cs_new_protected:Npn \__buffer_add_to_output_normal:n #1 
   {
-    \__buffer_add_to_output:nnn { Text } { 0 } {#1}
+    \tl_set:Nn \l__buffer_curr_type_tl { 0 }
+    \__buffer_add_to_output:nn { Text } {#1}
   }
 \cs_new_protected:Npn \__buffer_add_to_output_char:N #1
   { % #1 may be \char`\\
-    \__buffer_add_to_output:nnn { Text } { 0 } {#1}
+    \tl_set:Nn \l__buffer_curr_type_tl { 0 }
+    \__buffer_add_to_output:nn { Text } {#1}
   }
 \cs_new_protected:Npn \__buffer_add_to_output_cs_char:Nw #1#2 \s_stop
   { \__buffer_add_to_output_texcs:Nn {#1} {#2} }
@@ -1276,8 +1311,10 @@
   { \__buffer_add_to_output_texcs:Nn #1 {#2} }
 \cs_new:Npn \__buffer_add_to_output_texcs:Nn #1#2 % escapechar, cs name 
   {
-
+    \tl_set:Nn \l__buffer_curr_type_tl { }
+    \__buffer_add_to_output:nn { Texcs } { }
   }
+\tl_new:N \l__buffer_curr_type_tl 
 \tl_new:N \l__buffer_curr_output_tl
 \int_new:N \l__buffer_curr_output_int 
 \__buffer_let_int:w \c__buffer_NULL_int          0 \exp_stop_f:
@@ -1290,12 +1327,12 @@
 \__buffer_let_int:w \c__buffer_Brace_int         7 \exp_stop_f:
 \__buffer_let_int:w \c__buffer_Escape_int        8 \exp_stop_f:
 \__buffer_let_int:w \c__buffer_Comment_int       9 \exp_stop_f:
-\__buffer_let_int:w \c__buffer_PairStart_int    10  \exp_stop_f:
+\__buffer_let_int:w \c__buffer_PairStart_int    10 \exp_stop_f:
 \__buffer_let_int:w \c__buffer_PairStop_int     11 \exp_stop_f:
 \__buffer_let_int:w \c__buffer_CommentStart_int 12 \exp_stop_f:
 \__buffer_let_int:w \c__buffer_CommentStop_int  13 \exp_stop_f:
 \__buffer_let_int:w \c__buffer_Newline_int      14 \exp_stop_f:
-\cs_new_protected:Npn \__buffer_add_to_output:nnn #1#2#3
+\cs_new_protected:Npn \__buffer_add_to_output:nn #1#2
   {
 
   }

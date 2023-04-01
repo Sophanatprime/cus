@@ -1,11 +1,7 @@
-\CUSDependency{package={xcolor,hologo,etoolbox,underscore,
-    array,booktabs,pifont,enumitem,manfnt},
-  module={index,box}}
+\CUSDependency{package={xcolor,etoolbox,underscore,
+    array,booktabs,pifont,enumitem},
+  module={index,box},library={logo}}
 \CUSProvideExplLibrary{doc}{\cus@d@te}{\cus@versi@n}{documentation}
-
-\protected\def\textcdbend{\raisebox{.734\height}{\dbend}}
-\protected\def\textclhdbend{\raisebox{.734}{\lhdbend}}
-\protected\def\textcreversedvideodbend{\raisebox{.734}{\reversedvideodbend}}
 
 \cus_add_pdf_disable:n 
   { 
@@ -150,6 +146,9 @@
 \tl_new:N \l__cus_doc_cmd_module_tl
 \bool_new:N \l__cus_doc_cmd_noindex_bool
 \bool_new:N \l__cus_doc_cmd_replace_bool
+\bool_new:N \l__cus_doc_cmd_hyper_bool 
+\bool_set_true:N \l__cus_doc_cmd_hyper_bool 
+\tl_new:N \l__cus_doc_cmd_target_tl 
 \bool_new:N \l__cus_doc_in_implementation_bool
 \bool_new:N \g__cus_doc_typeset_documentation_bool
 \bool_new:N \g__cus_doc_typeset_implementation_bool
@@ -186,32 +185,51 @@
     The~'syntax'~environment~should~only~be~used~once~in~
     a~'function'~environment.
   }
+
+\tl_set:Nn \cus@doc@cmd@format  { }
+\tl_set:Nn \cus@doc@cs@format   { }
+\tl_set:Nn \cus@doc@tn@format   { }
+\tl_set:Nn \cus@doc@key@format  { }
+\tl_set:Nn \cus@doc@meta@format { }
+\tl_set:Nn \cus@doc@veta@format { }
+\tl_set:Nn \cus@doc@marg@format { }
+\tl_set:Nn \cus@doc@oarg@format { }
+\tl_set:Nn \cus@doc@parg@format { }
+\tl_set:Nn \cus@doc@pkg@format  { }
+\tl_set:Nn \cus@doc@env@format  { }
+\tl_set:Nn \cus@doc@cls@format  { }
+\tl_set:Nn \cus@doc@opt@format  { }
+
+\cs_new:Npn \pdfstringnewline { : ~ }
+\DeclareExpandableDocumentCommand
+  { \__codedoc_pdfstring_newline:w } { s o m } { \pdfstringnewline #3 }
 \DeclareDocumentCommand \cmd { O{} m }
-  { \__cus_doc_cmd:no {#1} { \token_to_str:N #2 } }
+  { \__cus_doc_cmd:no { format=\cus@doc@cmd@format, #1 } { \token_to_str:N #2 } }
 \DeclareDocumentCommand \cs  { O{} m }
-  { \__cus_doc_cmd:no {#1} { \c_backslash_str #2 } }
+  { \__cus_doc_cmd:no { format=\cus@doc@cs@format, #1 } { \c_backslash_str #2 } }
 \DeclareDocumentCommand \tn  { O{} m }
   {
     \__cus_doc_cmd:no
-      { module = TeX , replace = false , #1 }
+      { module = TeX , replace = false , format=\cus@doc@tn@format , #1 }
       { \c_backslash_str #2 }
   }
 \DeclareDocumentCommand \key { O{} m }
-  { \__cus_doc_cmd:nn {#1} {#2} }
+  { \__cus_doc_cmd:nn { keyval=true , type=keyval , format=\cus@doc@key@format , #1 } {#2} }
 \DeclareDocumentCommand \meta { m }
-  { \__cus_doc_meta:n {#1} }
+  { \cus@doc@meta@format { \__cus_doc_meta:n {#1} } }
 \DeclareDocumentCommand \veta { m }
-  { \__cus_doc_veta:n {#1} }
+  { \cus@doc@veta@format { \__cus_doc_veta:n {#1} } }
 \DeclareExpandableDocumentCommand
   { \__cus_doc_pdfstring_cmd:w } { o m } { \token_to_str:N #2 }
 \DeclareExpandableDocumentCommand
-  { \__cus_doc_pdfstring_cs:w  } { o m } { \c_backslash_str \tl_to_str:n {#2} }
+  { \__cus_doc_pdfstring_cs:w  } { o m } { \textbackslash \tl_to_str:n {#2} }
 \DeclareExpandableDocumentCommand
   { \__cus_doc_pdfstring_key:w } { o m } { \tl_to_str:n {#2} }
 \cs_new:Npn \__cus_doc_pdfstring_meta:w #1
   { < \tl_to_str:n {#1} > }
 \cus_add_pdf_disable:n 
   {
+    \cs_set_eq:NN \\ \__codedoc_pdfstring_newline:w
     \cs_set_eq:NN \cmd  \__cus_doc_pdfstring_cmd:w
     \cs_set_eq:NN \cs   \__cus_doc_pdfstring_cs:w
     \cs_set_eq:NN \tn   \__cus_doc_pdfstring_cs:w
@@ -225,16 +243,19 @@
     \cs_set_eq:NN \cusmodule \use:n
     \cs_set_eq:NN \cuslibrary \use:n
   }
-\cs_set_protected_nopar:Npn \Arg #1 { \texttt{\char`\{} \meta{#1} \texttt{\char`\}} }
-\cs_set_protected_nopar:Npn \marg { \Arg }
-\cs_set_protected_nopar:Npn \oarg #1 { \texttt[ \meta{#1} \texttt] }
-\cs_set_protected_nopar:Npn \parg #1 { \texttt( \meta{#1} \texttt) }
+\cs_set_protected_nopar:Npn \Arg { \marg }
+\cs_set_protected_nopar:Npn \marg #1 
+  { \cus@doc@marg@format { \texttt{\char`\{} \meta{#1} \texttt{\char`\}} } }
+\cs_set_protected_nopar:Npn \oarg #1 
+  { \cus@doc@oarg@format { \texttt[ \meta{#1} \texttt] } }
+\cs_set_protected_nopar:Npn \parg #1 
+  { \cus@doc@parg@format { \texttt( \meta{#1} \texttt) } }
+\cs_set_protected_nopar:Npn \env #1 { \cus@doc@env@format{\texttt{#1}} }
+\cs_set_protected_nopar:Npn \pkg #1 { \cus@doc@pkg@format{\textsf{#1}} }
+\cs_set_protected_nopar:Npn \cls #1 { \cus@doc@cls@format{\textsf{#1}} }
+\cs_set_protected_nopar:Npn \opt #1 { \cus@doc@opt@format{\texttt{#1}} }
 \cs_set_protected_nopar:Npn \file { \nolinkurl }
 \cs_set_protected_nopar:Npn \docfile { \nolinkurl }
-\cs_set_protected_nopar:Npn \env { \texttt }
-\cs_set_protected_nopar:Npn \pkg { \textsf }
-\cs_set_protected_nopar:Npn \cls { \textsf }
-\cs_set_protected_nopar:Npn \opt { \texttt }
 \cs_new_protected_nopar:Npn \cusmodule #1 { \pkg {#1} }
 \cs_new_protected_nopar:Npn \cuslibrary #1 { \pkg {#1} }
 
@@ -246,13 +267,37 @@
     do-index .bool_set_inverse:N = \l__cus_doc_cmd_noindex_bool ,
     replace   .bool_set:N   = \l__cus_doc_cmd_replace_bool    ,
     space     .bool_set:N   = \l__cus_doc_macro_visible_space_bool ,
+    keyval    .bool_set:N   = \l__cus_doc_keyval_bool         ,
+    hyper     .bool_set:N   = \l__cus_doc_cmd_hyper_bool      ,
+    target    .tl_set:N     = \l__cus_doc_cmd_target_tl       ,
+    type      .tl_set:N     = \l__cus_doc_type_tl             ,
+    format    .cs_set:Np    = \__cus_doc_cmd_format:n         ,
   }
+
+\prop_new:N \g_cus_doc_type_alias_prop 
+\prop_new:N \g_cus_doc_module_alias_prop
+\prop_put:Nnn \g_cus_doc_module_alias_prop { hyp } { hyperref }
+\cs_new_protected:Npn \__cus_doc_get_hyper_target:nN #1#2
+  {
+    \__kernel_tl_set:Nx #2 { \tl_to_str:n {#1} }
+    \tl_replace_all:Nxn #2 { \c_underscore_str } { / }
+    \tl_remove_all:Nx   #2 { \c_backslash_str }
+    \exp_args:NNo \prop_get:NnNT 
+      \g_cus_doc_type_alias_prop { \l__cus_doc_type_tl } \l__cus_doc_tmpa_tl
+      { \tl_set_eq:NN \l__cus_doc_type_tl \l__cus_doc_tmpa_tl }
+    \tl_put_left:Nx #2 { doc/ \l__cus_doc_type_tl // }
+  }
+\cs_generate_variant:Nn \__cus_doc_get_hyper_target:nN { o , x }
 \cs_new_protected:Npn \__cus_doc_cmd:nn #1#2
   {
+    \group_begin:
     \bool_set_false:N \l__cus_doc_cmd_noindex_bool
     \bool_set_true:N \l__cus_doc_cmd_replace_bool
+    \bool_set_false:N \l__cus_doc_keyval_bool
     \tl_set:Nn \l__cus_doc_cmd_index_tl { \q_no_value }
     \tl_set:Nn \l__cus_doc_cmd_module_tl { \q_no_value }
+    \tl_set:Nn \l__cus_doc_cmd_target_tl { \q_no_value }
+    \tl_set:Nn \l__cus_doc_type_tl { \q_no_value }
     \keys_set:nn { cus/doc/cmd } {#1}
     \tl_set:Nn \l__cus_doc_cmd_tl {#2}
     \bool_if:NT \l__cus_doc_cmd_replace_bool
@@ -262,6 +307,11 @@
         \__cus_doc_replace_at_at:N \l__cus_doc_cmd_tl
         \tl_replace_all:Nno \l__cus_doc_cmd_tl { _ } \l__cus_doc_tmpb_tl
       }
+    \quark_if_no_value:NT \l__cus_doc_cmd_target_tl 
+      { \tl_set_eq:NN \l__cus_doc_cmd_target_tl \l__cus_doc_cmd_tl }
+    \quark_if_no_value:NT \l__cus_doc_type_tl 
+      { \tl_set:Nn \l__cus_doc_type_tl { function } }
+
     \mode_if_math:T { \mbox }
       {
         \bool_if:NT \l__cus_doc_allow_indexing_bool { \__cus_doc_target: }
@@ -280,7 +330,20 @@
         \bool_if:NTF \l__cus_doc_macro_visible_space_bool
           { \tl_replace_all:Nnn \l__cus_doc_cmd_tl { ~ } { \textvisiblespace } }
           { \tl_replace_all:Nnn \l__cus_doc_cmd_tl { ~ } { \@xobeysp } }
-        \l__cus_doc_cmd_tl
+        \bool_if:NTF \l__cus_doc_cmd_hyper_bool 
+          {
+            \tl_remove_all:Nn \l__cus_doc_cmd_target_tl { \- }
+            \__cus_doc_get_hyper_target:oN 
+              \l__cus_doc_cmd_target_tl \l__cus_doc_cmd_target_tl 
+            \cus_label_if_exist:nTF \l__cus_doc_cmd_target_tl 
+              {
+                \hypersetup { linkcolor=cus/color/doc~cs }
+                \__cus_doc_cmd_format:n 
+                  { \cus_ref_label:nn \l__cus_doc_cmd_target_tl \l__cus_doc_cmd_tl }
+              }
+              { \__cus_doc_cmd_format:n \l__cus_doc_cmd_tl }
+          }
+          { \__cus_doc_cmd_format:n \l__cus_doc_cmd_tl }
         \@
       }
     \bool_if:NT \l__cus_doc_allow_indexing_bool
@@ -306,6 +369,7 @@
               \l__cus_doc_index_internal_bool
           }
       }
+    \group_end:
   }
 \cs_generate_variant:Nn \__cus_doc_cmd:nn { no }
 \cs_new_protected:Npn \__cus_doc_meta:n #1
@@ -626,7 +690,17 @@
 \cs_generate_variant:Nn \__cus_doc_special_index:nn { o }
 \tl_new:N \l__cus_doc_index_escaped_macro_tl
 \tl_new:N \l__cus_doc_index_escaped_key_tl
-\cs_new_protected:Npn \__cus_doc_special_index_module:nnnnN #1#2#3#4#5
+\cs_new_protected:Npn \__cus_doc_special_index_module:nnnnN #1#2#3 
+  {
+    \prop_get:NnNF \g_cus_doc_module_alias_prop {#3} \l__cus_doc_tmpa_tl
+      { \tl_set:Nn \l__cus_doc_tmpa_tl {#3} }
+    \use:x 
+      {
+        \__cus_doc_special_index_module_aux:nnnnN 
+          \exp_not:n { {#1} {#2} } { \l__cus_doc_tmpa_tl }
+      }
+  }
+\cs_new_protected:Npn \__cus_doc_special_index_module_aux:nnnnN #1#2#3#4#5
   {
     \use:x
       {
@@ -640,8 +714,8 @@
                     #5 \l__cus_doc_keyval_bool {#3}
                 }
                 {
-                  \__cus_doc_special_index_module_DEFAULT:NNn #5
-                    \l__cus_doc_keyval_bool {#3}
+                  \__cus_doc_special_index_module_DEFAULT:NNn 
+                    #5 \l__cus_doc_keyval_bool {#3}
                 }
             }
       }
@@ -1102,14 +1176,6 @@
   }
 \cs_new_protected:Npn \__cus_doc_typeset_aux:n #1
   { { \color[gray]{0.5} #1 } }
-\cs_new_protected:Npn \__cus_doc_get_hyper_target:nN #1#2
-  {
-    \__kernel_tl_set:Nx #2 { \tl_to_str:n {#1} }
-    \tl_replace_all:Nxn #2 { \c_underscore_str } { / }
-    \tl_remove_all:Nx   #2 { \c_backslash_str }
-    \tl_put_left:Nx #2 { doc/ \l__cus_doc_type_tl // }
-  }
-\cs_generate_variant:Nn \__cus_doc_get_hyper_target:nN { o , x }
 \keys_define:nn { cus/doc/function }
   {
     TF .value_forbidden:n = true ,
@@ -1160,9 +1226,9 @@
     no-label .code:n = \bool_set_true:N \l__cus_doc_no_label_bool ,
     verb .value_forbidden:n = true ,
     verb .bool_set:N = \l__cus_doc_names_verb_bool ,
-    module .tl_set:N = \l__cus_doc_override_module_tl ,
     type .tl_set:N = \l__cus_doc_type_tl , % label type 
     keyval .bool_set:N = \l__cus_doc_keyval_bool ,
+    module .tl_set:N = \l__cus_doc_override_module_tl ,
     path .tl_set:N = \l__cus_doc_key_path_tl ,
     frame .clist_set:N = \l__cus_doc_framed_setting_tl ,
     frame+ .code:n = \clist_put_right:Nn \l__cus_doc_framed_setting_tl {#1} ,
@@ -1219,7 +1285,7 @@
     \tl_remove_all:Nn \l__cus_doc_tmpa_tl { \- }
     \__cus_doc_get_hyper_target:oN \l__cus_doc_tmpa_tl \l__cus_doc_tmpa_tl 
     \hypersetup { linkcolor=cus/color/doc~cs }
-    \hyperref [ \l__cus_doc_tmpa_tl ] { \cs {#3} }
+    \hyperref [ \l__cus_doc_tmpa_tl ] { \cs [hyper=false] {#3} }
     \group_end:
   }
 \NewDocumentCommand \csreflist { O{function} m }
@@ -1232,7 +1298,7 @@
       {
         \__cus_doc_get_hyper_target:nN {##1} \l__cus_doc_tmpa_tl
         \seq_put_right:Nx \l__cus_tmpa_seq
-          { \exp_not:N \hyperref [ \l__cus_doc_tmpa_tl ] { \cs {##1} } }
+          { \exp_not:N \hyperref [ \l__cus_doc_tmpa_tl ] { \cs [hyper=false] {##1} } }
       }
     \exp_last_unbraced:NNo \seq_use:Nnnn \l__cus_tmpa_seq \cus@doc@refrange
     \group_end:
@@ -1274,7 +1340,7 @@
       {
         \exp_not:N \hyperref [ \l__cus_doc_tmpa_tl ] 
           { 
-            \exp_not:N \key 
+            \exp_not:N \key [ hyper=false ]
               { \IfBooleanF {#1} { #2 \tl_if_empty:nF {#2} / } \exp_not:n {#4} } 
           }
       }
@@ -1294,7 +1360,7 @@
           {
             \exp_not:N \hyperref [ \l__cus_doc_tmpa_tl ]
               { 
-                \exp_not:N \key 
+                \exp_not:N \key [ hyper=false ]
                   { \IfBooleanF {#1} { #2 \tl_if_empty:nF {#2} / } \exp_not:n {##1} } 
               }
           }
@@ -1705,24 +1771,39 @@
   }
 \cs_new:Npn \__cus_doc_shorthand_align_aux:
   {
-    \token_if_macro:NTF \l_peek_token
+    \cus_act_case_true:nnnn \l_peek_token
       {
-        \token_case_meaning:NnF \l_peek_token
-          { 
-            \__cus_doc_shorthand_align: { \exp_after:wN \forbiddenval \use_none:n }
-            \nobreakspace               { \exp_after:wN \initemptyval \use_none:n }
-          } 
-          { \initialval }
+        { \token_if_eq_meaning:NNTF \__cus_doc_shorthand_align: }
+          { \exp_after:wN \forbiddenval \use_none:n }
+        { \token_if_eq_meaning:NNTF \nobreakspace } 
+          { \exp_after:wN \initemptyval \use_none:n }
+        { \exp_after:wN \token_if_eq_charcode:NNTF \c_hash_str }
+          { \exp_after:wN \automaticval \use_none:n }
+        { \token_if_eq_charcode:NNTF * }
+          { \exp_after:wN \repinitval \use_none:n }
+        { \token_if_eq_charcode:NNTF ! }
+          { \exp_after:wN \resetval \use_none:n }
       }
-      {
-        \exp_args:NNo \token_case_charcode:NnF \l_peek_token 
-          {
-            \c_hash_str { \exp_after:wN \automaticval \use_none:n }
-            *                { \exp_after:wN \repinitval \use_none:n } 
-            !                { \exp_after:wN \resetval \use_none:n } 
-          }
-          { \initialval }
-      }
+      { \initialval }
+      { }
+    %\token_if_macro:NTF \l_peek_token
+    %  {
+    %    \token_case_meaning:NnF \l_peek_token
+    %      { 
+    %        \__cus_doc_shorthand_align: { \exp_after:wN \forbiddenval \use_none:n }
+    %        \nobreakspace               { \exp_after:wN \initemptyval \use_none:n }
+    %      } 
+    %      { \initialval }
+    %  }
+    %  {
+    %    \exp_args:NNo \token_case_charcode:NnF \l_peek_token 
+    %      {
+    %        \c_hash_str { \exp_after:wN \automaticval \use_none:n }
+    %        *                { \exp_after:wN \repinitval \use_none:n } 
+    %        !                { \exp_after:wN \resetval \use_none:n } 
+    %      }
+    %      { \initialval }
+    %  }
   }
 
 \ExplSyntaxOff
@@ -1736,61 +1817,12 @@
 \def\TFF{true\orbar\defaultval{false}}
 \begingroup
 \catcode`\^^M=\active %
-\gdef\resetval#1^^M{\hfill 重设为\ignorespaces #1\par}
+\gdef\resetval#1^^M{\hfill 重设为：{\color{blue}\bfseries\ignorespaces #1}\par}
 \gdef\initemptyval#1^^M{\hfill 初始为空\ignorespaces #1\par}%
 \gdef\forbiddenval#1^^M{\hfill 不可设置值\ignorespaces #1\par}%
 \gdef\automaticval#1^^M{\hfill\ignorespaces #1自动设置值\par}%
 \gdef\repinitval#1^^M{\hfill\ignorespaces #1\par}%
 \gdef\initialval#1^^M{\hfill 初始值：{\color{blue}\bfseries\ignorespaces #1}\par}%
 \endgroup%
-
-\def\TikZ{\hologo{TikZ}}
-\def\HoLogo@TikZ#1{Ti\textcolor{orange}{\textit{k}}Z}
-\def\HoLogoBkm@TikZ#1{TikZ}
-\def\TeX{\hologo{TeX}}
-\let\TEX\TeX
-\def\plainTeX{\hologo{plainTeX}}
-\def\eTeX{\hologo{eTeX}}
-\def\pdfTeX{\hologo{pdfTeX}}
-\def\pdfLaTeX{\hologo{pdfLaTeX}}
-\def\XeTeX{\hologo{XeTeX}}
-\def\XeLaTeX{\hologo{XeLaTeX}}
-\def\LuaLaTeX{\hologo{LuaLaTeX}}
-\def\LuaHBTeX{\hologo{LuaHBTeX}}
-\def\LuaMetaTeX{\hologo{LuaMetaTeX}}
-\def\pdfLaTeX{\hologo{pdfLaTeX}}
-\def\LaTeX{\hologo{LaTeX}}
-\let\LATEX\LaTeX
-\def\LaTeXe{\hologo{LaTeX2e}}
-\let\LATEXe\LaTeXe
-\def\LaTeXiii{\hologo{LaTeX3}}
-\def\dvipdfmx{\hologo{DVIPDFMx}}
-\def\TeXLive{\hologo{TeXLive}}
-\def\MiKTeX{\hologo{MiKTeX}}
-\def\pTeX{\hologo{pTeX}}
-\def\ApTeX{\hologo{ApTeX}}
-\def\upTeX{\hologo{upTeX}}
-\def\ApLaTeX{\hologo{ApLaTeX}}
-\def\upLaTeX{\hologo{upLaTeX}}
-\def\ConTeXt{\hologo{ConTeXt}}
-\def\HoLogo@LuaMetaTeX#1{LuaMeta\kern -.05em \hologo{TeX}}
-\def\HoLogo@pTeX#1{p\kern -.15em \hologo{TeX}}
-\def\HoLogo@pLaTeX#1{p\kern -.05em \hologo{LaTeX}}
-\def\HoLogo@ApTeX#1{A\kern -.05em \hologo{pTeX}}
-\def\HoLogo@upTeX#1{u\kern -.05em \hologo{pTeX}}
-\def\HoLogo@ApLaTeX#1{A\kern -.05em \hologo{pLaTeX}}
-\def\HoLogo@upLaTeX#1{u\kern -.05em \hologo{pLaTeX}}
-\def\HoLogo@ConTeXt#1{Con\hologo{TeX}t}
-\def\HoLogoBkm@LuaHBTeX#1{LuaHB\hologo{TeX}}
-\def\HoLogoBkm@LuaMetaTeX#1{LuaMeta\hologo{TeX}}
-\def\HoLogoBkm@pTeX#1{p\hologo{TeX}}
-\def\HoLogoBkm@pLaTeX#1{p\hologo{LaTeX}}
-\def\HoLogoBkm@ApTeX#1{A\hologo{pTeX}}
-\def\HoLogoBkm@upTeX#1{u\hologo{pTeX}}
-\def\HoLogoBkm@ApLaTeX#1{A\hologo{pLaTeX}}
-\def\HoLogoBkm@upLaTeX#1{u\hologo{pLaTeX}}
-\def\HoLogoBkm@ConTeXt#1{Con\hologo{TeX}t}
-\def\HoLogo@TeXLive#1{\TeX\ Live}
-\def\HoLogo@DVIPDFMx#1{DVIPDFM\ensuremath{x}}
 
 \ExplSyntaxOn

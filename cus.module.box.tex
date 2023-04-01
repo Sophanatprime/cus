@@ -36,6 +36,8 @@
     \int_zero:N \@mplistdepth
     \@minipagerestore \@setminipage
   }
+\cs_new_protected:Npn \cus_gset_vbox_width:Nnw 
+  { \tex_global:D \cus_set_vbox_width:Nnw }
 \cs_new_protected:Npn \cus_set_vbox_width_end:
   {
     \par \tex_unskip:D 
@@ -48,10 +50,16 @@
     \legacy_if_set_false:n { @minipage }
     \vbox_set_end:
   }
+\cs_new_eq:NN \cus_gset_vbox_width_end: \cus_set_vbox_width_end:
 \cs_new_protected:Npn \cus_set_vbox_varwidth:Nnw
   {
     \cs_set_eq:NN \@minipagerestore \@vwid@setup
     \cus_set_vbox_width:Nnw 
+  }
+\cs_new_protected:Npn \cus_gset_vbox_varwidth:Nnw
+  {
+    \cs_set_eq:NN \@minipagerestore \@vwid@setup
+    \cus_gset_vbox_width:Nnw 
   }
 \cs_set_eq:NN \__cus_tmp: \endvarwidth 
 \ctex_patch_cmd_once:NnnnTF \__cus_tmp: 
@@ -63,6 +71,7 @@
   } 
   { } { \cus_patch_failure:N \endvarwidth }
 \cs_new_protected:Npx \cus_set_vbox_varwidth_end: { \exp_not:o \__cus_tmp: }
+\cs_new_eq:NN \cus_gset_vbox_varwidth_end: \cus_set_vbox_varwidth_end:
 
 
 % \cs_new_protected:Npn \cus_peek_minipage:Nnnnw #1#2#3#4 % box num, vpos, width, code, 
@@ -1005,6 +1014,8 @@
           }
       }
   }
+\dim_new:N \cus@multicol@extra@height 
+\dim_new:N \cus@multicol@extra@width 
 %%
 % ref: https://tex.stackexchange.com/a/132461/232375
 % \cs_set:Npn \__cus_tmp:w #1\hbox to\full@width#2#3!!
@@ -1024,22 +1035,22 @@
   }
 % \def\foo#1\hsize\linewidth#2!!{%
 %   \def\prepare@multicols{#1%
-%     \cus@update@multi@width\linewidth
+%     \advance\linewidth-\cus@multicol@extra@width 
 %     \hsize\linewidth#2}}
 % \expandafter\foo\prepare@multicols!!
 \ctex_patch_cmd:Nnn \prepare@multicols { \hsize\linewidth }
   {
-    \cus@update@multi@width\linewidth
+    \advance\linewidth-\cus@multicol@extra@width 
     \hsize\linewidth
   }
 % \def\foo#1\dimen@\@colroom#2!!{%
 %   \def\multi@column@out{#1%
-%     \cus@update@multi@height\@colroom
+%     \advance\@colroom-\cus@multicol@extra@height 
 %     \dimen@\@colroom#2}}
 % \expandafter\foo\prepare@multicols!!
 \ctex_patch_cmd:Nnn \multi@column@out { \dimen@\@colroom }
   {
-    \cus@update@multi@height\@colroom 
+    \advance\@colroom-\cus@multicol@extra@height 
     \dimen@\@colroom 
   }
 \cs_set_eq:NN \cus@restore@LR@column@boxes \LR@column@boxes
@@ -1143,24 +1154,27 @@
       } ,
   }
 \cs_new_protected:Npn \__cus_multicolumns_process_framedoptions: 
-  { 
-    \__cus_filter_geometry_options:NNN 
-      \cus@multicol@framed@options 
-      \cus@multicol@framedgeometry@options 
-      \cus@multicol@framed@options 
-    \exp_args:No \cus@update@multi@framedgeometry \cus@multicol@framedgeometry@options 
+  {
+    \hbox_set:Nn \c_zero_int % we never use it 
+      { 
+        \exp_args:No \cus@update@multi@framedgeometry { \cus@multicol@framed@options } 
+        \cus@update@multi@height \cus@multicol@extra@height 
+        \cus@update@multi@width  \cus@multicol@extra@width 
+        \dim_gset_eq:NN \cus@multicol@extra@height \cus@multicol@extra@height 
+        \dim_gset_eq:NN \cus@multicol@extra@width  \cus@multicol@extra@width
+      }
   }
 \keys_define:nn { cus/multicolumns }
   {
     framed / fbox .code:n = 
       {
         \cs_set_protected:Npn \cus@update@multi@height ##1
-          { \advance##1-\dimexpr2\fboxrule+2\fboxsep\relax }
+          { ##1=\dimexpr2\fboxrule+2\fboxsep\relax }
         \cs_set_eq:NN \cus@update@multi@width \cus@update@multi@height 
         \cs_set_protected:Npn \cus@update@multi@box ##1
           { \hbox{\fbox{##1}} }
         \cs_set_protected:Npn \cus@update@multi@framedgeometry ##1 
-          { \keyval_parse:nnn \scan_stop: \__cus_set_fbox_geometry:nn {##1} }
+          { \keyval_parse:nnn \use_none:n \__cus_set_fbox_geometry:nn {##1} }
       }
   }
 \cs_new_protected:Npn \__cus_set_fbox_geometry:nn #1#2
@@ -1176,7 +1190,7 @@
   }
 \cs_new_protected_nopar:Npn \cus@startmulticolumns { \begin{multicols} }
 \cs_new_protected_nopar:Npn \cus@stopmulticolumns  { \end{multicols} }
-\NewDocumentCommand \startmulticolumns { O{} }
+\NewDocumentCommand \startmulticolumns { +O{} }
   {
     \group_begin:
     \keys_set:nn { cus/multicolumns } {#1}
