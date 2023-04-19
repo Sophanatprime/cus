@@ -26,7 +26,7 @@
 \cs_new:Npn \__cus_cmd_xxpand_argument_e:n {              \__cus_cmd_set_argument:x }
 \cs_new:Npn \__cus_cmd_xxpand_argument_f:n { \exp_args:Nf \__cus_cmd_set_argument:n }
 \cs_new:Npn \__cus_cmd_xxpand_argument_x:n {              \__cus_cmd_set_argument:x }
-\cs_new:Npn \__cus_cmd_xxpand_argument_sT:n #1
+\cs_new:Npn \__cus_cmd_xxpand_argument_sX:n #1
   { \__cus_cmd_set_argument:x { \text_expand:n {#1} } }
 \cs_new:Npn \__cus_cmd_xxpand_argument_sF:n #1
   { \__cus_cmd_set_argument:x { \text_purify:n {#1} } }
@@ -34,7 +34,7 @@
   { \protected@edef \ProcessedArgument { \ProcessedArgument } }
 \cs_new:Npn \__cus_cmd_xxpand_argument_sS:n #1
   { \__cus_cmd_set_argument:x { \tl_to_str:n {#1} } }
-\cs_new_eq:NN \__cus_cmd_xxpand_argument_p:n \__cus_cmd_xxpand_argument_sT:n
+\cs_new_eq:NN \__cus_cmd_xxpand_argument_p:n \__cus_cmd_xxpand_argument_sX:n
 \cs_new_protected:Npn \__cus_cmd_regex_replace_argument:w #1 #
   { \tl_trim_spaces_apply:nN {#1} \__cus_cmd_regex_replace_argument_aux:nnnn }
 \cs_new:Npn \__cus_cmd_regex_replace_argument_aux:nnnn #1#2#3#4

@@ -1,6 +1,6 @@
-% \DocumentMetadata{pdfversion=1.7}
+\DocumentMetadata{pdfversion=1.7}
 \documentclass[twoside]{book}
-\overfullrule10pt 
+% \overfullrule10pt 
 \PassOptionsToPackage{silent}{xeCJK}
 \usepackage{ctex}
 \usepackage{fontawesome5}
@@ -42,9 +42,6 @@
 %   BoldFont       = *-bold,
 %   ItalicFont     = *-italic,
 %   BoldItalicFont = *-bolditalic]
-\makeatletter
-\setfontface\cus@doc@itfont{texgyrepagella-italic}[Extension=.otf,BoldFont=texgyrepagella-bolditalic]
-\makeatother
 \setmainfont{TeXGyreTermesX}[
   Extension      = .otf,
   UprightFont    = *-Regular,
@@ -116,37 +113,41 @@
 %region title setting
 \makeatletter
 \@secpenalty=-\@m 
+%% 空 mark 实际上保存为了 \prg_do_nothing:，这里并不直接检测，而利用一个空的 mark
+\NewMarkClass{totalempty}
+\InsertMark{totalempty}{}
 \NewMarkClass{chapter/head}
 \NewMarkClass{section/head}
 \long\def\chaptermark#1{%
-  \InsertMark{chapter/head}{\noexpand\hyperlink{\@currentHref}{#1}}%
+  \InsertMark{chapter/head}{\protect\hyperlink{\@currentHref}{#1}}%
   \InsertMark{section/head}{}}
 \long\def\sectionmark#1{%
-  \InsertMark{section/head}{\noexpand\hyperlink{\@currentHref}{#1}}}
+  \InsertMark{section/head}{\protect\hyperlink{\@currentHref}{#1}}}
 \def\@chaptosec{\;\texttt{>\kern-.1em >}\;}
 \def\@splitrange{\ \texttt{=\kern-.1em =\kern-.2em >}\ }
-\def\head@ifempty#1{\ifthenelse{\equal{#1}{}}}
+\def\head@ifempty#1{\ifthenelse{\equal{#1}{}\OR\equal{#1}{\TopMark{totalempty}}}}
 \def\head@hifeq#1{\IfMarksEqualTF{#1/head}}
 \def\head@ifeq#1#2{\ifthenelse{\equal{#1}{#2}}}
 \def\head@ct{\TopMark{chapter/head}} \def\head@st{\TopMark{section/head}}
 \def\head@cf{\FirstMark{chapter/head}} \def\head@sf{\FirstMark{section/head}}
 \def\head@cl{\LastMark{chapter/head}} \def\head@sl{\LastMark{section/head}}
+\def\head@fc#1{{\bfseries #1}} \def\head@fs#1{{#1}}
 \newcommand\marked@title{%
   \head@hifeq{chapter}{first}{last}{%
     \head@ifempty\head@cf{}
       {\head@ifempty\head@ct
-        {\head@cf\head@ifempty\head@sl{}{\@chaptosec
-          \head@ifeq\head@sf\head@sl{\head@sf}{\head@sf
-            \head@ifempty\head@sl{}{\@splitrange\head@sl}}}}
+        {\head@fc\head@cf\head@ifempty\head@sl{}{\@chaptosec
+          \head@ifeq\head@sf\head@sl{\head@fs\head@sf}{\head@fs\head@sf
+            \head@ifempty\head@sl{}{\@splitrange\head@fs\head@sl}}}}
         {\head@ifeq\head@ct\head@cf
-          {\head@ct\head@ifempty\head@sf{}
+          {\head@fc\head@ct\head@ifempty\head@sf{}
             {\@chaptosec\head@ifeq\head@sf\head@sl
-              {\head@sf}{\head@sf\@chaptosec\head@sl}}}
-          {\head@ct\head@ifempty\head@st{}{\@chaptosec\head@st}\@splitrange
-            \head@cl\head@ifempty\head@sl{}{\@chaptosec\head@sl}}}}%
-  }{\head@cf\@splitrange\head@cl}}
+              {\head@fs\head@sf}{\head@fs\head@sf\@chaptosec\head@fs\head@sl}}}
+          {\head@fc\head@ct\head@ifempty\head@st{}{\@chaptosec\head@fs\head@st}\@splitrange
+            \head@fc\head@cl\head@ifempty\head@sl{}{\@chaptosec\head@fs\head@sl}}}}%
+  }{\head@fc\head@cf\@splitrange\head@fc\head@cl}}
 \setuptitle[chapter]{pagestyle=fancy, 
-  fixskip, break=\addpenalty{\@secpenalty}, 
+  fixskip, break=\needspace{100pt}, 
   beforeskip=30pt, afterskip=25pt, format=\zihao{-2}\bfseries\centering,}
 \setuptitle[section]{fixskip, name={\texorpdfstring{\S~}{\S}},
   beforeskip=20pt plus 5pt minus 5pt, afterskip=15pt plus 2pt minus 2pt,
@@ -157,13 +158,8 @@
   format=\zihao{-4}\bfseries\raggedright,}
 
 \providecommand\headlink@warp[1]{#1}
-\setpagestyle*{plain}{
-  \setheadrulewidth{0pt}
-  \setfootrulewidth{0pt}
-  \setheadfoot{}
-}
-\setpagestyle{fancy}{
-  \setheadfoot {}
+\setpagestyle{plain}[totalempty]{}
+\setpagestyle*{fancy}[totalempty]{
   \sethead [ol,er] {\CusTeX 宏集手册}
   \sethead [or,el] {\headlink@warp\marked@title}
   % \setfoot [or,el] {\texttt{Longaster@163.com}}
@@ -173,6 +169,21 @@
 \makeatother
 %endregion
 
+\makeatletter
+\protected\def\this@doc@externallink{\raisebox{-.8ex}[0pt][0pt]{\hi{\faIcon{external-link-alt}}}}
+\protected\def\this@doc@linkpage{\raisebox{.8ex}[0pt][0pt]{\lo{P.\labelinfo{page}{\cus@doc@thelabel}}}}
+\protected\def\this@doc@linkinfo{\lohi{\,\rmfamily\this@doc@linkpage}{\,\this@doc@externallink}}
+\def\cus@doc@basic@format{\ifx\cus@doc@thelabel\@empty \cus@doc@thetext
+  \else \hyperref[\cus@doc@thelabel]{\cus@doc@thetext\this@doc@linkinfo}\!\fi}
+\def\cus@doc@cs@format#1{\hypersetup{linkcolor=cus/color/doc cs}\cus@doc@basic@format}
+\let\cus@doc@cmd@format\cus@doc@cs@format
+\let\cus@doc@tn@format\cus@doc@cs@format
+\def\cus@doc@key@format#1{\hypersetup{linkcolor=cus/color/doc key}\cus@doc@basic@format}
+\def\cus@doc@csref@format#1{\cus@doc@basic@format}
+\def\cus@doc@envref@format#1{\cus@doc@basic@format}
+\def\cus@doc@keyref@format#1{\cus@doc@basic@format}
+\setfontface\cus@doc@itfont{texgyrepagella-italic}[Extension=.otf,BoldFont=texgyrepagella-bolditalic]
+\makeatother
 \definecolor{cus/color/doc cs}{RGB}{180,116,107}
 \definecolor{cus/color/doc env}{RGB}{216,156,122}
 \definecolor{cus/color/doc key}{RGB}{138,149,169}
@@ -270,15 +281,17 @@
 \maketitle
 
 \frontmatter
-\usepagestyle{fancy}
-\setuptitle[chapter]{numbering=false}
+\setpagestyle+{fancy.contents}[fancy]{\sethead[or,el]{\UseName{head@fc}\firstmark}}
+\setuptitle[chapter]{numbering=false,pagestyle=}
 \renewcommand{\contentsname}{总目录}
-\tableofcontents[ragged,outer-sep=0pt,sep=1.5em,2]
+{\long\def\chaptermark#1{\mark{{\noexpand\hyperlink{\UseName{@currentHref}}{\contentsname}}{}}}
+  \tableofcontents[ragged,outer-sep=0pt,sep=1.5em,2]}
 
 
 \mainmatter
 \setuplayout{preset=main}
-\setuptitle[chapter]{numbering=true}
+\usepagestyle{fancy}
+\setuptitle[chapter]{numbering=true,pagestyle=fancy}
 \removebackground[./watermark]
 
 
@@ -415,7 +428,7 @@ Logo。输出 \CusTeX，\CusLaTeX。
   \begin{syntax}
     \V\cusemoji \marg{pic filename}
   \end{syntax}
-插入一张图片，它的（总）高度为当前文字的高度，向下移动 \cs{cusemojilowerratio} 个文字的高度。
+插入一张图片，它的（总）高度为当前文字的高度，向下移动 \cs{cusemojilowerra\-tio} 个文字的高度。
 \cs{cusemojilowerratio} 必须为 \texttt{0} 或 \veta{a}\texttt/\veta{b}，其中 \veta{a}、
 \veta{b} 为非零整数；如果是负数则向上移动。\cs{cusemojilowerratio} 默认为 \texttt{1/8}。
 
@@ -443,7 +456,7 @@ Logo。输出 \CusTeX，\CusLaTeX。
   \begin{syntax}
     \V\ReplaceArgumentIf \marg{test function} \marg{true replacement} \marg{false replacement}
   \end{syntax}
-\meta{test function} 应该吸收三个参数，分别为要测试的值、true 分支、false 分支。
+\meta{test function} 需要三个参数，分别为要测试的值、true 分支、false 分支。
 当测试为真时，把参数替换为 \meta{true replacement}，否则，替换为 \meta{false replacement}。
 \end{function}
 
@@ -466,7 +479,7 @@ Logo。输出 \CusTeX，\CusLaTeX。
     \V\ReplaceArgumentIfEqual    \marg{tl} \marg{true replacement} \marg{false replacement}
     \V\ReplaceArgumentIfStrEqual \marg{str} \marg{true replacement} \marg{false replacement}
   \end{syntax}
-判断参数是否等于 \meta{tl}，如果是则替换为 \meta{true replacement}，否则，
+判断参数是否等于 \meta{tl}（或 \meta{str}），如果是则替换为 \meta{true replacement}，否则，
 替换为 \meta{false replacement}。
 \end{function}
 
@@ -507,9 +520,9 @@ Logo。输出 \CusTeX，\CusLaTeX。
 此外，还有几个特殊的 spec：
 \begin{itemize}
   \item[\texttt{sS}] --- 把参数转化为字符串，（使用 \tn{detokenize}）；
-  \item[\texttt{sT}] --- 和 \verb|p| 完全一样，（使用 \cs{text_expand:n}）；
+  \item[\texttt{sX}] --- 和 \verb|p| 完全一样，（使用 \cs{text_expand:n}）；
   \item[\texttt{sF}] --- 类似于 \verb|x|，但不可展开的记号和未定义的命令被移除了，（使用 \cs{text_purify:n}）；
-  \item[\texttt{sP}] --- 类似于 \verb|sT|，速度更快，但数学公式中的命令会被展开，未定义的命令也会出错。
+  \item[\texttt{sP}] --- 类似于 \verb|sX|，速度更快，但数学公式中的命令会被展开，未定义的命令也会出错。
 \end{itemize}
 \end{function}
 
@@ -1258,24 +1271,37 @@ Unicode 代码点。
 
 本节所述的功能主要通过 \pkg{fancyhdr} 实现。
 
-\begin{function}{\usepagestyle}
+\begin{function}{\usepagestyle, \usethispagestyle}
   \begin{syntax}
     \verb|\usepagestyle| \marg{pagestyle}
   \end{syntax}
-使用页眉页脚的样式 \meta{pagestyle}。
+\cs{usepagestyle} 页眉页脚的样式 \meta{pagestyle}。\cs{usethispagestyle} 设置本页的样式。
 
 有一个预定义的样式 \texttt{totalempty}，它将页眉页脚设置为空，并将页眉页脚横线的厚度设为 \texttt{0pt}。
 \end{function}
 
-\begin{function}{\setpagestyle}
+\begin{function}[EXP]{\@currpagestyle, \@specialstyle}
+只读。展开为当前使用的样式名 \meta{pagestyle} 或 \tn{usethispagestyle} 设置的样式名。
+\end{function}
+
+\begin{function}{\setpagestyle,\copypagestyle}
   \begin{syntax}
     \verb|\setpagestyle|   \marg{pagestyle} \marg{code}
     \verb|\setpagestyle|   \marg{pagestyle_1} \oarg{pagestyle_2} \marg{code}
     \verb|\setpagestyle| * \marg{pagestyle_1} \oarg{pagestyle_2} \marg{code}
+    \verb|\setpagestyle| . \marg{pagestyle_1} \oarg{pagestyle_2} \marg{code}
+    \verb|\setpagestyle| + \marg{pagestyle_1} \oarg{pagestyle_2} \marg{code}
+    \V\copypagestyle  \marg{pagestyle_1} \marg{pagestyle_2}
   \end{syntax}
 设置样式 \marg{pagestyle}，或基于样式 \meta{pagestyle_2} 设置 \meta{pagestyle_1}。
+如果 \meta{pagestyle_2} 发生改变，那么 \meta{pagestyle_1} 也可能随之改变。
 
-带 \verb|*| 的，仅设置而不使用。不带 \verb|*| 的，还会立刻使用该样式。
+不带其它符号的，仅设置而不使用。
+带 \verb|*| 的，还会立刻使用该样式，但不会修改 \cs{usethispagestyle} 所设置的样式。
+带 \verb|.| 的，修改 \cs{usethispagestyle} 所设置的样式。
+带 \verb|+| 的，相当于同时使用 \cs{usepagestyle} 和 \cs{usethispagestyle}。
+
+\cs{copypagestyle} 把样式 \meta{pagestyle_2} 复制给 \meta{pagestyle_1}。
 \end{function}
 
 \begin{function}{\sethead,\setfoot,\setheadfoot,
@@ -1972,6 +1998,18 @@ Unicode 代码点。
 \end{itemize}
 \end{function}
 
+本例展示在页面样式的代码中为本页增加背景文字：
+% \setpagestyle 总是局部的
+\edef\next{\setpagestyle.{tmpstyle}[\UseName{@currpagestyle}]}
+\next{\background(lt){\textcolor{red}{\LARGE\CusTeX}}}
+\begin{xample}
+\edef\next{\setpagestyle.{tmpstyle}[\UseName{@currpagestyle}]}
+\next{\background(lt){\textcolor{red}{\LARGE\CusTeX}}}
+\stopxamplecode
+\xampleprint
+如本页左上角所示。
+\end{xample}
+
 除了上述两个命令外，还提供了两个设置背景图片的命令。
 
 \begin{function}{\foregroundpicture,\backgroundpicture}
@@ -2153,7 +2191,7 @@ Unicode 代码点。
 
 \subsection{初始化设置}
 
-初始化设置选项可以在导言区修改任意次，但不可在正文设置。
+初始化设置选项可以在导言区修改任意次，但不可在正文中设置。
 
 \begin{keyval}[path=title/...]{number-from,number-within,number-without}
   \begin{syntax}
@@ -2200,24 +2238,39 @@ Unicode 代码点。
 设置对章节标题进行编号的层次数。可以是整数或层级名称。
 
 \CusTeX 预先定义了一些层级名称，如\cref{tab:level-name} 所示。
-\marginnote{\linespread{1.1}\small\ttabbox
-{\setcaptiontype{table}
- \begin{tabular}{r>{\ttfamily}l}
-  \toprule
-  层级 & \multicolumn{1}{c}{名称} \\
-  \midrule
-  -1 & part \\
-  0 & chapter \\
-  1 & section \\
-  2 & subsection \\
-  3 & subsubsection \\
-  4 & paragraph \\
-  5 & subparagraph \\
-  4 & sub3section \\
-  5 & sub4section \\
-  \bottomrule
-\end{tabular}}{\caption{层级名称}\label{tab:level-name}}}[2cm]
 \end{function}
+
+\begin{table}[htb]
+\linespread{1.1}\small 
+\begin{pagecenterbox}
+\begin{tabular}{l>{\ttfamily}c>{\ttfamily}c>{\ttfamily}c>{\ttfamily}c>{\ttfamily}c}
+  \toprule
+  层级 & -1&0&1&2&3 \\ \midrule
+  名称 & part&chapter&section&subsection&subsubsection \\ \specialrule{\heavyrulewidth}{\aboverulesep}{\belowrulesep}
+  层级 &4&5&4&5& \\ \midrule
+  名称 &paragraph&subparagraph&sub3section&sub4section& \\ \bottomrule
+\end{tabular}
+\end{pagecenterbox}
+\captionsetup{margin={\dimeval{\paperwidth-3.4cm-\textwidth},0pt}}
+\caption{层级名称}\label{tab:level-name}
+\end{table}
+% \marginnote{\linespread{1.1}\small\ttabbox
+% {\setcaptiontype{table}
+%  \begin{tabular}{r>{\ttfamily}l}
+%   \toprule
+%   层级 & \multicolumn{1}{c}{名称} \\
+%   \midrule
+%   -1 & part \\
+%   0 & chapter \\
+%   1 & section \\
+%   2 & subsection \\
+%   3 & subsubsection \\
+%   4 & paragraph \\
+%   5 & subparagraph \\
+%   4 & sub3section \\
+%   5 & sub4section \\
+%   \bottomrule
+% \end{tabular}}{\caption{层级名称}\label{tab:level-name}}}[2cm]
 
 \begin{keyval}[path=title/...]{numbering}
   \begin{syntax}
@@ -2232,8 +2285,6 @@ Unicode 代码点。
 因此 \cs{section} 会被编号当且仅当 \texttt{secnumdepth}
 不小于 1，且其 \opt{numbering} 键为 \opt{true}，并且使用不带星号的章节命令。
 \end{keyval}
-
-\vspace{1.2cm}
 
 \begin{keyval}[path=title/...]{name,name-preto,name-appto}
   \begin{syntax}
@@ -2305,7 +2356,10 @@ Unicode 代码点。
   \begin{syntax}
     pagestyle = \marg{pagestyle}
   \end{syntax}
-\texttt{page} （如 \cs{part}）和 \texttt{top} （如 \cs{chapter}）标题类还可以设置该标题所在页的页面样式。在 \texttt{normal} 标题类中无效。关于页面样式的相关内容，见\cref{sec:pagestyle}。
+\texttt{page} （如 \cs{part}）和 \texttt{top} （如 \cs{chapter}）标题类还可以设置该标题所在页的页面样式。在 \texttt{normal} 标题类中无效。
+值为空时，不会修改页面样式。
+
+关于页面样式的相关内容，见\cref{sec:pagestyle}。
 \end{keyval}
 
 
@@ -2393,9 +2447,10 @@ Unicode 代码点。
 
 \begin{keyval}[path=title/...]{float-barrier}
   \begin{syntax}
-    float-barrier = <&\TTF>
+    float-barrier = <&\TTF> & false 
   \end{syntax}
-控制是否本章节所属的浮动体可以位于其它章节内。默认情况下浮动体可以放置在其它章节内（值为 \opt{true}）。
+控制是否本章节所属的浮动体可以位于其它章节内，为 \opt{true} 时，浮动体不能放在其它章节内。
+默认情况下浮动体可以放置在其它章节内。
 \end{keyval}
 
 除了使用以上这个选项，还可以设置浮动体的“边界”。
@@ -2449,7 +2504,7 @@ Unicode 代码点。
 设置已有的样式。
 \end{keyval}
 
-\begin{function}{\titleifname}
+\begin{function}[EXP]{\titleifname}
   \begin{syntax}
     \verb|\titleifname| \marg{有名字时的内容} \marg{无名字时的内容}
   \end{syntax}
@@ -2721,13 +2776,13 @@ Unicode 代码点。
 
 \LaTeX 的 \tn{label} 可以标记位置用于交叉引用，\pkg{hyperref} 宏包还提供了超链接的功能，\pkg{bookmark} 宏包则提供了书签功能。本模块封装了其中的某些命令，但不会自动加载这些宏包，需要用户自行加载或使用 \CusTeX 提供的宏包加载机制来加载。
 
-\begin{function}[EXP]{\lableinfo,\cus_label_info:nn}
+\begin{function}[EXP]{\labelinfo,\cus_label_info:nn}
   \begin{syntax}
-    \verb|\lableinfo| \marg{info} \marg{label}
+    \verb|\labelinfo| \marg{info} \marg{label}
   \end{syntax}
 获取 \meta{label} 的相关信息。\meta{label} 可以为空，代表最近写入的那个 label。
 
-可获得的信息 \marg{info} 为：
+可获得的信息 \meta{info} 为：
 \begin{itemize}[nosep]
   \item \texttt{name}，\meta{label} 的值；
   \item \texttt{page}，获得 \meta{label} 所在页的 \tn{thepage} 值，若 \meta{label} 不存在则为 \texttt{0}；
@@ -2790,7 +2845,8 @@ Unicode 代码点。
   \end{syntax}
 将 \meta{text} 或 \meta{material} 链接到 \meta{label} 或 \meta{target}。
 
-\meta{text} 可以断行，但不能包含特殊文本。\meta{material} 中可以包含特殊文本，如 verbatim，但不可断行。
+\meta{text} 可以断行，但不能包含特殊文本。\meta{material} 中可以包含特殊文本，如 verbatim，仅能在特殊的位置断行。
+另见 \cs{cus_ref_label_shbox:nn}、\cs{cus_ref_target_shbox:nn}。
 
 \meta{material} 可以是 \texttt\{\BNFN{horizontal mode material}\texttt\}，正如 \tn{hbox}
 \texttt\{\BNFN{horizontal mode material}\texttt\} 那样，也可以有 \BNFN{box specification}。左右括号可以是隐式的。
@@ -3131,15 +3187,14 @@ Unicode 代码点。
 \xampleprint
 \end{xample}
 
-\begin{function}{\cus_tl_split_braced:nn,\cus_tl_split_braced:NNNN}
+\begin{function}[EXP]{\cus_tl_split_braced:nn}
   \begin{syntax}
     \V*|\cus_tl_split_braced:nn|   \marg{tl_1} \marg{tl_2}
-    \V*|\cus_tl_split_braced:NNNN| <tl var_1> <tl var_2> <tl var_3> <tl var_3>
   \end{syntax}
 \cs{cus_tl_split_braced:nn} 提取 \meta{tl_1} 和 \meta{tl_2} 的值，将它们分别拆成两个部分，
 这拆分的四个部分中，第 1、3 部分的长度为 \meta{tl_1} 和 \meta{tl_2} 中长度的较小值。
-第 2、4 个部分为剩余的值，当中有一个为空。这四个部分的每一项都由括号括起来。
-即，若设 \meta{tl_1} 的长度大于 \meta{tl_2}，则 
+第 2、4 个部分为剩余的值，当中至少有一个为空。这四个部分的每一项都由括号括起来。
+即，若设 \meta{tl_1} 的长度小于 \meta{tl_2}，则 
 \begingroup \linespread{1}\selectfont \jot=0pt
 \begin{align*}
   \text{\veta{tl_1}} &= a_1,a_2,\cdots,a_m \\
@@ -3151,11 +3206,16 @@ Unicode 代码点。
 \end{align*}
 \endgroup
 \UNEXPANDEDRESULT
+\end{function}
 
+\begin{function}{\cus_tl_split_braced:NNNN}
+  \begin{syntax}
+    \V*|\cus_tl_split_braced:NNNN| <tl var_1> <tl var_2> <tl var_3> <tl var_3>
+  \end{syntax}
 \cs{cus_tl_split_braced:NNNN} 提取 \meta{tl var_1} 和 \meta{tl var_2} 的值，
 将它们分别拆成两个部分，将这些值保存到 4 个 \meta{tl var} 中。
 其中 \meta{tl var_1} 和 \meta{tl var_2} 为前一部分，\meta{tl var_3} 和 \meta{tl var_4}
-为后一部分，当中有一个为空。
+为后一部分，当中至少有一个为空。
 \end{function}
 
 \begin{xample}
@@ -3558,6 +3618,52 @@ Unicode 代码点。
 \xampleprint 
 \end{xample}
 另见 \csref(HyperRef2){HyperRef}、\csref(HyperLink2){HyperLink} 及\cref{eg:hyperref-fparbox}。
+
+\subsection{特殊的“水平”盒子}
+
+\TeX 的 \tn{hbox} 所创建的盒子是\emph{受限水平模式}（restricted horizontal mode）
+下的盒子。这盒子中的 discretionary、penalty 等项被移除了，当使用 \tn{unhbox} 时，在某些位置
+无法断行。
+名为 \href{https://www.tug.org/TUGboat/tb11-4/tb30downes.pdf}{\itshape Line Breaking in \tn{unhbox}ed Text} 的 TUGBoat 文章介绍了一种方法，可以解决上述问题。
+
+本模块使用此种想法定义了几个命令。
+
+\begin{function}{\cus_set_shbox:Nw,\cus_set_shbox_end:}
+  \begin{syntax}
+    \V*|\cus_set_shbox:Nw| \meta{box}
+    ~~~~\meta{content}
+    \V*|\cus_set_shbox_end:|
+  \end{syntax}
+设置可正常断行的盒子。注意不允许在 \meta{content} 中手动断行。
+\end{function}
+
+\begin{function}{\cus_peek_shbox:Nnw}
+  \begin{syntax}
+    \V*|\cus_peek_shbox:Nnw| \meta{box} \marg{code} \meta{material}
+  \end{syntax}
+向后收集可正常断行的盒子。注意不允许在 \meta{content} 中手动断行。
+\end{function}
+
+\begin{function}{\cus_use_shbox:N}
+  \begin{syntax}
+    \V*|\cus_use_shbox:N| \meta{box}
+  \end{syntax}
+类似于 \cs{box_use:N}，使用上述两个命令设置的盒子必须使用这个命令来使用盒子。
+\end{function}
+
+注意在使用了 \cs{cus_set_shbox:Nw} 后如果没有使用 \cs{cus_use_shbox:N}，则不能再使用 \cs{cus_set_shbox:Nw}。
+
+使用这个技术使得超链接文本可以包含特殊文本且能够正常断行。
+
+\begin{function}{\cus_ref_label_shbox:nn,\cus_ref_target_shbox:nn}
+  \begin{syntax}
+    \V*|\cus_ref_label_shbox:nn| \marg{label} \meta{material}
+  \end{syntax}
+链接到 \meta{label} 或 \meta{target}。\meta{material} 可以包含特殊文本，可以断行，但不允许手动断行。
+
+另见 \cs{cus_ref_label_box:nn}、\cs{cus_ref_target_box:nn}。
+\end{function}
+
 
 
 \section{\cusmodule{struct}模块}\label{sec:struct-programming}
@@ -4025,7 +4131,7 @@ cbl 列表除了 \cs{cus@type@contentsline}、\cs{cus@type@contentsline@}、
 \xamplecode\medskip \label{eg:powerful-tocsetstyle}
 \end{xample}
 
-\begin{figure}[htb]\RawFloats
+\begin{figure}[H]%\RawFloats
 \begin{pagecenterbox}
 \begin{minipage}{\dimeval{\paperwidth-3.4cm}}
 \startmulticolumns[outer-sep=0pt,framed=fbox,ragged,overflow=0pt]
@@ -4363,7 +4469,8 @@ verbatim 和分段。
 
 本库提供 \cs{cs}、\cs{cmd}、\cs{tn} 来排版宏。
 
-\begin{function}{\cs,\cmd,\tn,\key}
+\begin{function}{\cs,\cmd,\tn,\key,
+  \cus@doc@cs@format,\cus@doc@cmd@format,\cus@doc@tn@format,\cus@doc@key@format}
 \begin{syntax}
   \verb|\cs|  \oarg{cmd key-val} \marg{macro name}
   \verb|\cmd| \oarg{cmd key-val} \marg{macro}
@@ -4371,6 +4478,9 @@ verbatim 和分段。
   \verb|\key| \oarg{cmd key-val} \marg{key name}
 \end{syntax}
 排版宏。\cs{tn} 专用于排版 \TeX 和 \LaTeXe 的宏。
+
+\cs{cus@doc@cs@format} 等命令则是修改显示的格式，最多可带有一个参数。
+这些命令中可以修改链接显示的颜色和字体。
 \end{function}
 
 \begin{keyval}[path=doc/cmd]{index,module,no-index,space,keyval,hyper,target}
@@ -4381,10 +4491,11 @@ verbatim 和分段。
   do-index = <&\TTF>  &#
   space    = <&\TTF> & false 
   keyval   = <&\TTF> &#
-  hyper    = <&\TTF> & true 
+  hyper    = <&\TTF|raw> & true 
   target   = <{target}> &#
+  target*  = <{target}>
 \end{syntax}
-\cs{cs}、\cs{cmd}、\cs{tn} 可用的键值选项。
+\csreflist{cs,cmd,tn} 可用的键值选项。
 
 \opt{no-index} 控制是否写入索引文件。\opt{do-index} 与 \opt{no-index} 相反。
 
@@ -4395,11 +4506,23 @@ verbatim 和分段。
 \opt{keyval} 控制是否为键值选项。
 
 \opt{hyper} 控制是否自动链接到该命令的说明处，仅当该命令的说明存在时有效。
-\opt{target} 设置链接的位置。
+\opt{target} 设置链接的位置。默认情况下，还会对 \meta{target} 进行一定的处理，
+如果已经可以确定无需再对 \meta{target} 进行处理，可以设置 \verb|hyper=raw|。
+\opt{target*=} 是 \verb|hyper=raw, target=| 的简写。
 \end{keyval}
 
-\begin{function}{\meta,\veta,\Arg,\oarg,\parg,\pkg,\env,\cls,\opt,\file,\docfile} 
+\begin{function}{\meta,\veta,\marg,\Arg,\oarg,\parg,\pkg,\env,\cls,\opt,\file,\docfile,
+  \cus@doc@meta@format,\cus@doc@veta@format,\cus@doc@marg@format,\cus@doc@oarg@format,
+  \cus@doc@parg@format,\cus@doc@pkg@format,\cus@doc@env@format,\cus@doc@cls@format,\cus@doc@opt@format} 
 排版宏的参数。
+
+\cs{cus@doc@meta@format} 等命令用于修改显示的格式。
+
+\cs{Arg} 相当于 \cs{marg}。
+
+\tn{file} 和 \tn{docfile} 相当于 \tn{nolinkurl}。不提供修改格式的接口。
+
+注意 \cs{marg}、\cs{oarg}、\cs{parg} 都包含 \cs{meta}。
 \end{function}
 
 \begin{function}[type=environment]{function}
@@ -4451,7 +4574,7 @@ verbatim 和分段。
   \verb|#| 在本环境中的类别码被设置为 12（other）。
 \end{texnote}
 
-\envreflist{function,keyval,syntax} 环境均可使用 \cs{V} 命令，它和 \csref{Verbatimize} 
+\envreflist{function,keyval,syntax} 环境均可使用 \cs{V} 命令，它和 \cs{Verbati\-mize} 
 一样，但以当前字体显示。
 
 \begin{keyval}[path=doc/function]{EXP,rEXP}
@@ -4547,7 +4670,8 @@ verbatim 和分段。
   \end{syntax}
 \end{function}
 
-\begin{function}{\csref,\csreflist,\envref,\envreflist,\keyref,\keyreflist}
+\begin{function}{\csref,\csreflist,\envref,\envreflist,\keyref,\keyreflist,
+  \cus@doc@csref@format,\cus@doc@envref@format,\cus@doc@keyref@format}
   \begin{syntax}
     \verb|\csref|      \oarg{类型} \marg{cs name}
     \verb|\csref|      \oarg{类型} \parg{cs label} \marg{cs name}
@@ -4560,6 +4684,8 @@ verbatim 和分段。
     \verb|\keyreflist| \oarg{key path} \marg{key name list}
   \end{syntax}
 引用命令，环境或键。对于列表的引用，可以通过 \cs{cus@doc@refrange} 修改分隔字符。
+
+\cs{cus@doc@csref@format} 等三个命令则是修改它们显示的格式，最多可带有一个参数。
 \end{function}
 
 \begin{function}{\cus@doc@ttfont,\cus@doc@itfont}
@@ -4733,24 +4859,27 @@ BNF 范式排版环境。
 
 \begin{function}{\HyperRef,\HyperLink}
   \begin{syntax}
-    \V\HyperRef   \marg{label} \marg{text}
-    \V\HyperRef * \marg{label} \meta{material}
-    \V\HyperLink   \marg{target} \marg{text}
-    \V\HyperLink * \marg{target} \meta{material}
+    \V\HyperRef   \marg{label} \marg{material}
+    \V\HyperRef * \marg{label} \marg{material}
+    \V\HyperLink   \marg{target} \marg{material}
+    \V\HyperLink * \marg{target} \marg{material}
   \end{syntax}
-\pkg{hyperref} 宏包提供了 \tn{hyperref} 和 \tn{hyperlink} 命令，用于链接到 label 或 hyper target，但是这两个命令的参数不能包含特殊的文本，如不能包含 verbatim 文本和 \tn{parbox} 等。
+\pkg{hyperref} 宏包提供了 \tn{hyperref} 和 \tn{hyperlink} 命令，用于链接到 label 或 hyper target，
+但是这两个命令的参数不能包含特殊的文本，如不能包含 verbatim 文本和 \tn{parbox} 等。
 \cs{HyperRef} 和 \cs{HyperLink} 用于解决这个问题。
 
-\cs{HyperRef}\marg{label}\marg{text} 和 \tn{hyperref}\oarg{label}\marg{text} 完全一样。
-其作用是把 \meta{text} 链接到 \meta{label} 所在的那个地方。
+\cs{HyperRef}\marg{label}\marg{material} 和 \tn{hyperref}\oarg{label}\marg{text} 效果完全一样。
+其作用是把 \meta{text} 链接到 \meta{label} 所在的那个地方，但可以包含特殊文本，仅能在特殊的位置断行。
 
 \cs{HyperLink}\marg{target}\marg{text} 和 \tn{hyperlink}\oarg{target}\marg{text}
-完全一样，其作用是把 \meta{text} 链接到 \meta{target} 所在的那个地方。
+完全一样，其作用是把 \meta{text} 链接到 \meta{target} 所在的那个地方，但可以包含特殊文本，仅能在特殊的位置断行。
 
-它们还有带星号的用法。功能相同，但 \meta{material} 中可以有特殊的文本，比如 verbatim，
-\env{parbox} 等，但 \meta{material} 本身并不能作为其它命令的参数。缺点是不能换行。
+它们还有带星号的用法。功能相同，但 \meta{material} 中可以有特殊的文本，也可以正常换行。
 
-另见 \csref{cus_ref_label_box:nn}、\csref{cus_ref_target_box:nn}。
+需注意比如虽然 \meta{material} 可以包含特殊文本，如 \env{parbox} 等，但其本身并不能作为其它命令的参数。
+
+另见 \csref{cus_ref_label_box:nn}、\csref{cus_ref_target_box:nn} 和 
+\csref{cus_ref_label_shbox:nn}、\csref{cus_ref_target_shbox:nn}。
 \end{function}
 
 除了上面所说的简单的用法，这两个命令还支持用可选参数设置 \meta{material} 的宽度、高度及对齐方式。
@@ -5018,9 +5147,9 @@ s_0,s_1,s_2&w_0&g_0&w_1&g_1&w_2\rlap{ (in \texttt{pt})}\\\hline
 
 \begin{xample}
 \hypersetup{linkcolor=red} 链接到
-\HyperRef*{sec:fparbox-fvarbox}{\fparbox[t]{3cm}
+\HyperRef{sec:fparbox-fvarbox}{\fparbox[t]{3cm}
   [border-color={}]{可以分段的\par \verb|\lfbox|}}
-\HyperRef*{sec:fparbox-fvarbox}{\fvarbox[c]{3cm}
+\HyperRef{sec:fparbox-fvarbox}{\fvarbox[c]{3cm}
   [border-color={}]{可以分段的\par \verb|\lfbox|}}
 \stopxamplecode
 \label{eg:hyperref-fparbox}
@@ -5143,11 +5272,12 @@ s_0,s_1,s_2&w_0&g_0&w_1&g_1&w_2\rlap{ (in \texttt{pt})}\\\hline
 
 
 \cleardoublepage 
+\cussetup[doc/cmd]{hyper=false}
 \vbadness=10000 \hbadness=10000 \vfuzz=\maxdimen \hfuzz=\maxdimen
 \backmatter
 \long\def\sectionmark#1{}
 \long\def\chaptermark#1{\mark{{\noexpand\hyperlink{\UseName{@currentHref}}{索引}}{}}}
-\setpagestyle{fancy}{\sethead[or,el]{\firstmark}}
+\setpagestyle*{fancy}{\sethead[or,el]{\UseName{head@fc}\firstmark}}
 \setuplayout{preset=balance}
 \chapter{索引}
 \vskip-14pt 
@@ -5251,9 +5381,12 @@ s_0,s_1,s_2&w_0&g_0&w_1&g_1&w_2\rlap{ (in \texttt{pt})}\\\hline
 \CHToI{geometry}{\tn{Gm@changelayout}};
 \CHToI{fancyhdr}{\tn{f@nch@O@olh}, \tn{f@nch@O@orh}, \tn{f@nch@O@elh}, \tn{f@nch@O@erh}};
 \CHToI{fancyhdr}{\tn{f@nch@O@olf}, \tn{f@nch@O@orf}, \tn{f@nch@O@elf}, \tn{f@nch@O@erf}};
+\CHToM{latex}{\tn{pagestyle}, \tn{thispagestyle}}
+\CHToP{latex}{\tn{@outputpage}}
+\CHToI{latex}{\tn{ps@\meta{pagestyle}}, \tn{is@specialpage}, \tn{@specialstyle}}
 \CHToI{fancyhdr}{\tn{f@nch@pagestyle}};
 \CHToI{fancyhdr}{\tn{f@nch@headinit}, \tn{f@nch@footinit}};
-\CHToI{fancyhdr}{\tn{ps@f@nch@fancyproto}, \tn{f@nch@def}};
+\CHToI{fancyhdr}{\tn{ps@f@nch@fancyproto}, \tn{f@nch@def}, \tn{f@nch@ps@\meta{pagestyle}-is-fancyhdr}};
 \CHToI{latex}{\tn{if@fcolmade}};
 \CHToI{fancyhdr}{\tn{iff@nch@footnote}};
 

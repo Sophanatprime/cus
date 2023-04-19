@@ -22,27 +22,6 @@
     lfbox-whole  .meta:n = { whole  = { \lfbox [{#1}] } } ,
     lfbox-whole .default:n = { border-style = solid } ,
   }
-\keys_define:nn { cus/multicolumns }
-  {
-    framed / lfbox .code:n = 
-      {
-        \cs_set_protected:Npn \cus@update@multi@height ##1
-          {
-            ##1=
-              \dimexpr(\option{/fbox/padding-top}+\option{/fbox/padding-bottom}
-              +\option{/fbox/border-top-width}+\option{/fbox/border-bottom-width})\relax
-          }
-        \cs_set_protected:Npn \cus@update@multi@width ##1
-          {
-            ##1=
-              \dimexpr(\option{/fbox/padding-left}+\option{/fbox/padding-right}
-              +\option{/fbox/border-left-width}+\option{/fbox/border-right-width})\relax
-          }
-        \cs_set_protected:Npn \cus@update@multi@box ##1 
-          { \hbox { \exp_args:NNo \lfbox [ \cus@multicol@framed@options ] {##1} } }
-        \cs_set_protected:Npn \cus@update@multi@framedgeometry { \fboxset }
-      }
-  }
 
 
 \NewDocumentCommand \fparbox { O{c} O{\relax} O{s} m O{} }

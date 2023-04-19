@@ -11,7 +11,7 @@ CusTeX 是一个文档类框架。使用者可以方便地设置标题、目录�
 
 license: [LPPL1.3c](http://www.latex-project.org/lppl.txt)
 
-Copyright 2020  Wenjian Chern
+Copyright 2023 Wenjian Chern
 
 This work may be distributed and/or modified under the
 conditions of the LaTeX Project Public License, either

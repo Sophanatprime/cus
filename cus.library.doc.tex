@@ -146,8 +146,7 @@
 \tl_new:N \l__cus_doc_cmd_module_tl
 \bool_new:N \l__cus_doc_cmd_noindex_bool
 \bool_new:N \l__cus_doc_cmd_replace_bool
-\bool_new:N \l__cus_doc_cmd_hyper_bool 
-\bool_set_true:N \l__cus_doc_cmd_hyper_bool 
+\__cus_int_let:Nw \l__cus_doc_cmd_hyper_int 2~
 \tl_new:N \l__cus_doc_cmd_target_tl 
 \bool_new:N \l__cus_doc_in_implementation_bool
 \bool_new:N \g__cus_doc_typeset_documentation_bool
@@ -186,10 +185,10 @@
     a~'function'~environment.
   }
 
-\tl_set:Nn \cus@doc@cmd@format  { }
-\tl_set:Nn \cus@doc@cs@format   { }
-\tl_set:Nn \cus@doc@tn@format   { }
-\tl_set:Nn \cus@doc@key@format  { }
+\tl_set:Nn \cus@doc@cmd@format  { \hypersetup{linkcolor=cus/color/doc~cs} }
+\tl_set:Nn \cus@doc@cs@format   { \hypersetup{linkcolor=cus/color/doc~cs} }
+\tl_set:Nn \cus@doc@tn@format   { \hypersetup{linkcolor=cus/color/doc~cs} }
+\tl_set:Nn \cus@doc@key@format  { \hypersetup{linkcolor=cus/color/doc~key} }
 \tl_set:Nn \cus@doc@meta@format { }
 \tl_set:Nn \cus@doc@veta@format { }
 \tl_set:Nn \cus@doc@marg@format { }
@@ -199,6 +198,9 @@
 \tl_set:Nn \cus@doc@env@format  { }
 \tl_set:Nn \cus@doc@cls@format  { }
 \tl_set:Nn \cus@doc@opt@format  { }
+\tl_set:Nn \cus@doc@csref@format { }
+\tl_set:Nn \cus@doc@envref@format { }
+\tl_set:Nn \cus@doc@keyref@format { }
 
 \cs_new:Npn \pdfstringnewline { : ~ }
 \DeclareExpandableDocumentCommand
@@ -268,10 +270,13 @@
     replace   .bool_set:N   = \l__cus_doc_cmd_replace_bool    ,
     space     .bool_set:N   = \l__cus_doc_macro_visible_space_bool ,
     keyval    .bool_set:N   = \l__cus_doc_keyval_bool         ,
-    hyper     .bool_set:N   = \l__cus_doc_cmd_hyper_bool      ,
-    target    .tl_set:N     = \l__cus_doc_cmd_target_tl       ,
-    type      .tl_set:N     = \l__cus_doc_type_tl             ,
+    hyper     .choices:nn   = { false, true, raw } 
+      { \__cus_int_let:Nw \l__cus_doc_cmd_hyper_int \l_keys_choice_int } ,
+    hyper     .default:n    = true ,
     format    .cs_set:Np    = \__cus_doc_cmd_format:n         ,
+    target    .tl_set:N     = \l__cus_doc_cmd_target_tl       ,
+    target*   .meta:n       = { hyper=raw, target={#1} }      ,
+    type      .tl_set:N     = \l__cus_doc_type_tl             ,
   }
 
 \prop_new:N \g_cus_doc_type_alias_prop 
@@ -330,20 +335,37 @@
         \bool_if:NTF \l__cus_doc_macro_visible_space_bool
           { \tl_replace_all:Nnn \l__cus_doc_cmd_tl { ~ } { \textvisiblespace } }
           { \tl_replace_all:Nnn \l__cus_doc_cmd_tl { ~ } { \@xobeysp } }
-        \bool_if:NTF \l__cus_doc_cmd_hyper_bool 
+        \tl_set:Nn \cus@doc@thetext  { \l__cus_doc_cmd_tl }
+        \int_case:nn { \l__cus_doc_cmd_hyper_int }
           {
-            \tl_remove_all:Nn \l__cus_doc_cmd_target_tl { \- }
-            \__cus_doc_get_hyper_target:oN 
-              \l__cus_doc_cmd_target_tl \l__cus_doc_cmd_target_tl 
-            \cus_label_if_exist:nTF \l__cus_doc_cmd_target_tl 
+            { 1 } % false 
+              { 
+                \tl_clear:N \cus@doc@thelabel 
+                \__cus_doc_cmd_format:n \l__cus_doc_cmd_tl 
+              }
+            { 2 } % true 
               {
-                \hypersetup { linkcolor=cus/color/doc~cs }
+                \tl_remove_all:Nn \l__cus_doc_cmd_target_tl { \- }
+                \__cus_doc_get_hyper_target:oN 
+                  \l__cus_doc_cmd_target_tl \l__cus_doc_cmd_target_tl 
+                \cus_label_if_exist:nTF \l__cus_doc_cmd_target_tl 
+                  {
+                    \tl_set:Nn \cus@doc@thelabel { \l__cus_doc_cmd_target_tl }
+                    \__cus_doc_cmd_format:n 
+                      { \cus_ref_label:nn \l__cus_doc_cmd_target_tl \l__cus_doc_cmd_tl }
+                  }
+                  { 
+                    \tl_clear:N \cus@doc@thelabel
+                    \__cus_doc_cmd_format:n \l__cus_doc_cmd_tl 
+                  }
+              }
+            { 3 } % raw 
+              {
+                \tl_set:Nn \cus@doc@thelabel { \l__cus_doc_cmd_target_tl }
                 \__cus_doc_cmd_format:n 
                   { \cus_ref_label:nn \l__cus_doc_cmd_target_tl \l__cus_doc_cmd_tl }
               }
-              { \__cus_doc_cmd_format:n \l__cus_doc_cmd_tl }
           }
-          { \__cus_doc_cmd_format:n \l__cus_doc_cmd_tl }
         \@
       }
     \bool_if:NT \l__cus_doc_allow_indexing_bool
@@ -1285,7 +1307,7 @@
     \tl_remove_all:Nn \l__cus_doc_tmpa_tl { \- }
     \__cus_doc_get_hyper_target:oN \l__cus_doc_tmpa_tl \l__cus_doc_tmpa_tl 
     \hypersetup { linkcolor=cus/color/doc~cs }
-    \hyperref [ \l__cus_doc_tmpa_tl ] { \cs [hyper=false] {#3} }
+    \use:e { \cs [target*={\l__cus_doc_tmpa_tl}, format=\exp_not:N \cus@doc@csref@format] } {#3}
     \group_end:
   }
 \NewDocumentCommand \csreflist { O{function} m }
@@ -1298,7 +1320,7 @@
       {
         \__cus_doc_get_hyper_target:nN {##1} \l__cus_doc_tmpa_tl
         \seq_put_right:Nx \l__cus_tmpa_seq
-          { \exp_not:N \hyperref [ \l__cus_doc_tmpa_tl ] { \cs [hyper=false] {##1} } }
+          { \cs [target*={\l__cus_doc_tmpa_tl}, format=\exp_not:N \cus@doc@csref@format] { \exp_not:n {##1} } }
       }
     \exp_last_unbraced:NNo \seq_use:Nnnn \l__cus_tmpa_seq \cus@doc@refrange
     \group_end:
@@ -1311,7 +1333,9 @@
     \tl_remove_all:Nn \l__cus_doc_tmpa_tl { \- }
     \__cus_doc_get_hyper_target:oN \l__cus_doc_tmpa_tl \l__cus_doc_tmpa_tl 
     \hypersetup { linkcolor=cus/color/doc~env }
-    \hyperref [ \l__cus_doc_tmpa_tl ] { \env {#3} }
+    \tl_set:Nn \cus@doc@thetext { \tl_clear:N \cus@doc@envformat \env {#3} }
+    \tl_set:Nn \cus@doc@thelabel { \l__cus_doc_tmpa_tl }
+    \cus@doc@envref@format { \hyperref [ \l__cus_doc_tmpa_tl ] { \env {#3} } }
     \group_end:
   }
 \NewDocumentCommand \envreflist { O{environment} m }
@@ -1324,7 +1348,12 @@
       {
         \__cus_doc_get_hyper_target:nN {##1} \l__cus_doc_tmpa_tl
         \seq_put_right:Nx \l__cus_tmpa_seq
-          { \exp_not:N \hyperref [ \l__cus_doc_tmpa_tl ] { \env {##1} } }
+          { 
+            \tl_set:Nn \exp_not:N \cus@doc@thelabel { \l__cus_doc_tmpa_tl }
+            \exp_not:n { \tl_set:Nn \cus@doc@thetext { \tl_clear:N \cus@doc@envformat \env {##1} } }
+            \exp_not:N \cus@doc@envref@format 
+              { \exp_not:N \hyperref [ \l__cus_doc_tmpa_tl ] { \exp_not:n { \env {##1} } } }
+          }
       }
     \exp_last_unbraced:NNo \seq_use:Nnnn \l__cus_tmpa_seq \cus@doc@refrange
     \group_end:
@@ -1338,11 +1367,8 @@
     \hypersetup { linkcolor=cus/color/doc~key }
     \use:e 
       {
-        \exp_not:N \hyperref [ \l__cus_doc_tmpa_tl ] 
-          { 
-            \exp_not:N \key [ hyper=false ]
-              { \IfBooleanF {#1} { #2 \tl_if_empty:nF {#2} / } \exp_not:n {#4} } 
-          }
+        \key [ target*={\l__cus_doc_tmpa_tl}, format=\exp_not:N \cus@doc@keyref@format ]
+          { \IfBooleanF {#1} { #2 \tl_if_empty:nF {#2} / } \exp_not:n {#4} } 
       }
     \group_end:
   }
@@ -1358,11 +1384,8 @@
           { #2 \tl_if_empty:nF {#2} / \exp_not:n {##1} } \l__cus_doc_tmpa_tl
         \seq_put_right:Nx \l__cus_tmpa_seq
           {
-            \exp_not:N \hyperref [ \l__cus_doc_tmpa_tl ]
-              { 
-                \exp_not:N \key [ hyper=false ]
-                  { \IfBooleanF {#1} { #2 \tl_if_empty:nF {#2} / } \exp_not:n {##1} } 
-              }
+            \key [ target*={\l__cus_doc_tmpa_tl}, format=\exp_not:N \cus@doc@keyref@format ]
+              { \IfBooleanF {#1} { #2 \tl_if_empty:nF {#2} / } \exp_not:n {##1} }
           }
       }
     \exp_last_unbraced:NNo \seq_use:Nnnn \l__cus_tmpa_seq \cus@doc@refrange
@@ -1539,7 +1562,10 @@
 \cs_new_protected:Npn \__cus_doc_typeset_functions:
   {
     \linespread{1} \small \cus@doc@ttfont 
+    \group_begin:
+    \def\HyperRaiseLinkDefault{\z@}
     \__cus_doc_target:
+    \group_end:
     \Hy@MakeCurrentHref { HD. \int_use:N \c@HD@hypercount }
     \begin{tabular} [t] { @{} l @{} >{\hspace{\tabcolsep}} r @{} }
       \toprule

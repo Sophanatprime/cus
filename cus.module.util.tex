@@ -1746,12 +1746,12 @@
   { 
     \exp_args:Nne \use:c { __cus_get_label_#1:n }
       { 
-        \tl_if_blank:oTF { \tl_to_str:n \exp_after:wN { \use:e {#1} } } 
+        \tl_if_blank:eTF {#2} 
           { \tl_to_str:N \@currentlabel } 
-          { \tl_to_str:n \exp_after:wN { \use:e {#1} } } 
+          {#2} 
       }
   }
-\cs_new_eq:NN \lableinfo \cus_label_info:nn 
+\cs_new_eq:NN \labelinfo \cus_label_info:nn 
 \cs_new:Npn \__cus_get_label_name:n #1 {#1}
 \cs_new:Npn \__cus_get_label_data:n #1
   { \cs_if_exist:cTF { r@#1 } { \tl_item:cn { r@#1 } { 1 } } { \c_novalue_tl } }
@@ -1911,7 +1911,7 @@
 % #1=box num, #2=primitive box cs, #3=process code
 \cs_new_protected:Npn \cus_peek_box:NNnw #1#2#3
   {
-    \tl_set:Nn \__cus_peek_box_auxii: { \color_group_end: \c_group_end_token #3 }
+    \tl_set:Nn \__cus_peek_box_auxii: { \c_group_end_token #3 }
     \tex_afterassignment:D \__cus_peek_box_auxi:
     \tex_setbox:D #1 #2
   }
@@ -1924,7 +1924,7 @@
 %   }
 \cs_new:Npn \__cus_peek_box_auxi:
   {
-    \color_group_begin: \c_group_begin_token
+    \c_group_begin_token
     \group_insert_after:N \__cus_peek_box_auxii:
   }
 \cs_new_protected_nopar:Npn \cus@collectbox { \cus_peek_box:NNnw }
@@ -1996,9 +1996,9 @@
     \cs_new_protected_nopar:Npn \cus_ref_label:nn #1#2 { \group_begin: #2 \group_end: }
     \cs_new_protected_nopar:Npn \cus_ref_target:nn #1#2 { \group_begin: #2 \group_end: }
     \cs_new_protected_nopar:Npn \cus_ref_label_box:nn #1
-      { \__cus_ref_box_aux:nw { \box_use_drop:N \l__cus_tmpc_box } }
+      { \__cus_ref_box_aux:nw { \hbox_unpack_drop:N \l__cus_tmpc_box } }
     \cs_new_protected_nopar:Npn \cus_ref_target_box:nn #1
-      { \__cus_ref_box_aux:nw { \box_use_drop:N \l__cus_tmpc_box } }
+      { \__cus_ref_box_aux:nw { \hbox_unpack_drop:N \l__cus_tmpc_box } }
     \cs_new_protected_nopar:Npn \cus@update@PL@page #1 { }
     \cs_new_protected_nopar:Npn \cus_gset_page_label:n #1 { }
     \cs_new_protected_nopar:Npn \cus_gset_next_page_label:n #1 { }
@@ -2056,28 +2056,26 @@
     \cs_gset_protected_nopar:Npn \cus_ref_target:nn { \hyperlink } % target, text 
     \sys_if_engine_xetex:TF
       {
-        \cs_gset_protected_nopar:Npn \cus_ref_label_box:nn #1
+        %% see hyperref.pdf, \XeTeXLinkBox
+        \cs_new_protected_nopar:Npn \cus@xetex@box #1
           {
-            \__cus_ref_box_aux:nw
-              { \hyperref [{#1}] { \XeTeXLinkBox { \box_use:N \l__cus_tmpc_box } } } 
-          }
-        \cs_gset_protected_nopar:Npn \cus_ref_target_box:nn #1
-          {
-            \__cus_ref_box_aux:nw
-              { \hyperlink {#1} { \XeTeXLinkBox { \box_use:N \l__cus_tmpc_box } } }
+            \setbox\z@\hbox{\llap{\lower\dp#1\hbox{\XeTeXLink@space}}}
+            \dp\z@=\dp#1 \ht\z@=\ht#1
+            \setbox\tw@\hbox{\rlap{\raise\ht#1\hbox{\XeTeXLink@space}}}
+            \dp\tw@=\dp#1 \ht\tw@=\ht#1
+            \box\z@ \unhbox#1 \box\tw@ 
           }
       }
+      { \cs_new_protected_nopar:Npn \cus@xetex@box #1 { \unhbox #1 } }
+    \cs_gset_protected_nopar:Npn \cus_ref_label_box:nn #1
       {
-        \cs_gset_protected_nopar:Npn \cus_ref_label_box:nn #1
-          {
-            \__cus_ref_box_aux:nw
-              { \hyperref [{#1}] { \box_use:N \l__cus_tmpc_box } }
-          }
-        \cs_gset_protected_nopar:Npn \cus_ref_target_box:nn #1
-          {
-            \__cus_ref_box_aux:nw
-              { \hyperlink {#1} { \box_use:N \l__cus_tmpc_box } }
-          }
+        \__cus_ref_box_aux:nw
+          { \hyperref [{#1}] { \cus@xetex@box \l__cus_tmpc_box } } 
+      }
+    \cs_gset_protected_nopar:Npn \cus_ref_target_box:nn #1
+      {
+        \__cus_ref_box_aux:nw
+          { \hyperlink {#1} { \cus@xetex@box \l__cus_tmpc_box } }
       }
     \cs_if_exist:NT \HyPL@EveryPage
       {

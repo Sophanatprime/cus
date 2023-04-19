@@ -22,7 +22,7 @@
 \NeedsTeXFormat{LaTeX2e}[2021/06/01]
 \RequirePackage{l3keys2e,xtemplate}
 \def\cus@d@te{2022/07/10}
-\def\cus@versi@n{0.0.2}
+\def\cus@versi@n{0.0.2.5}
 \ProvidesExplPackage{cus}{\cus@d@te}{\cus@versi@n}{Chinese User Scheme (CUS) basic file}
 
 \def\CusTeX{C\kern-.12em \raise.0466ex\hbox{u}\kern-.1em\lower .4ex\hbox{S}\kern-.15em\TeX}
@@ -90,7 +90,7 @@
 \group_end: 
 %%
 
-\RequirePackage{xparse}
+\RequirePackage{xparse} % we need to use `l'
 \RequirePackage{ctexhook,ctexpatch}
 \RequirePackage{etl}
 
