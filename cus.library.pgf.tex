@@ -1,0 +1,32 @@
+\CUSProvideLibrary{pgf}{\cus@d@te}{\cus@versi@n}{pgf and tikz support}
+
+% shade text, see: https://tex.stackexchange.com/questions/192496/
+\newbox\cus@picturebox 
+\protected\def\shadetext#1#2{%
+  \setbox\cus@picturebox=\hbox{{\cus@pdfliteral{7 Tr }#2}}%
+  \tikz[baseline=0,line width=0pt]\path \pgfextra{\rlap{\copy\cus@picturebox}} [#1] 
+    (0,-\dp\cus@picturebox) rectangle (\wd\cus@picturebox,\ht\cus@picturebox);}
+\protected\def\shadetextbox#1{%
+  \cus@collectbox\cus@picturebox\hbox{\shadetext{#1}{\unhbox\cus@picturebox}}} 
+
+\newbox\cus@phantombox 
+\protected\def\cus@phantomtobox#1{%
+  \setbox\cus@phantombox=\null 
+  \ht\cus@phantombox=\ht#1%
+  \dp\cus@phantombox=\dp#1%
+  \wd\cus@phantombox=\wd#1%
+  \box\cus@phantombox}
+
+\newcommand\shadecontent[3][]{% node options, shading options, content
+  \setbox\cus@picturebox=\hbox{#3}%
+  \begin{tikzpicture}[baseline=(textnode.base)]
+    \node[shade,#2,inner sep=0pt,outer sep=0pt,#1](textnode)
+      {\cus@phantomtobox\cus@picturebox};
+    \begin{scope}[transparency group=knockout]
+      \fill[white](textnode.south west)rectangle(textnode.north east);
+      \node[opacity=0,inner sep=0pt,outer xsep=0pt,#1]{\box\cus@picturebox};
+    \end{scope}
+  \end{tikzpicture}% 
+}
+\newcommand\shadecontentbox[2][]{%
+  \cus@collectbox\cus@picturebox\hbox{\shadecontent[{#1}]{#2}{\unhbox\cus@picturebox}}}

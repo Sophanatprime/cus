@@ -1,0 +1,16 @@
+\CUSProvideLibrary{tcb}{\cus@d@te}{\cus@versi@n}{tcolorbox}
+
+\ExplSyntaxOn
+\keys_define:nn { cus/frame }
+  {
+    tcbox-frame  .meta:n = { frame  = { \tcbox [{#1}] } } ,
+    tcbox-frame .default:n = { } ,
+    tcbox-first  .meta:n = { first  = { \tcbox [{#1}] } } ,
+    tcbox-first .default:n = { } ,
+    tcbox-middle .meta:n = { middle = { \tcbox [{#1}] } } ,
+    tcbox-middle .default:n = { } ,
+    tcbox-last   .meta:n = { last   = { \tcbox [{#1}] } } ,
+    tcbox-last .default:n = { } ,
+    tcbox-whole  .meta:n = { whole  = { \tcbox [{#1}] } } ,
+    tcbox-whole .default:n = { } ,
+  }

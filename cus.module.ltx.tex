@@ -1,0 +1,134 @@
+\CUSProvideModule{ltx}{\cus@d@te}{\cus@versi@n}{wrapping of LaTeX2e kernel}
+
+\ExplSyntaxOn
+\cs_new_eq:NN \cus@letcs \cs_set_eq:Nc 
+\cs_new_eq:NN \Replicate \prg_replicate:nn
+\cs_new_protected:Npn \__cus_cmd_set_argument:n { \tl_set:Nn \ProcessedArgument }
+\cs_new_protected:Npn \__cus_cmd_set_argument:x { \tl_set:Nx \ProcessedArgument }
+\cs_new_protected:Npn \__cus_cmd_replace_argument:nnnn #1#2#3#4
+  {
+    #1 {#4}
+      { \__cus_cmd_set_argument:n {#2} }
+      { \__cus_cmd_set_argument:n {#3} }
+  }
+\cs_new_protected:Npn \__cus_cmd_expand_argument:Nn #1
+  { \ExpandArgs { #1 } \__cus_cmd_set_argument:n }
+\cs_new_protected:Npn \__cus_cmd_xxpand_argument:nn #1#2
+  { 
+    \cs_if_exist:cTF { __cus_cmd_xxpand_argument_#1:n } 
+      { \use:c { __cus_cmd_xxpand_argument_#1:n } {#2} }
+      { \msg_error:nnx { cus } { cmd-xxpand-argument } {#1} }
+  }
+\cs_new:Npn \__cus_cmd_xxpand_argument_c:n { \exp_args:Nc \__cus_cmd_set_argument:n }
+\cs_new:Npn \__cus_cmd_xxpand_argument_o:n { \exp_args:No \__cus_cmd_set_argument:n }
+\cs_new:Npn \__cus_cmd_xxpand_argument_V:n { \exp_args:NV \__cus_cmd_set_argument:n }
+\cs_new:Npn \__cus_cmd_xxpand_argument_v:n { \exp_args:Nv \__cus_cmd_set_argument:n }
+\cs_new:Npn \__cus_cmd_xxpand_argument_e:n {              \__cus_cmd_set_argument:x }
+\cs_new:Npn \__cus_cmd_xxpand_argument_f:n { \exp_args:Nf \__cus_cmd_set_argument:n }
+\cs_new:Npn \__cus_cmd_xxpand_argument_x:n {              \__cus_cmd_set_argument:x }
+\cs_new:Npn \__cus_cmd_xxpand_argument_sX:n #1
+  { \__cus_cmd_set_argument:x { \text_expand:n {#1} } }
+\cs_new:Npn \__cus_cmd_xxpand_argument_sF:n #1
+  { \__cus_cmd_set_argument:x { \text_purify:n {#1} } }
+\cs_new:Npn \__cus_cmd_xxpand_argument_sP:n #1
+  { \protected@edef \ProcessedArgument { \ProcessedArgument } }
+\cs_new:Npn \__cus_cmd_xxpand_argument_sS:n #1
+  { \__cus_cmd_set_argument:x { \tl_to_str:n {#1} } }
+\cs_new_eq:NN \__cus_cmd_xxpand_argument_p:n \__cus_cmd_xxpand_argument_sX:n
+\cs_new_protected:Npn \__cus_cmd_regex_replace_argument:w #1 #
+  { \tl_trim_spaces_apply:nN {#1} \__cus_cmd_regex_replace_argument_aux:nnnn }
+\cs_new:Npn \__cus_cmd_regex_replace_argument_aux:nnnn #1#2#3#4
+  {
+    \tl_set:Nn \ProcessedArgument {#4}
+    \bool_lazy_and:nnTF 
+      { \tl_if_single_token_p:n {#1} }
+      { \token_if_eq_catcode_p:NN + #1 }
+      { \regex_replace_all:nnN }
+      { \regex_replace_once:nnN } 
+        {#2} {#3} \ProcessedArgument
+  }
+\cs_new_eq:NN \ReplaceArgumentIf \__cus_cmd_replace_argument:nnnn 
+\cs_new_protected:Npn \ReplaceArgumentIfEqual #1
+  { \__cus_cmd_replace_argument:nnnn { \tl_if_eq:nnTF {#1} } }
+\cs_new_protected:Npn \ReplaceArgumentIfStrEqual #1
+  { \__cus_cmd_replace_argument:nnnn { \str_if_eq:nnTF {#1} } }
+\cs_new_protected:Npn \ReplaceArgumentIfMatch #1
+  { \__cus_cmd_replace_argument:nnnn { \regex_match:nnTF {#1} } }
+% 如果使用 \NewDocumentCommand 不能出现非 m 的 spec
+% \NewDocumentCommand \RegexReplaceArgument { t+ +m +m +m }
+%   {
+%     \tl_set:Nn \ProcessedArgument {#4}
+%     \bool_if:nTF {#1} 
+%       { \regex_replace_all:nnN } { \regex_replace_once:nnN }
+%       {#2} {#3} \ProcessedArgument
+%   }
+\cs_new_eq:NN \RegexReplaceArgument \__cus_cmd_regex_replace_argument:w 
+% \cs_new_protected:Npn \ExpandArgument #1
+%   { \exp_args:Nf \__cus_cmd_expand_argument:Nn { \tl_head:f {#1} } }
+\cs_new_eq:NN \ExpandArgument \__cus_cmd_xxpand_argument:nn
+
+\msg_new:nnn { cus } { cmd-xxpand-argument } { Unknown~arg~expansion~"#1" }
+\ExplSyntaxOff
+
+\protected\def\zkern{\kern\z@}
+\let\@EA\expandafter
+\def\@EAEA{\@EA\@EA}
+\def\@EAEAEA{\@EA\@EA\@EA}
+\def\@EAEAEAEAEA{\@EA\@EAEAEA\@EA}
+\protected\def\lo#1{\ifmmode\@EA\@firstoftwo\else\@EA\@secondoftwo\fi
+  {{}_{#1}}{\textsubscript{{#1}}}}
+\protected\def\hi#1{\ifmmode\@EA\@firstoftwo\else\@EA\@secondoftwo\fi
+  {{}^{#1}}{\textsuperscript{{#1}}}}
+\protected\def\lohi#1#2{%
+  \ifmmode\@EA\@firstoftwo\else\@EA\@secondoftwo\fi 
+  {_{#1}^{#2}}
+  {\m@th 
+    $\relax 
+    _{\hbox{{\fontsize\sf@size\sf@size\selectfont #1}}}%
+    ^{\hbox{{\fontsize\sf@size\sf@size\selectfont #2}}}%
+    $}}
+
+\NewDocumentCommand\makelapbox{O{}O{c}>{\ReplaceArgumentIfStrEqual{s}{c}{#3}}O{#2}m}
+  {\leavevmode@ifvmode\@nameuse{#3lap}{\makebox[{#1}][{#2}]{#4}}}
+\NewDocumentCommand\parlapbox{O{c}O{}O{s}O{c}m+m}
+  {\leavevmode@ifvmode\@nameuse{#4lap}{\parbox[{#1}][{#2}][{#3}]{#5}{#6}}}
+
+\newenvironment{enumlist}[5][]
+  {\list{#1}{%
+    \leftmargin=\dimeval{#2+\z@}\relax
+    \itemindent=\dimeval{#3+\z@}\relax
+    \listparindent=\itemindent
+    \labelsep=\dimeval{#4+\z@}\relax
+    \rightmargin=\dimeval{#5+\z@}\relax}}
+  {\endlist}
+\newenvironment{enumlist*}[5][]
+  {\enumlist[#1]{#2}{#3}{#4}{#5}%
+    \topsep\z@ \partopsep\z@ \itemsep\z@ \parsep\z@ \parskip\z@}
+  {\endenumlist}
+
+
+\def\cus@mathdispatch#1#2{%
+  \mathchoice{#1\tf@size{#2}}{#1\tf@size{#2}}{#1\sf@size{#2}}{#1\ssf@size{#2}}}
+
+\def\cusemojilowerratio{1/8}
+\protected\def\cus@emoji@pic#1#2{\leavevmode@ifvmode
+  \lower\dimexpr #1\p@*\cusemojilowerratio\hbox{\includegraphics[height={#1\p@}]{#2}}}
+\def\cus@emoji@math#1{\cus@mathdispatch{\cus@emoji@pic}{#1}}
+\protected\def\cusemoji#1{{\ifmmode\cus@emoji@math{#1}\else\cus@emoji@pic\f@size{#1}\fi}}
+
+\ExplSyntaxOn
+\cs_new_protected_nopar:Npn \cus@char@pic #1#2#3#4 % pic ht, dp, wd, file
+  {
+    \mode_leave_vertical:
+    \tl_set:Nx \l__cus_tmpa_tl
+      {
+        \tl_if_empty:nF {#1} { height = \dim_eval:n { #1 } , }
+        \tl_if_empty:nF {#3} { width  = \dim_eval:n { #3 } }
+      }
+    \tl_if_empty:nTF {#2} { \use:n } { \box_move_down:nn {#2} }
+      { \hbox:n { \exp_last_unbraced:NNo \includegraphics [ \l__cus_tmpa_tl ] {#4} } }
+  }
+\ExplSyntaxOff 
+\NewDocumentCommand\cuscharpictext
+  {O{\f@size\p@} D<>{\cusemojilowerratio} O{(#1)*#2} O{} m}
+  {\cus@char@pic{#1}{#3}{#4}{#5}}

@@ -1,0 +1,46 @@
+\documentclass{standalone}
+\input{generic}
+\begin{document}
+\small
+\begin{tblr}{hlines,colspec={*{3}{crr}},rulesep={-.8pt},rows={belowsep=1.4pt},
+column{1,4,7}={font=\ttfamily},row{1}={font=\bfseries,halign=c},
+cell{1}{-}={cyan9},
+cell{2-8}{1-3}={red9},cell{2-8}{4-6}={yellow9},cell{2-8}{7-9}={olive9},
+cell{9-15}{1-3}={green9},cell{9-15}{4-6}={teal9},cell{9-14}{7-9}={azure9},
+cell{16-19}{1-3}={blue9},cell{16-19}{4-6}={brown9},cell{15-19}{7-9}={magenta9},
+hline{1,2,Z}={1.2pt},hline{9}={1.2pt},hline{16}={1-6}{1.2pt},
+hline{15}={7-9}{1.2pt},
+hline{15}={1}{1}{1.2pt,green9,rightpos=0,leftpos=0},hline{15}={1}{2-3}{1.2pt,green9,rightpos=0,leftpos=0},
+hline{15}={2}{1-3}{black},
+hline{15}={1}{4}{1.2pt,teal9,rightpos=0,leftpos=0},hline{15}={1}{5-6}{1.2pt,teal9,rightpos=0,leftpos=0},
+hline{15}={2}{4-6}{black,leftpos=0,rightpos=0},
+row{14}={belowsep+={-.8pt}},
+hline{16}={1}{7}{1.2pt,magenta9,rightpos=0,leftpos=0},hline{16}={1}{8,9}{1.2pt,magenta9,rightpos=0,leftpos=0},
+hline{16}={2}{7-9}{black},
+row{14}={belowsep+={-.6pt}},
+vline{2,5,8}={solid},
+vline{4,7}={solid,1.2pt,black},
+%% vline{4}={15}{text={\vrule width\rulewidth}},
+% vline{4}={16-Z}{text={\noexpand\color{blue9}\vrule width.4pt\noexpand\color{black}\vrule width.4pt\noexpand\color{blue9}\vrule width.4pt}},
+vline{3,6,9}={text={\clap{\ensuremath{\times}}}}}
+名称 & 宽 & 高 & 名称 & 宽 & 高 & 名称 & 宽 & 高 \\
+A0 & 841mm & 1189mm & B0 & 1000mm & 1414mm & C0 & 917mm & 1297mm \\
+A1 & 594mm & 841mm & B1 & 707mm & 1000mm & C1 & 648mm & 917mm \\
+A2 & 420mm & 594mm & B2 & 500mm & 707mm & C2 & 458mm & 648mm \\
+A3 & 297mm & 420mm & B3 & 353mm & 500mm & C3 & 324mm & 458mm \\
+A4 & 210mm & 297mm & B4 & 250mm & 353mm & C4 & 229mm & 324mm \\
+A5 & 148mm & 210mm & B5 & 176mm & 250mm & C5 & 162mm & 229mm \\
+A6 & 105mm & 148mm & B6 & 125mm & 176mm & C6 & 114mm & 162mm \\
+b0j & 1030mm & 1456mm & n0kai & 787mm & 1092mm & b0kai & 889mm & 1194mm \\
+b1j & 728mm & 1030mm & n2kai & 787mm & 546mm & b2kai & 889mm & 597mm \\
+b2j & 515mm & 728mm & n4kai & 389mm & 546mm & b4kai & 444mm & 597mm \\
+b3j & 364mm & 515mm & n6kai & 370mm & 520mm & b8kai & 420mm & 285mm \\
+b4j & 257mm & 364mm & n8kai & 260mm & 370mm & b16kai & 210mm & 285mm \\
+b5j & 182mm & 257mm & n16kai & 185mm & 260mm & b32kai & 142mm & 210mm \\
+b6j & 128mm & 182mm & n32kai & 185mm & 130mm & ANSIA & 8.5in & 11in \\
+screen & 225mm & 180mm & 6kai & 360mm & 390mm & ANSIB & 11in & 17in \\
+letter & 8.5in & 11in & 8kai & 270mm & 390mm & ANSIC & 17in & 22in \\
+legal & 8.5in & 14in & 16kai & 195mm & 270mm & ANSID & 22in & 34in \\
+executive & 7.25in & 10.5in & 32kai & 195mm & 135mm & ANSIE & 34in & 44in \\
+\end{tblr}
+\end{document}

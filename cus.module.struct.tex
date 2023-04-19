@@ -1,4 +1,4 @@
-\CUSDependency{ disable={titlesec,titletoc,tocloft,etoc,placeins,multitoc}, 
+\CUSDependency{ disable={titlesec,titletoc,tocloft,etoc,placeins,multitoc,minitoc}, 
   module={util} }
 \CUSProvideExplModule{struct}{\cus@d@te}{\cus@versi@n}{structures of document}
 
@@ -71,7 +71,9 @@
   {
     \int_gincr:N \g__cus_cbl_count_int
     \int_gincr:c { g__cus_cbl_type~#1_count_int }
-    \tl_set:Nx \l__cus_cbl_heading_level_tl { \cus_heading_level:n { #1-#2 } }
+    \clist_set:Nx \l__cus_tmpa_clist {#2}
+    \tl_set:Nx \l__cus_cbl_heading_level_tl 
+      { \exp_args:Ne \cus_heading_level:n { #1- \l__cus_tmpa_clist } }
     \tl_gset:cx 
       { cus/cbl~/cbl~ /entry [ \int_use:N \g__cus_cbl_count_int ] _tl }
       {
@@ -458,8 +460,8 @@
       \let\cus@type@contentsline@\@empty 
       \let\thmt@numberline\numberline 
       \def\cus@type@contentsline##1##2##3##4{
-        \exp_args:Ncf\empty{thmt@contentsline@ \clist_item:nn{##3} {1}}
-          {\clist_item:nn{##3}{1}}}
+        \exp_args:Ncf\empty{thmt@contentsline@ \cus_clist_item_first:n{##3}}
+          {\cus_clist_item_first:n{##3}}}
       \ifthmt@listswap
         \def\numberline##1##2
           {\tl_if_head_eq_meaning:nNTF{##1}\relax{##2}
@@ -467,7 +469,7 @@
       \else \def\numberline{\thmt@numberline}
       \fi 
       \exp_last_unbraced:NNo \@for\thmt@envname {\string :=}\thmt@allenvs\do{\thmtlo@newentry}
-      \standardplaincombinedlist{\listtheoremname}{loe}
+      \multicolplaincombinedlist[1]{\listtheoremname}{loe}
       \endgroup}
     \AtBeginDocument{\def\thmt@contentsline#1#2#3#4
       {\cus_use_psr:n{toc/loe}{loe}{0}{#1}{1}{#2}{#3}{#4}}}
@@ -521,6 +523,19 @@
     \tl_set:cn { @toc@#1@#2@blockitem } {#5}
     \tl_set:cn { @toc@#1@#2@blockfinish } {#6}
     \tl_set:cn { @toc@#1@#2@listfinish } {#7}
+  }
+\cs_new_protected:Npn \cus_specified_cbl_style_save:nnnnnnnN #1#2#3#4#5#6#7#8
+% type, level, list start, block start, block entry, block finish, list finish, tl
+  {
+    % 必须先自行初始化
+    \tl_build_put_right:Nx #8
+      {
+        \tl_set:Nn \exp_not:c { @toc@#1@#2@liststart } { \exp_not:n {#3} }
+        \tl_set:Nn \exp_not:c { @toc@#1@#2@blockstart } { \exp_not:n {#4} }
+        \tl_set:Nn \exp_not:c { @toc@#1@#2@blockitem } { \exp_not:n {#5} }
+        \tl_set:Nn \exp_not:c { @toc@#1@#2@blockfinish } { \exp_not:n {#6} }
+        \tl_set:Nn \exp_not:c { @toc@#1@#2@listfinish } { \exp_not:n {#7} }
+      }
   }
 \cs_new_protected:Npn \cus_specified_cbl:n #1
   {
@@ -610,16 +625,16 @@
 \cs_new_protected:Npn \cus_specified_cbl:nnn #1#2#3 % toc type, level, curr count
   {
     \group_begin:
-    \cs_set_eq:NN \? \g_cus_document_cbl_index_int 
+    \__cus_specified_cbl_set_special_cs:n {#1}
     \bool_lazy_or:nnTF
       { \tl_if_empty_p:n {#3} }
       { \tl_if_novalue_p:n {#3} }
       { 
-        \int_compare:nNnTF { \g_cus_document_cbl_index_int } > { 0 }
+        \int_compare:nNnTF { \$ } > { 0 }
           {
             \tl_if_novalue:nTF {#2}
-              { \__cus_specified_cbl_local:nnn {#1} {  } { \g_cus_document_cbl_index_int } }
-              { \__cus_specified_cbl_local:nnn {#1} {#2} { \g_cus_document_cbl_index_int } }
+              { \__cus_specified_cbl_local:nnn {#1} {  } { \$ } }
+              { \__cus_specified_cbl_local:nnn {#1} {#2} { \$ } }
           }
           { \cus_specified_cbl:n {#1} }
       }
@@ -635,6 +650,10 @@
     \group_end:
   }
 \cs_new_protected:Npn \__cus_specified_cbl_local:nnn #1#2#3
+  {
+    \use:e { \__cus_specified_cbl_local_aux:nnn {#1} {#2} } {#3}
+  }
+\cs_new_protected:Npn \__cus_specified_cbl_local_aux:nnn #1#2#3
   {
     \tl_if_empty:nTF {#1}
       { 
@@ -660,13 +679,20 @@
       { 
         \int_compare:nNnTF { \tochilevel } > {#2} 
           { \cus_specified_cbl:n {#1} } 
-          { \exp_args:Nnf \__cus_specified_cbl_local_real:nnn {#1} { \int_eval:n {#2} } {#3} } 
+          { 
+            \tl_set:Nx \tochilevel { \int_eval:n {#2} }
+            \exp_args:Nnf \__cus_specified_cbl_local_real:nnn {#1} { \int_eval:n {#2} } {#3} 
+          } 
       }
       { 
         \int_compare:nNnTF { \tochilevel } >
           { \tl_if_empty:nTF {#1} { 0 } { \cus_heading_level:nn {#1} {#2} } }
           { \cus_specified_cbl:n {#1} } 
-          { \__cus_specified_cbl_local_real:nnn {#1} {#2} {#3} } 
+          {
+            \tl_set:Nx \tochilevel 
+              { \tl_if_empty:nTF {#1} { 0 } { \cus_heading_level:nn {#1} {#2} } }
+            \__cus_specified_cbl_local_real:nnn {#1} {#2} {#3} 
+          } 
       }
   }
 \cs_new_protected:Npn \__cus_specified_cbl_local_real:nnn #1#2#3
@@ -676,20 +702,17 @@
     \int_zero:N \l__cus_cbl_search_max_int
     \tl_if_empty:nTF {#1} 
       { 
-        \int_compare:nNnTF {#3} > { \g__cus_cbl_count_int }
-          { 
-            \int_set:Nn \l__cus_cbl_search_min_int { \c_max_int }
-            \int_set:Nn \l__cus_cbl_search_max_int { -\c_max_int }
-          }
-          { \__cus_specified_cbl_search:n {#3} }
+        \exp_args:Nf \__cus_specified_cbl_search:n 
+          { \int_max:nn { 0 } { \int_min:nn { #3 } { \g__cus_cbl_count_int } } }
       }
       { 
-        \int_compare:nNnTF {#3} > { \use:c { g__cus_cbl_type~#1_count_int } }
+        \exp_args:Nnnf \__cus_specified_cbl_search:nnn {#1} {#2}
           {
-            \int_set:Nn \l__cus_cbl_search_min_int { \c_max_int }
-            \int_set:Nn \l__cus_cbl_search_max_int { -\c_max_int }
+            \int_max:nn { 0 }
+              {
+                \int_min:nn { #3 } { \use:c { g__cus_cbl_type~#1_count_int } }
+              }
           }
-          { \__cus_specified_cbl_search:nnn {#1} {#2} {#3} }
       }
     \cus@toc@contentsline@begin 
     \cs_set:Npn \cus@toc@contentsline ##1##2##3##4##5##6##7##8##9
@@ -773,17 +796,55 @@
     \tl_gset:Nn \toctheclass {#1}
     \clist_gset:Nn \tocthetags {#2}
   }
+\cs_new:Npn \__cus_specified_cbl_set_special_cs:n #1
+  {
+    \cs_set_eq:NN \? \g_cus_document_cbl_index_int 
+    \bool_lazy_or:nnTF 
+      { \tl_if_empty_p:n {#1} } { \int_compare_p:nNn { \? } < { 1 } }
+      { \cs_set_eq:NN \$ \? }
+      { 
+        \bool_set_true:N \l__cus_tmpa_bool 
+        \int_set_eq:NN \l__cus_tmpa_int \?
+        \bool_while_do:Nn \l__cus_tmpa_bool 
+          { 
+            \cus_contents_get:nN \l__cus_tmpa_int \l__cus_tmpa_tl 
+            \quark_if_no_value:NTF \l__cus_tmpa_tl 
+              { 
+                \cs_set:Npx \$ { 0 }
+                \bool_set_false:N \l__cus_tmpa_bool 
+              }
+              {
+                \str_if_eq:eeTF
+                  { \tl_item:Nn \l__cus_tmpa_tl { 2 } } {#1}
+                  { 
+                    \cs_set:Npx \$ { \tl_item:Nn \l__cus_tmpa_tl { 3 } }
+                    \bool_set_false:N \l__cus_tmpa_bool 
+                  }
+                  {
+                    \if_int_compare:w \l__cus_tmpa_int = \c_one_int 
+                      \cs_set:Npx \$ { 0 }
+                      \bool_set_false:N \l__cus_tmpa_bool 
+                    \else:
+                      \int_decr:N \l__cus_tmpa_int 
+                    \fi:
+                  }
+              }
+          }
+      }
+  }
 \int_new:N \l__cus_cbl_search_min_int
 \int_new:N \l__cus_cbl_search_max_int
-\cs_new:Npn \__cus_specified_cbl_search:n #1
+\cs_new_protected:Npn \__cus_specified_cbl_search:n #1
   { \msg_error:nn {cus} {} } %!!TODO:
-\cs_new:Npn \__cus_specified_cbl_search_basic:nnn #1#2#3
+\cs_new_protected:Npn \__cus_specified_cbl_search_basic:nnn #1#2#3
   {
     \int_set:Nn \l__cus_tmpa_int {#3}
+    \int_set:Nn \l__cus_tmpb_int { \cus_heading_level:n { #1-#2 } }
     \bool_set_true:N \l__cus_tmpa_bool
     \cs_set:Npn \cus@type@contentsline ##1##2##3##4##5##6##7##8
       {
-        \int_compare:nNnTF {##4} > { \tochilevel }
+        % 如果此时的 level > #2 ，说明在 #2 内部
+        \int_compare:nNnTF {##4} > { \l__cus_tmpb_int }
           {
             \int_decr:N \l__cus_tmpa_int
             \if_int_compare:w \l__cus_tmpa_int < \c_one_int
@@ -792,30 +853,37 @@
             \fi:
           }
           {
-            \int_compare:nNnTF {##4} = { \tochilevel }
+            \int_compare:nNnTF {##4} = { \l__cus_tmpb_int }
               {
                 \__cus_if_head_int_dec:nTF {#2}
                   { \int_set_eq:NN \l__cus_cbl_search_min_int \l__cus_tmpa_int }
                   {
-                    \str_if_eq:eeTF { \clist_item:nn {##3} {1} } {#2}
+                    \str_if_eq:eeTF { \cus_clist_item_first:n {##3} } {#2}
                       { \int_set_eq:NN \l__cus_cbl_search_min_int \l__cus_tmpa_int }
                       { \int_set:Nn \l__cus_cbl_search_min_int \c_max_int }
                   }
               }
               {
-                \int_set:Nn \l__cus_cbl_search_min_int \c_max_int
+                \int_set:Nn \l__cus_cbl_search_min_int \l__cus_tmpa_int 
               }
             \bool_set_false:N \l__cus_tmpa_bool
           }
       }
-    \bool_while_do:Nn \l__cus_tmpa_bool
-      { \tl_use:c { cus/cbl~/type~#1 /entry[\int_use:N \l__cus_tmpa_int]_tl } }
+    \cus_contents_type_get:nnN {#1} {#3} \l__cus_tmpa_tl 
+    \bool_lazy_or:nnTF 
+      { \quark_if_no_value_p:N \l__cus_tmpa_tl }
+      { \int_compare_p:nNn { \tl_item:Nn \l__cus_tmpa_tl { 5 } } < \l__cus_tmpb_int }
+      { \int_set:Nn \l__cus_cbl_search_min_int { \c_max_int } }
+      {
+        \bool_while_do:Nn \l__cus_tmpa_bool
+          { \tl_use:c { cus/cbl~/type~#1 /entry[\int_use:N \l__cus_tmpa_int]_tl } }
+      }
 
     \int_set:Nn \l__cus_tmpa_int { #3+1 }
     \bool_set_true:N \l__cus_tmpa_bool
     \cs_set:Npn \cus@type@contentsline ##1##2##3##4##5##6##7##8
       {
-        \int_compare:nNnTF {##4} > { \tochilevel }
+        \int_compare:nNnTF {##4} > { \l__cus_tmpb_int }
           {
             \int_incr:N \l__cus_tmpa_int
             \if_int_compare:w
@@ -826,44 +894,27 @@
             \fi:
           }
           {
-            \int_compare:nNnTF {##4} = { \tochilevel }
-              {
-                \__cus_if_head_int_dec:nTF {#2}
-                  {
-                    \int_set:Nn \l__cus_cbl_search_max_int { \l__cus_tmpa_int - 1 }
-                    \bool_set_false:N \l__cus_tmpa_bool
-                  }
-                  {
-                    \str_if_eq:eeTF { \clist_item:nn {##3} {1} } {#2}
-                      {
-                        \int_set:Nn \l__cus_cbl_search_max_int { \l__cus_tmpa_int - 1 }
-                        \bool_set_false:N \l__cus_tmpa_bool
-                      }
-                      {
-                        \int_set:Nn \l__cus_cbl_search_max_int { -\c_max_int }
-                        \bool_set_false:N \l__cus_tmpa_bool
-                      }
-                  }
-              }
-              {
-                \int_set:Nn \l__cus_cbl_search_max_int { -\c_max_int }
-                \bool_set_false:N \l__cus_tmpa_bool
-              }
+            \int_set:Nn \l__cus_cbl_search_max_int { \l__cus_tmpa_int - 1 }
+            \bool_set_false:N \l__cus_tmpa_bool 
           }
       }
     \int_compare:nNnTF 
       { \l__cus_tmpa_int } > { \use:c { g__cus_cbl_type~#1_count_int } }
-      { \int_set:Nn \l__cus_cbl_search_max_int { -\c_max_int } }
+      { 
+        \int_compare:nNnTF { \l__cus_cbl_search_min_int } > 
+          { \use:c { g__cus_cbl_type~#1_count_int } }
+          { \int_set:Nn \l__cus_cbl_search_max_int { -\c_max_int } }
+          {
+            \int_set:Nn \l__cus_cbl_search_max_int 
+              { \use:c { g__cus_cbl_type~#1_count_int } } 
+          }
+      }
       {
         \bool_while_do:Nn \l__cus_tmpa_bool
           { \use:c { cus/cbl~/type~#1 /entry[\int_use:N \l__cus_tmpa_int]_tl } }
       }
-    \int_compare:nNnTF \l__cus_cbl_search_min_int > {#3}
+    \int_compare:nNnT \l__cus_cbl_search_min_int > {#3}
       { \int_set:Nn \l__cus_cbl_search_max_int { -\c_max_int } }
-      { 
-        \int_compare:nNnT \l__cus_cbl_search_max_int < {#3}
-          { \int_set:Nn \l__cus_cbl_search_max_int {#3} }
-      }
   }
 \cs_new:Npn \__cus_specified_cbl_search:nnn #1#2#3
   {
@@ -971,7 +1022,7 @@
               }
           }
           {
-            \int_step_inline:nnnn { \tocthelevel - 1 } { -1 } { \tocthenextlevel - 1 }
+            \int_step_inline:nnnn { \tocthelevel - 1 } { -1 } { \tocthenextlevel + 1 }
               {
                 \tl_gset:Nn \tocthelevel {##1}
                 \toc@if {first} {##1} { \tociffirsttrue } { \tociffirstfalse }
@@ -1061,42 +1112,69 @@
       }
       \cs_undefine:N
   }
-% 不准确
-\cs_new_protected_nopar:Npn \cus_get_cbl_level_distance:nnnN #1#2#3#4
+\cs_new_protected_nopar:Npn \cus_get_cbl_level_range:nnnNN #1#2#3#4#5
   {
     \group_begin:
     \tl_set:Nx \tochilevel { \use:c { cus/cbl~/type~#1 /hi_used_level_tl } }
-    \__cus_specified_cbl_search_basic:nnn {#1} {#2} {#3}
+    \__cus_specified_cbl_set_special_cs:n {#1}
+    \use:e { \__cus_specified_cbl_search_basic:nnn {#1} {#2} } {#3}
     \use:e 
       {
-        \group_begin:
-        \tl_set:Nx \exp_not:N #4
-          {
-            \int_compare:nNnTF \l__cus_cbl_search_min_int > \l__cus_cbl_search_max_int
-              { 0 }
-              { \int_eval:n { \l__cus_cbl_search_max_int - \l__cus_cbl_search_min_int } }
-          }
+        \group_end:
+        \tl_set:Nx \exp_not:N #4 { \int_use:N \l__cus_cbl_search_min_int }
+        \tl_set:Nx \exp_not:N #5 { \int_use:N \l__cus_cbl_search_max_int }
       }
   }
-\NewDocumentCommand \getcblleveldistance { m m O{} m }
+\NewDocumentCommand \getcbllevelrange { m m O{} m m }
   {
     \use:e 
       {
-        \cus_get_cbl_level_distance:nnnN 
+        \cus_get_cbl_level_range:nnnNN 
           {#1} {#2} 
-          { \tl_if_empty:nTF {#3} { \CurrentCombinedListCount } {#3} }
-          \exp_not:N #4
+          { \tl_if_blank:nTF {#3} { \exp_not:N \$ } { \exp_not:n {#3} } }
       }
+          #4 #5
   }
 \NewDocumentCommand \SetSpecifiedCombinedListStyle { O{}+m+m+m+m+m+m }
   {
+    \bool_if:NTF \l__cus_specified_cbl_save_bool 
+      {
+        \cs_set:Npn \__cus_set_specified_combinedlist_style:w ##1##2
+          { 
+            \cus_specified_cbl_style_save:nnnnnnnN 
+              {##1} {##2} {#3} {#4} {#5} {#6} {#7} \g__cus_specified_style_tl 
+          }
+      }
+      {
+        \cs_set:Npn \__cus_set_specified_combinedlist_style:w ##1##2
+          { 
+            \cus_specified_cbl_style:nnnnnnn 
+              {##1} {##2} {#3} {#4} {#5} {#6} {#7} 
+          }
+      }
     \bool_lazy_or:nnTF { \tl_if_empty_p:n {#1} } { \str_if_eq_p:nn {#1} {*} }
       { \seq_map_inline:Nn \g__cus_cbl_type_seq }
       { \clist_map_inline:nn {#1} }
         { 
           \clist_map_inline:nn {#2}
-            { \cus_specified_cbl_style:nnnnnnn {##1} {####1} {#3} {#4} {#5} {#6} {#7} }
+            { \__cus_set_specified_combinedlist_style:w {##1} {####1} }
         }
+  }
+\bool_new:N \l__cus_specified_cbl_save_bool 
+\cs_new_protected:Npn \__cus_saveto_specified_cbl_style:n
+  { \tl_build_put_right:Nn \g__cus_specified_style_tl }
+\NewDocumentCommand \SaveSpecifiedCombinedListStyle { m +m }
+  {
+    \@bsphack
+    \cs_set_eq:cN { __cus/saved/+ } \+
+    \cs_set_eq:NN \+ \__cus_saveto_specified_cbl_style:n
+    \bool_set_true:N \l__cus_specified_cbl_save_bool 
+    \tl_build_clear:N \g__cus_specified_style_tl 
+    #2 
+    \tl_build_get:NN \g__cus_specified_style_tl #1
+    \bool_set_false:N \l__cus_specified_cbl_save_bool 
+    \cs_set_eq:Nc \+ { __cus/saved/+ }
+    \@esphack 
   }
 \NewDocumentCommand \SpecifiedCombinedList { >{\TrimSpaces} O{} }
   { \cus_specified_cbl:n {#1} }
@@ -1170,46 +1248,64 @@
 \@namedef{l@toc/cbl/level 5}#1#2#3#4#5#6#7{\@dottedtocline{5}{12em}{6em}{#5}{#6}}
 
 
-\protected\def\plaincombinedlist#1{%
-  \begingroup
-  \@tempcnta\z@
+\protected\def\localplaincombinedlist#1#2#3{%
+  \begingroup 
+  \@tempcnta #2\relax
+  \ifnum\@tempcnta<\@ne \@tempcnta\@ne \fi 
+  \advance\@tempcnta-\@ne
+  \@tempcntb #3\relax 
+  \if\relax#1\relax 
+    \ifnum\@tempcntb>\total@cbl@count \@tempcntb\total@cbl@count \fi 
+  \else 
+    \ifnum\@tempcntb>\@nameuse{total@type#1@count} 
+      \@tempcntb\@nameuse{total@type#1@count}
+    \fi
+  \fi 
   \if\relax#1\relax
     \loop 
-    \ifnum\@tempcnta<\total@cbl@count
-      \advance\@tempcnta by\@ne
-      \contents@entry{\the\@tempcnta}\repeat 
+      \ifnum\@tempcnta<\@tempcntb
+        \advance\@tempcnta by\@ne
+        \contents@entry{\the\@tempcnta}\repeat 
   \else 
     \loop 
-      \ifnum\@tempcnta<\csname total@type#1@count\endcsname
+      \ifnum\@tempcnta<\@tempcntb
         \advance\@tempcnta by\@ne
         \contents@typeentry{#1}{\the\@tempcnta}\repeat 
   \fi
   \endgroup}
-\protected\def\standardplaincombinedlist#1#2{%
-  \if@twocolumn
-    \@restonecoltrue\onecolumn
-  \else
-    \@restonecolfalse
-  \fi
-  \if\relax\detokenize{#1}\relax\else \chapter{#1}\fi
-  \plaincombinedlist{#2}%
-  \if@restonecol\twocolumn\fi}
-\NewDocumentCommand\multicolplaincombinedlist{ O{columns=2,outer-sep=0pt} m m }{%
-  \if@twocolumn
-    \@restonecoltrue\onecolumn
-  \else
-    \@restonecolfalse
-  \fi
-  \if\relax\detokenize{#2}\relax\else \chapter{#2}\fi
-  \startmulticolumns[#1]%
-  \plaincombinedlist{#3}%
-  \stopmulticolumns
-  \if@restonecol\twocolumn\fi}
+\NewDocumentCommand\multicollocalplaincombinedlist
+  { O{columns=2,outer-sep=0pt} m m m m }
+  {\if@twocolumn
+      \@restonecoltrue\onecolumn
+    \else
+      \@restonecolfalse
+    \fi
+    \protected@edef\@tempc{#2}%
+    \if\relax\detokenize\expandafter{\@tempc}\relax\else \chapter{#2}\fi
+    \startmulticolumns[#1]%
+    \localplaincombinedlist{#3}{#4}{#5}%
+    \stopmulticolumns
+    \if@restonecol\twocolumn\fi}
+\protected\def\plaincombinedlist#1{\localplaincombinedlist{#1}{-\maxdimen}{\maxdimen}}
+\NewDocumentCommand\multicolplaincombinedlist{O{columns=2,outer-sep=0pt} m m}
+  {\multicollocalplaincombinedlist[{#1}]{#2}{#3}{-\maxdimen}{\maxdimen}}
 
 \let\@starttoc\plaincombinedlist
-\protected\def\tableofcontents{\standardplaincombinedlist{\contentsname}{toc}}
-\protected\def\listoffigures{\standardplaincombinedlist{\listfigurename}{lof}}
-\protected\def\listoftables{\standardplaincombinedlist{\listtablename}{lot}}
+\DeclareRobustCommand\tableofcontents[1][columns=1]%[columns=2,outer-sep=0pt]
+  {\multicolplaincombinedlist[{#1}]{\contentsname}{toc}}
+\NewDocumentCommand\localtableofcontents
+  { D(){,} O{columns=1} >{\SplitArgument{1}{,}} D(){#1} }
+  {\loc@ltableofcontents#3%
+    \multicollocalplaincombinedlist[{#2}]{\contentsname}{toc}{\@tempcbla}{\@tempcblb}}
+\def\loc@ltableofcontents#1#2{
+  \IfNoValueTF{#1}{\def\@tempa{\CurrentTitleLevel}}
+    {\edef\@tempa{\if\relax#1\relax \CurrentTitleLevel \else #1\fi}}%
+  \IfNoValueTF{#2}{\def\@tempb{}}{\def\@tempb{#2}}%
+  \expanded{\getcbllevelrange{toc}{\@tempa}[{\@tempb}]}{\@tempcbla}{\@tempcblb}}
+\DeclareRobustCommand\listoffigures[1][columns=1]%[columns=2,outer-sep=0pt]
+  {\multicolplaincombinedlist[{#1}]{\listfigurename}{lof}}
+\DeclareRobustCommand\listoftables[1][columns=1]%[columns=2,outer-sep=0pt]
+  {\multicolplaincombinedlist[{#1}]{\listtablename}{lot}}
 
 
 %% modify placeins.sty
@@ -1270,41 +1366,53 @@
             \exp_not:N \__cus_title_initial:n { \cs_to_str:N #1 }
             \exp_not:N \tl_if_blank:nTF {##3}
               { 
-                \exp_not:N \__cus_if_keyval:nTF {##2} 
+                \cus_if_keyval_variable:nNnn {##2}
+                  \exp_not:N \l__cus_title_curr_keys_tl 
                   { 
-                    \__cus_store_title_setting:nn { \cs_to_str:N #1 } {##2}
-                    \cus_setup_title:nn { \cs_to_str:N #1 } {##2}
-                    \exp_not:N \IfBooleanTF {##1} 
-                      { \exp_not:c { title@class@ #2 } { \cs_to_str:N #1 } * } 
-                      { \exp_not:c { title@class@ #2 } { \cs_to_str:N #1 } \scan_stop: } 
+                    \__cus_title_full:onnnnn 
+                      \exp_not:N \l__cus_title_curr_keys_tl
+                      { \cs_to_str:N #1 } { \exp_not:c { title@class@ #2 } }
+                      { \exp_not:N \IfBooleanTF {##1} * \scan_stop: }
                       {##4} {##4}
                   }
                   {
-                    \exp_not:N \tl_if_blank:nTF {##2}
-                      {
-                        \exp_not:N \IfBooleanTF {##1}
-                          { \exp_not:c { title@class@ #2 } { \cs_to_str:N #1 } * {##4} {##4} }
-                          { \exp_not:c { title@class@ #2 } { \cs_to_str:N #1 } \scan_stop: {##4} {##4} }
-                      }
-                      {
-                        \exp_not:N \IfBooleanTF {##1}
-                          { \exp_not:c { title@class@ #2 } { \cs_to_str:N #1 } * {##2} {##4} }
-                          { \exp_not:c { title@class@ #2 } { \cs_to_str:N #1 } \scan_stop: {##2} {##4} }
-                      }
+                    \__cus_title_normal:nnnnn 
+                      { \cs_to_str:N #1 } { \exp_not:c { title@class@ #2 } }
+                      { \exp_not:N \IfBooleanTF {##1} * \scan_stop: }
+                      {##2} {##4}
                   }
               }
               {
-                \__cus_store_title_setting:nn { \cs_to_str:N #1 } {##2}
-                \cus_setup_title:nn { \cs_to_str:N #1 } {##2}
-                \exp_not:N \IfBooleanTF {##1}
-                  { \exp_not:c { title@class@ #2 } { \cs_to_str:N #1 } * } 
-                  { \exp_not:c { title@class@ #2 } { \cs_to_str:N #1 } \scan_stop: } 
-                {##3} {##4}
+                \__cus_title_full:nnnnnn 
+                  {##2} { \cs_to_str:N #1 } 
+                  { \exp_not:c { title@class@ #2 } }
+                  { \exp_not:N \IfBooleanTF {##1} * \scan_stop: }
+                  {##3} {##4}
               }
             \__cus_restore_title_setting:n { \cs_to_str:N #1 }
             \ignorespaces
           }
       }
+  }
+% key, title str, class, star or else, entry, title 
+\cs_new_protected:Npn \__cus_title_full:nnnnnn #1#2 
+  {
+    \__cus_store_title_setting:nn {#2} {#1}
+    \cus_setup_title:nn {#2} {#1}
+    \__cus_title_normal:nnnnn {#2} 
+  }
+\cs_new_protected:Npn \__cus_title_full:onnnnn 
+  { \exp_args:No \__cus_title_full:nnnnnn }
+% title str, class, star or else, entry, title 
+\cs_new_protected:Npn \__cus_title_normal:nnnnn #1#2#3#4#5
+  { 
+    \use:e 
+      { 
+        \exp_not:n {#2} 
+        {#1} {#3} 
+        { \tl_if_blank:nTF {#4} { \exp_not:n {#5} } { \exp_not:n {#4} } } 
+      } 
+        {#5} 
   }
 \NewDocumentCommand \setuptitle { O{*} +m }
   {
@@ -1312,9 +1420,19 @@
     \seq_if_in:NnTF \l__cus_tmpa_seq { * }
       { \seq_map_inline:Nn \g__cus_title_seq }
       { \seq_map_inline:Nn \l__cus_tmpa_seq }
-        { \cus_setup_title:nn {##1} {#2} }
+        { \setuponetitle {##1} {#2} }
   }
 \cs_new_protected:Npn \cus_setup_title:nn #1 { \keys_set:nn { cus/title/#1 } }
+\cs_new_protected_nopar:Npn \setuponetitle #1
+  {
+    \cs_if_exist:cTF {#1} { \cus_setup_title:nn {#1} }
+      { 
+        \msg_warning:nnx { cus } { unknown-title } 
+          { \exp_after:wN \token_to_str:N \cs:w #1 \cs_end: } 
+        \use_none:n
+      }
+  }
+\msg_new:nnn { cus } { unknown-title } { Unknown~title~command:~#1. }
 
 \cs_new_protected:Npn \__cus_define_title_initial:n #1
   {
@@ -1361,16 +1479,25 @@
       }
   }
 \keys_define:nn { cus } { title .meta:nn = { cus/title } {#1} }
+\cs_new_nopar:Npn \titleinternalvalue #1 { \cs:w title~parameter@#1 \cs_end: }
 \cs_new_protected:Npn \__cus_define_title_keys:n #1
   {
     \cus_set_title_key_special_store_restore:nn {#1}
-      { name, number-from, number-within, number-without, number, 
-        bookmark, bookmark* }
+      { 
+        style, name, name-preto, name-appto, number, 
+        number-from, number-within, number-without, 
+        number-format, label-format,
+        tags+, bookmark, bookmark* 
+      }
     \keys_define:nn { cus/title } { #1 .meta:nn = { cus/title/#1 } {##1} }
     \keys_define:nn { cus/title/ #1 }
       {
         style           .meta:n = {##1} ,
         name            .code:n = { \cus_assign_heading_name:nn {#1} {##1} } ,
+        name-preto      .code:n = 
+          { \tl_put_left:cn { title~parameter@pre #1 } {##1} } ,
+        name-appto      .code:n = 
+          { \tl_put_right:cn { title~parameter@post #1 } {##1} } ,
         number        .tl_set:c = title~parameter@the #1 ,
         number-from     .code:n = 
           \__cus_title_keys_preamble_set:nn { number-from }
@@ -1381,11 +1508,17 @@
         number-without  .code:n = 
           \__cus_title_keys_preamble_set:nn { number-without }
             { \counterwithout {#1} {##1} \scan_stop: } ,
-        beforeskip  .skip_set:c = title~parameter@#1@beforeskip ,
-        afterskip   .skip_set:c = title~parameter@#1@afterskip ,
-        leftskip    .skip_set:c = title~parameter@#1@leftskip ,
-        rightskip   .skip_set:c = title~parameter@#1@rightskip ,
-        indent       .dim_set:c = title~parameter@#1@indent ,
+        number-format   .code:n = 
+          \__cus_title_keys_preamble_set:nn { number-format }
+            { \cs_set:cpn { the #1 } {##1} } ,
+        label-format    .code:n = 
+          \__cus_title_keys_preamble_set:nn { label-format }
+            { \labelformat {#1} { ##1 } } ,
+        beforeskip   .tl_set:c = title~parameter@#1@beforeskip ,
+        afterskip    .tl_set:c = title~parameter@#1@afterskip ,
+        leftskip     .tl_set:c = title~parameter@#1@leftskip ,
+        rightskip    .tl_set:c = title~parameter@#1@rightskip ,
+        indent       .tl_set:c = title~parameter@#1@indent ,
         numbering .switch_set:c = title~parameter@#1@numbering ,
         numbering    .initial:n = true ,
         beforeskip   .initial:n = \c_zero_skip ,
@@ -1407,6 +1540,9 @@
         level           .code:n = 
           \__cus_title_keys_preamble_set:nn { title~level }
             { \cus_assign_heading_level:nn {#1} {##1} } ,
+        tags       .clist_set:c = title~parameter@#1@tags ,
+        tags+           .code:n = 
+          { \clist_put_right:cn { title~parameter@#1@tags } {#1} } ,
         tocline      .cs_set:cp = { title~parameter@#1@tocline } ##1##2 ,
         tocline      .initial:n = \titlenumberline{##1}##2 ,
         bookmark        .code:n = \cus_gset_next_bookmark_text:n {##1} ,
@@ -1475,6 +1611,16 @@
     \cs_set_eq:cc { title~tmpstore@pre #1 } { title~parameter@pre #1 }
     \cs_set_eq:cc { title~tmpstore@post #1 } { title~parameter@post #1 }
   }
+\cus_set_title_key_store_code:nn { @name-preto }
+  {
+    \seq_put_right:Nn \l__cus_title_restore_key_seq { name-preto }
+    \cs_set_eq:cc { title~tmpstore@pre #1 } { title~parameter@pre #1 }
+  }
+\cus_set_title_key_store_code:nn { @name-appto }
+  {
+    \seq_put_right:Nn \l__cus_title_restore_key_seq { name-appto }
+    \cs_set_eq:cc { title~tmpstore@post #1 } { title~parameter@post #1 }
+  }
 \cus_set_title_key_store_code:nn { @number }
   {
     \seq_put_right:Nn \l__cus_title_restore_key_seq { number }
@@ -1501,6 +1647,10 @@
     \cs_set_eq:cc { title~parameter@pre #1 } { title~tmpstore@pre #1 }
     \cs_set_eq:cc { title~parameter@post #1 } { title~tmpstore@post #1 }
   }
+\cus_set_title_key_restore_code:nn { @name-preto }
+  { \cs_set_eq:cc { title~parameter@pre #1 } { title~tmpstore@pre #1 } }
+\cus_set_title_key_restore_code:nn { @name-appto }
+  { \cs_set_eq:cc { title~parameter@post #1 } { title~tmpstore@post #1 } }
 \cus_set_title_key_restore_code:nn { @number }
   {
     \cs_set_eq:cc { title~parameter@the #1 } { title~tmpstore@the #1 }
@@ -1510,9 +1660,13 @@
     \cus_set_title_key_store_code:nn {#1}   { }
     \cus_set_title_key_restore_code:nn {#1} { }
   }
+\cus_ignore_title_key_store_restore:n { @style } 
 \cus_ignore_title_key_store_restore:n { @number-from } 
 \cus_ignore_title_key_store_restore:n { @number-within } 
 \cus_ignore_title_key_store_restore:n { @number-without } 
+\cus_ignore_title_key_store_restore:n { @number-format } 
+\cus_ignore_title_key_store_restore:n { @label-format } 
+\cus_ignore_title_key_store_restore:n { @tags+ } 
 \cus_ignore_title_key_store_restore:n { @bookmark } 
 \cus_ignore_title_key_store_restore:n { @bookmark* } 
 \cs_new_protected:Npn \cus_set_title_key_special_store:nn #1#2
@@ -1573,6 +1727,37 @@
   }
 \cs_new_protected_nopar:Npn \setsecnumdepth { \setsecnumberdepth }
 
+% 判断是不是已经 patch 了
+\cs_if_exist:NF \ctex_cleveref_hook:
+  {
+    \cs_new_protected:Npn \ctex_cleveref_hook:
+      {
+        \@ifpackageloaded { hyperref }
+          {
+            \@ifpackagewith { hyperref } { implicit = false }
+              { }
+              { \__ctex_cleveref_hook_aux:N \H@refstepcounter }
+          }
+          {
+            \__ctex_cleveref_hook_aux:N \refstepcounter@noarg
+            \__ctex_cleveref_hook_aux:N \refstepcounter@optarg
+          }
+      }
+    \cs_new_protected:Npn \__ctex_cleveref_hook_aux:N #1
+      {
+        \ctex_patch_cmd_all:NnnnTF #1
+          {
+            \ExplSyntaxOff
+            \char_set_catcode_letter:n { 64 }
+          }
+          { \endcsname \csname the }
+          { \expandafter \endcsname \csname the }
+          { }
+          { \ctex_patch_failure:N #1 }
+      }
+    \cus_pkg_code:nnn { cleveref } { } { \ctex_cleveref_hook: }
+  }
+
 \msg_new:nnn { cus } { document-reset-value } { Cannot~set~#1~after~preamble. }
 
 \cs_new_eq:NN \CurrentCombinedListCount \g_cus_document_cbl_index_int 
@@ -1582,14 +1767,14 @@
   {
     \str_if_eq:eeT {#1} { toc }
       { 
-        \if_int_compare:w \cus_heading_level:n { toc-#2 } = \c_zero_int
+        \if_int_compare:w \exp_args:Ne \cus_heading_level:n { toc-#2 } = \c_zero_int
           \int_gincr:N \g__cus_curr_toc_default_level_count_int
         \fi:
       }
   }
 \group_begin:
 \char_set_catcode_other:N \#
-\cus_hook_gput_as:n 
+\cus_hook_gput_ae:n 
   {
     \ctex_appto_cmd:NnnTF \addcontentsline { \makeatletter }
       { \cus@updatedefaultlevel{#1}{#2} }
@@ -1626,25 +1811,32 @@
   }
 \cs_new:Npn \title@ifnumbering #1
   { \bool_if:cTF { title~parameter@ #1 @numbering } }
-% \cs_new_protected:Npn \title@makeanchor { \cus_make_unique_target:n }
-\cs_new:Npn \title@makeanchor #1 { }
-\cus_pkg_code:nnn { hyperref } { }
-  { 
-    \cs_gset_protected:Npn \title@makeanchor #1
-      {
-        \Hy@MakeCurrentHrefAuto {#1}
-        \Hy@raisedlink
-          {
-            \hyper@anchorstart { \@currentHref }
-            \hyper@anchorend 
-          }
-      }
-  }
+\cs_new_protected:Npn \title@makeanchor { \cus_make_unique_target:n }
+% \cs_new:Npn \title@makeanchor #1 { }
+% \cus_pkg_code:nnn { hyperref } { }
+%   { 
+%     \cs_gset_protected:Npn \title@makeanchor #1
+%       {
+%         \Hy@MakeCurrentHrefAuto {#1*}
+%         \Hy@raisedlink
+%           {
+%             \hyper@anchorstart { \@currentHref }
+%             \hyper@anchorend 
+%           }
+%       }
+%   }
 \cs_new:Npn \title@gettitle #1 { }
 \cus_pkg_code:nnn { nameref } { }
   { \cs_gset_protected:Npn \title@gettitle { \NR@gettitle } }
+\cs_new:Npn \__cus_if_incsname:TF 
+  { \tex_ifincsname:D \exp_after:wN \use_i:nn \else: \exp_after:wN \use_ii:nn \fi: }
 \cs_new:Npn \title@addtocline #1#2
-  { \addcontentsline {toc} {#1} { \use:c { title~parameter@#1@tocline } {#1} {#2} } }
+  { 
+    \addcontentsline {toc} 
+      % bookmark needs #1 to determine level
+      { #1 \__cus_if_incsname:TF { } { , \use:c { title~parameter@#1@tags } } } 
+      { \use:c { title~parameter@#1@tocline } {#1} {#2} } 
+  }
 \cs_new:Npn \title@heading@format@initial 
   {
     \normalfont
@@ -1735,10 +1927,10 @@
   \ifnum \c@secnumdepth >-2\relax
     \title@ifnumbering{#1}
       {\title@ifnametrue \refstepcounter{#1}}
-      {\title@ifnamefalse \title@makeanchor{#1*}}%
+      {\title@ifnamefalse \title@makeanchor{#1}}%
   \else 
     \title@ifnamefalse
-    \title@makeanchor{#1*}%
+    \title@makeanchor{#1}%
   \fi 
   \title@gettitle{#2}%
   \title@addtocline{#1}{#2}%
@@ -1790,14 +1982,14 @@
     \if@mainmatter 
       \title@ifnumbering{#1}
         {\title@ifnametrue \refstepcounter{#1}}
-        {\title@ifnamefalse \title@makeanchor{#1*}}%
+        {\title@ifnamefalse \title@makeanchor{#1}}%
     \else 
       \title@ifnamefalse 
-      \title@makeanchor{#1*}%
+      \title@makeanchor{#1}%
     \fi 
   \else 
     \title@ifnamefalse 
-    \title@makeanchor{#1*}
+    \title@makeanchor{#1}
   \fi 
   \title@gettitle{#2}%
   \title@addtocline{#1}{#2}%
@@ -1811,7 +2003,7 @@
   \fi}
 \protected\def\title@class@top@@ #1#2#3{%
   \title@ifnamefalse 
-  \title@makeanchor{#1*}%
+  \title@makeanchor{#1}%
   \title@gettitle{#2}%
   \title@classhook@topend 
   \if@twocolumn 
@@ -1878,13 +2070,13 @@
 \protected\def\title@class@normal@ #1#2#3{%
   \ifnum\title@getlevel{#1}>\c@secnumdepth
     \title@ifnamefalse
-    \title@makeanchor{#1*}%
+    \title@makeanchor{#1}%
     \let\@svsec\@empty 
   \else 
     \title@ifnumbering{#1}
       {\title@ifnametrue \refstepcounter{#1}%
         \protected@edef\@svsec{\title@name{#1}\title@aftername{#1}}\relax}
-      {\title@ifnamefalse \title@makeanchor{#1*}%
+      {\title@ifnamefalse \title@makeanchor{#1}%
         \let\@svsec\@empty}%
   \fi 
   \title@gettitle{#2}%
@@ -1907,7 +2099,7 @@
       \title@addtocline{#1}{#2}}%
   \title@class@endnormal{#1}}
 \protected\def\title@class@normal@@ #1#2#3{%
-  \title@makeanchor{#1*}%
+  \title@makeanchor{#1}%
   \title@ifnamefalse 
   \title@gettitle{#2}%
   \title@ifrunin{#1}
@@ -1971,13 +2163,13 @@
 \protected\def\title@class@free@ #1#2#3{%
   \ifnum\title@getlevel{#1}>\c@secnumdepth 
     \title@ifnamefalse 
-    \title@makeanchor{#1*}%
+    \title@makeanchor{#1}%
     \let\@svsec\@empty 
   \else 
     \title@ifnumbering{#1}
       {\title@ifnametrue \refstepcounter{#1}%
         \protected@edef\@svsec{\title@name{#1}\title@aftername{#1}}\relax}
-      {\title@ifnamefalse \title@makeanchor{#1*}%
+      {\title@ifnamefalse \title@makeanchor{#1}%
         \let\@svsec\@empty}%
   \fi
   \title@gettitle{#1}%
@@ -1991,7 +2183,7 @@
   \title@class@endfree{#1}}
 \protected\def\title@class@free@@ #1#2#3{%
   \title@ifnamefalse 
-  \title@makeanchor{#1*}%
+  \title@makeanchor{#1}%
   \title@gettitle{#2}%
   \title@heading@format@initial 
   {\title@format{#1}{%
@@ -2024,17 +2216,17 @@
     \title@setvarwidth\@tempboxa{.4\textwidth}{%
       \title@ifstar{#2}{%
         \title@ifnamefalse 
-        \title@makeanchor{#1*}%
+        \title@makeanchor{#1}%
         \let\@svsec\@empty}{%
         \ifnum\title@getlevel{#1}>\c@secnumdepth 
           \title@ifnamefalse 
-          \title@makeanchor{#1*}%
+          \title@makeanchor{#1}%
           \let\@svsec\@empty
         \else 
           \title@ifnumbering{#1}
             {\title@ifnametrue \refstepcounter{#1}%
               \protected@edef\@svsec{\title@name{#1}\title@aftername{#1}}\relax}
-            {\title@ifnamefalse \title@makeanchor{#1*}%
+            {\title@ifnamefalse \title@makeanchor{#1}%
               \let\@svsec\@empty}%
         \fi 
       }%

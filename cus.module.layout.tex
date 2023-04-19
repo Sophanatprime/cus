@@ -1,6 +1,6 @@
 \CUSDependency{ package={
   (cus@TATE)lltjp-geometry, geometry, [usegeometry]typearea, fancyhdr
- } 
+ } , disable={autofancyhdr}
 }
 \CUSProvideExplModule{layout}{\cus@d@te}{\cus@versi@n}{layout settings}
 
@@ -463,11 +463,36 @@
 \msg_new:nnn { cus } { papername-unknown } { The~papername~`#1'~is~unknown. }
 
 
-\NewDocumentCommand \setpagestyle { s m O{f@nch@fancyproto} +m }
+\protected\def\pagestyle#1{%
+  \@ifundefined{ps@#1}\undefinedpagestyle
+    {\edef\@currpagestyle{#1}\@nameuse{ps@\@currpagestyle}}}
+\protected\def\thispagestyle#1{%
+  \@ifundefined{ps@#1}\undefinedpagestyle
+    {\global\@specialpagetrue\xdef\@specialstyle{#1}}}
+\ctex_patch_cmd:Nnn \@outputpage { \if@specialpage } 
+  { \if@specialpage \let\@currpagestyle\@specialstyle }
+\NewDocumentCommand \setpagestyle { l m O{f@nch@fancyproto} +m }
   {
-    \str_if_eq:eeTF {#2} {#3} 
-      { \f@nch@pagestyle {#2} [f@nch@fancyproto] } { \f@nch@pagestyle {#2} [#3] } {#4}
-    \IfBooleanF {#1} { \usepagestyle {#2} }
+    \bool_lazy_or:nnTF 
+      { \str_if_eq_p:ee { \c_tilde_str } { \exp_not:n {#3} } }
+      { \str_if_eq_p:ee {#2} {#3} }
+      { \f@nch@pagestyle {#2} [f@nch@fancyproto] } 
+      { \f@nch@pagestyle {#2} [#3] } {#4}
+    \str_case:nn {#1}
+      {
+        { * } { \usepagestyle{#2} }
+        { . } { \usethispagestyle{#2} }
+        { + } { \usepagestyle{#2} \usethispagestyle{#2} }
+      }
+  }
+\cs_new_protected_nopar:Npn \copypagestyle #1#2 
+  { 
+    \cs_if_exist:cTF { ps@#2 }
+      { 
+        \cs_set_eq:cc { ps@#1 } { ps@#2 } 
+        \cs_set_eq:cc { f@nch@ps@#1-is-fancyhdr } { f@nch@ps@#2-is-fancyhdr }
+      }
+      { \undefinedpagestyle }
   }
 \cs_new_protected_nopar:Npn \usepagestyle { \pagestyle }
 \cs_new_protected_nopar:Npn \usethispagestyle { \thispagestyle }
