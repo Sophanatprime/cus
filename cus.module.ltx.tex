@@ -110,13 +110,23 @@
 \def\cus@mathdispatch#1#2{%
   \mathchoice{#1\tf@size{#2}}{#1\tf@size{#2}}{#1\sf@size{#2}}{#1\ssf@size{#2}}}
 
-\def\cusemojilowerratio{1/8}
+\def\cusemojilowerratio{1/7}
+\def\cusemojitotalratio{8/9}
 \protected\def\cus@emoji@pic#1#2{\leavevmode@ifvmode
-  \lower\dimexpr #1\p@*\cusemojilowerratio\hbox{\includegraphics[height={#1\p@}]{#2}}}
+  \lower\dimexpr #1\p@*\cusemojitotalratio*\cusemojilowerratio
+    \hbox{\includegraphics[height=\dimeval{#1\p@*\cusemojitotalratio}]{#2}}}
 \def\cus@emoji@math#1{\cus@mathdispatch{\cus@emoji@pic}{#1}}
 \protected\def\cusemoji#1{{\ifmmode\cus@emoji@math{#1}\else\cus@emoji@pic\f@size{#1}\fi}}
 
+\protected\def\cusautosize#1{\ifmmode
+    {\setbox\z@\hbox{\m@th $\relax #1$}\cus@mathautosize}\@EA\@gobble\fi
+  {\leavevmode@ifvmode #1}}
+\def\cus@mathautosize{\mathchoice
+  {\copy\z@}{\copy\z@}{\cus@scale@box\z@\defaultscriptratio\defaultscriptratio \copy\z@}
+  {\cus@scale@box\z@\defaultscriptscriptratio\defaultscriptscriptratio \box\z@}}
+
 \ExplSyntaxOn
+\cs_new_eq:NN \cus@scale@box \box_scale:Nnn
 \cs_new_protected_nopar:Npn \cus@char@pic #1#2#3#4 % pic ht, dp, wd, file
   {
     \mode_leave_vertical:

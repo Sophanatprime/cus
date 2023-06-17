@@ -22,7 +22,7 @@
 \NeedsTeXFormat{LaTeX2e}[2021/06/01]
 \RequirePackage{l3keys2e,xtemplate}
 \def\cus@d@te{2022/07/10}
-\def\cus@versi@n{0.0.2.5}
+\def\cus@versi@n{0.0.3}
 \ProvidesExplPackage{cus}{\cus@d@te}{\cus@versi@n}{Chinese User Scheme (CUS) basic file}
 
 \def\CusTeX{C\kern-.12em \raise.0466ex\hbox{u}\kern-.1em\lower .4ex\hbox{S}\kern-.15em\TeX}
@@ -73,21 +73,24 @@
         \fi:
       }
   }
-\group_begin:
-\cs_set_eq:NN \c_parameter_token \scan_stop:
 \cs_if_free:NT \token_if_control_word:NTF 
   {
-    \prg_new_conditional:Npnn \token_if_control_word:N #1 { p, T, F, TF }
+    \prg_new_conditional:Npnn \token_if_control_word:N #1 { p , T , F , TF }
       {
         \if:w 0 \__cus_strcmp:ww { \exp_not:N #1 } { \token_to_str:N #1 }
-          \prg_return_false:
+          \__token_if_control_word_aux:w 
         \else:
-          \if_catcode:w \exp_not:N #1 \c_parameter_token
+          \if:w \exp_not:N #1 \token_to_str:N #1
             \prg_return_false: \else: \prg_return_true: \fi:
         \fi:
       }
+    \cs_new:Npn \__token_if_control_word_aux:w #1 \fi: { \prg_return_false: }
   }
-\group_end: 
+\cs_if_free:NT \text_mdfive_hash:n 
+  {
+    \cs_new:Npn \text_mdfive_hash:n #1 
+      { \str_mdfive_hash:e { \text_expand:n {#1} } }
+  }
 %%
 
 \RequirePackage{xparse} % we need to use `l'
@@ -367,6 +370,7 @@
 
 \CUSLoadModule { ltx }
 \CUSLoadModule { util }
+\CUSLoadModule { algo }
 \CUSLoadModule { package }
 
 \group_begin:

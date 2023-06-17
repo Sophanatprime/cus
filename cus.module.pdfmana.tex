@@ -1,9 +1,19 @@
 \CUSProvideExplModule{pdfmana}{\cus@d@te}{\cus@versi@n}{special for pdfmanagement}
+\tl_const:Nn \c__cus_pdfmana_patch_tl 
+  {
+    \cs_set_protected_nopar:Npn \transparent #1 { }
+    \cs_set_protected_nopar:Npn \texttransparent #1#2 
+      { \mode_leave_vertical: \group_begin: #2 \group_end: }
+  }
 \bool_lazy_and:nnTF
   { \cs_if_exist_p:N \pdfmanagement_if_active_p: } 
   { \pdfmanagement_if_active_p: } 
   { \cs_gset_eq:NN \CusIfPdfmana \use_i:nn }
-  { \cs_gset_eq:NN \CusIfPdfmana \use_ii:nn \tex_endinput:D }
+  { 
+    \cs_gset_eq:NN \CusIfPdfmana \use_ii:nn 
+    \c__cus_pdfmana_patch_tl 
+    \tex_endinput:D 
+  }
 \CUSDependency{disable={transparent},package={l3opacity}}
 
 \NewDocumentCommand \transparent { m }

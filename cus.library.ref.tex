@@ -9,7 +9,9 @@
     \int_gincr:N \g__cus_ref_record_page_int
     \cus_newlabel_shipout_x:xxxxxx 
       { cus@ref/pageodd/cnt/ \int_use:N \g__cus_ref_record_page_int }
-      { } { \exp_not:N \int_value:w #1 } { } { } { }
+      { \int_use:N \g__cus_ref_record_page_int } 
+      { \exp_not:N \int_value:w #1 } { } { } 
+      { \exp_not:N \int_value:w \g_shipout_readonly_int }
     \cus_label_if_exist:nTF 
       { cus@ref/pageodd/cnt/ \int_use:N \g__cus_ref_record_page_int }
       {

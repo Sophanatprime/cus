@@ -76,8 +76,9 @@
 
 \cs_new:Npn \DocUsageuse #1 { \textit {#1} } % 正文中使用
 \cs_new:Npn \DocUsageusage #1 { \textbf {#1} }   % 说明处
-\cs_new:Npn \DocUsagemain #1 { \underline {#1} } % 定义处
+\cs_new:Npn \DocUsagedef #1 { \underline {#1} } % 定义处
 \cs_new:Npn \DocUsagecode #1 { {#1} } % 代码中使用
+\cs_new:Npn \DocUsagemain #1 { {#1} } % 正常情况
 
 \tl_new:N \cus@doc@ttfont \tl_set:Nn \cus@doc@ttfont { \ttfamily }
 \tl_new:N \cus@doc@itfont \tl_set:Nn \cus@doc@itfont { \normalfont\itshape }
@@ -293,6 +294,8 @@
     \tl_put_left:Nx #2 { doc/ \l__cus_doc_type_tl // }
   }
 \cs_generate_variant:Nn \__cus_doc_get_hyper_target:nN { o , x }
+\tl_new:N \cus@doc@thetext 
+\tl_new:N \cus@doc@thelabel
 \cs_new_protected:Npn \__cus_doc_cmd:nn #1#2
   {
     \group_begin:
@@ -634,12 +637,15 @@
     \__kernel_tl_set:Nx \l__cus_doc_index_key_tl
       { \tl_tail:N \l__cus_doc_index_key_tl }
   }
-\cs_new_protected:Npn \__cus_doc_target: 
+\cs_new_protected:Npn \__cus_doc_target:
+  { \__cus_doc_target_raise:n { \normalbaselineskip } }
+\cs_new_protected:Npn \__cus_doc_target_raise:n #1
   {
     \mode_leave_vertical:
     \group_begin:
     \int_gincr:N \c@HD@hypercount 
-      \Hy@raisedlink { \llap { \hypertarget {HD.\the\c@HD@hypercount} {} \, } }
+    \__cus_make_raised_target:nn {#1}
+      { \llap { \hypertarget {HD.\the\c@HD@hypercount} {} \, } }
     \group_end:
   }
 \cs_new_protected:Npn \__cus_doc_key_trim_module:n #1
@@ -697,6 +703,12 @@
       }
   }
 \clist_new:N \g__cus_doc_non_modules_clist
+\NewDocumentCommand \SpecialIndex { O{main} +m }
+  {
+    \@bsphack
+    \__cus_doc_special_index:nn {#2} {#1}
+    \@esphack
+  }
 \cs_new_protected:Npn \__cus_doc_special_index:nn #1#2
   {
     \__cus_doc_key_get:n {#1}
@@ -1562,10 +1574,7 @@
 \cs_new_protected:Npn \__cus_doc_typeset_functions:
   {
     \linespread{1} \small \cus@doc@ttfont 
-    \group_begin:
-    \def\HyperRaiseLinkDefault{\z@}
-    \__cus_doc_target:
-    \group_end:
+    \__cus_doc_target_raise:n { \c_zero_dim }
     \Hy@MakeCurrentHref { HD. \int_use:N \c@HD@hypercount }
     \begin{tabular} [t] { @{} l @{} >{\hspace{\tabcolsep}} r @{} }
       \toprule

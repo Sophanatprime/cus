@@ -463,11 +463,14 @@
 \msg_new:nnn { cus } { papername-unknown } { The~papername~`#1'~is~unknown. }
 
 
+\protected\def\undefinedpagestyle#1{%
+  \msg_warning:nnx { cus } { unknown-pagestyle } {#1}
+}
 \protected\def\pagestyle#1{%
-  \@ifundefined{ps@#1}\undefinedpagestyle
+  \@ifundefined{ps@#1}{\undefinedpagestyle{#1}}
     {\edef\@currpagestyle{#1}\@nameuse{ps@\@currpagestyle}}}
 \protected\def\thispagestyle#1{%
-  \@ifundefined{ps@#1}\undefinedpagestyle
+  \@ifundefined{ps@#1}{\undefinedpagestyle{#1}}
     {\global\@specialpagetrue\xdef\@specialstyle{#1}}}
 \ctex_patch_cmd:Nnn \@outputpage { \if@specialpage } 
   { \if@specialpage \let\@currpagestyle\@specialstyle }
@@ -492,7 +495,7 @@
         \cs_set_eq:cc { ps@#1 } { ps@#2 } 
         \cs_set_eq:cc { f@nch@ps@#1-is-fancyhdr } { f@nch@ps@#2-is-fancyhdr }
       }
-      { \undefinedpagestyle }
+      { \undefinedpagestyle{#2} }
   }
 \cs_new_protected_nopar:Npn \usepagestyle { \pagestyle }
 \cs_new_protected_nopar:Npn \usethispagestyle { \thispagestyle }
@@ -540,3 +543,5 @@
   { \if@fcolmade \exp_after:wN \use_i:nn \else: \use_ii:nn \fi: }
 \cs_set:Npn \iffootnote 
   { \iff@nch@footnote \exp_after:wN \use_i:nn \else: \use_ii:nn \fi: }
+
+\msg_new:nnn { cus } { unknown-pagestyle } { Unknown~pagestyle~`#1'. }
