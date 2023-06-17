@@ -4,8 +4,6 @@
 
 %SEE: ctexheading (ctexbook.cls), titlesec, titletoc, etoc, etc. 
 
-%\tl_const:Nn \cus@maincbl { toc }
-%\cs_set_eq:NN \cus@currcbl \cus@maincbl
 \tl_new:N \g__cus_cbl_before_load_tl
 \tl_new:N \g__cus_cbl_after_load_tl
 
@@ -50,7 +48,9 @@
     \int_gincr:N \g_cus_document_cbl_index_int 
     \protected@write \@auxout
       {
-        \cs_set_eq:NN \label \use_none:n 
+        \cs_set_eq:NN \ifintitle \use_ii:nn
+        \cs_set_eq:NN \ifincblentry \use_i:nn
+        \cs_set_eq:NN \label \__cus_use_none_exp_om:w 
         \cs_set_eq:NN \index \__cus_use_none_exp_om:w 
         \cs_set_eq:NN \glossary \__cus_use_none_exp_om:w 
       }
@@ -1171,7 +1171,9 @@
     \bool_set_true:N \l__cus_specified_cbl_save_bool 
     \tl_build_clear:N \g__cus_specified_style_tl 
     #2 
-    \tl_build_get:NN \g__cus_specified_style_tl #1
+    % \tl_build_get:NN \g__cus_specified_style_tl #1
+    \tl_build_end:N \g__cus_specified_style_tl
+    \tl_set_eq:NN #1 \g__cus_specified_style_tl
     \bool_set_false:N \l__cus_specified_cbl_save_bool 
     \cs_set_eq:Nc \+ { __cus/saved/+ }
     \@esphack 
@@ -1297,7 +1299,7 @@
   { D(){,} O{columns=1} >{\SplitArgument{1}{,}} D(){#1} }
   {\loc@ltableofcontents#3%
     \multicollocalplaincombinedlist[{#2}]{\contentsname}{toc}{\@tempcbla}{\@tempcblb}}
-\def\loc@ltableofcontents#1#2{
+\def\loc@ltableofcontents#1#2{%
   \IfNoValueTF{#1}{\def\@tempa{\CurrentTitleLevel}}
     {\edef\@tempa{\if\relax#1\relax \CurrentTitleLevel \else #1\fi}}%
   \IfNoValueTF{#2}{\def\@tempb{}}{\def\@tempb{#2}}%
@@ -1350,6 +1352,10 @@
 
 \msg_new:nnn { cus } { title-class-unknown } { The~title~class~`#1'~unknown. }
 \seq_new:N \g__cus_title_seq
+\prop_new:N \g__cus_title_prop 
+\cs_new_eq:NN \ifintitle \use_ii:nn
+\cs_new_eq:NN \ifincblentry \use_ii:nn
+\cs_new_protected:Npn \__cus_title_update_level_prop:nn { \prop_gput:Nxx \g__cus_title_prop }
 \cs_new_protected:Npn \IterateTitleList { \seq_map_inline:Nn \g__cus_title_seq }
 \NewDocumentCommand \definetitle { m >{ \TrimSpaces } O{normal} +m } 
   { 
@@ -1357,11 +1363,15 @@
       { \msg_error:nnn { cus } { title-class-unknown } {#2} }
     \exp_args:NNe \seq_if_in:NnF \g__cus_title_seq { \cs_to_str:N #1 }
       { \exp_args:Ne \__cus_define_title_initial:n { \cs_to_str:N #1 } }
+    \exp_args:Nee \keys_define:nn { cus/title/ \cs_to_str:N #1 } 
+      { \exp_not:v { title@classkeys@#2 } }
+    \str_gset:cx { title~parameter@ \cs_to_str:N #1 @__class } {#2}
     \exp_args:Nee \cus_setup_title:nn { \cs_to_str:N #1 }
       { \exp_not:v { title@classinitial@ #2 } , \exp_not:n {#3} }
+    \use:c { title@classhook@#2afterdef }
     \use:e 
       {
-        \exp_not:N \DeclareDocumentCommand \exp_not:N #1 { s +O{} O{} m }
+        \DeclareDocumentCommand \exp_not:N #1 { s +O{} O{} m }
           {
             \exp_not:N \__cus_title_initial:n { \cs_to_str:N #1 }
             \exp_not:N \tl_if_blank:nTF {##3}
@@ -1390,6 +1400,7 @@
                   {##3} {##4}
               }
             \__cus_restore_title_setting:n { \cs_to_str:N #1 }
+            \exp_not:n { \cs_set_eq:NN \ifintitle \use_ii:nn }
             \ignorespaces
           }
       }
@@ -1423,13 +1434,30 @@
         { \setuponetitle {##1} {#2} }
   }
 \cs_new_protected:Npn \cus_setup_title:nn #1 { \keys_set:nn { cus/title/#1 } }
-\cs_new_protected_nopar:Npn \setuponetitle #1
+\cs_new_protected:Npn \cus_title_level_do:nn #1#2
   {
-    \cs_if_exist:cTF {#1} { \cus_setup_title:nn {#1} }
+    \cs_set:Npn \__cus_title_level_do:n ##1 {#2}
+    \seq_map_inline:Nn \g__cus_title_seq
+      {
+        \int_compare:nNnT {#1} = { \use:c { title~parameter@ ##1 @level } }
+          { \__cus_title_level_do:n {##1} }
+      }
+  }
+\cs_new_protected_nopar:Npn \setuponetitleq #1 { \cus_setup_title:nn {#1} }
+\cs_new_protected:Npn \setuponetitle #1#2
+  {
+    \cus_if_head_int:nTF {#1}
       { 
-        \msg_warning:nnx { cus } { unknown-title } 
-          { \exp_after:wN \token_to_str:N \cs:w #1 \cs_end: } 
-        \use_none:n
+        \exp_args:Nf \cus_title_level_do:nn { \int_eval:n {#1} } 
+          { \cus_setup_title:nn {##1} {#2} }
+      }
+      { 
+        \cs_if_exist:cTF {#1}
+          { \cus_setup_title:nn {#1} {#2} }
+          { 
+            \msg_warning:nnx { cus } { unknown-title } 
+              { \exp_after:wN \token_to_str:N \cs:w #1 \cs_end: }
+          }
       }
   }
 \msg_new:nnn { cus } { unknown-title } { Unknown~title~command:~#1. }
@@ -1482,13 +1510,14 @@
 \cs_new_nopar:Npn \titleinternalvalue #1 { \cs:w title~parameter@#1 \cs_end: }
 \cs_new_protected:Npn \__cus_define_title_keys:n #1
   {
-    \cus_set_title_key_special_store_restore:nn {#1}
+    \cus_setup_title_store_restore:nnN {#1}
       { 
         style, name, name-preto, name-appto, number, 
         number-from, number-within, number-without, 
         number-format, label-format,
         tags+, bookmark, bookmark* 
       }
+      @ 
     \keys_define:nn { cus/title } { #1 .meta:nn = { cus/title/#1 } {##1} }
     \keys_define:nn { cus/title/ #1 }
       {
@@ -1576,6 +1605,7 @@
   { 
     \seq_clear:N \l__cus_title_restore_key_seq 
     \tl_gset:Nx \CurrentTitleLevel { \tl_use:c { title~parameter@ #1 @level } }
+    \cs_set_eq:NN \ifintitle \use_i:nn
   }
 \tl_gset:Nx \CurrentTitleLevel { -10001 }
 \cs_new_protected:Npn \__cus_store_title_setting:nn #1#2
@@ -1605,27 +1635,6 @@
     \cs_set_protected:cpn { title~store@ #1 @command } 
       \__cus_store_title_setting_key:nn ##1##2
   }
-\cus_set_title_key_store_code:nn { @name }
-  {
-    \seq_put_right:Nn \l__cus_title_restore_key_seq { name }
-    \cs_set_eq:cc { title~tmpstore@pre #1 } { title~parameter@pre #1 }
-    \cs_set_eq:cc { title~tmpstore@post #1 } { title~parameter@post #1 }
-  }
-\cus_set_title_key_store_code:nn { @name-preto }
-  {
-    \seq_put_right:Nn \l__cus_title_restore_key_seq { name-preto }
-    \cs_set_eq:cc { title~tmpstore@pre #1 } { title~parameter@pre #1 }
-  }
-\cus_set_title_key_store_code:nn { @name-appto }
-  {
-    \seq_put_right:Nn \l__cus_title_restore_key_seq { name-appto }
-    \cs_set_eq:cc { title~tmpstore@post #1 } { title~parameter@post #1 }
-  }
-\cus_set_title_key_store_code:nn { @number }
-  {
-    \seq_put_right:Nn \l__cus_title_restore_key_seq { number }
-    \cs_set_eq:cc { title~tmpstore@the #1 } { title~parameter@the #1 }
-  }
 \cs_new_protected_nopar:Npn \__cus_restore_title_setting:n #1
   {
     \seq_remove_duplicates:N \l__cus_title_restore_key_seq
@@ -1642,53 +1651,91 @@
     \cs_set_protected:cpn { title~restore@ #1 @command }
       \__cus_restore_title_setting_key:nn ##1##2
   }
-\cus_set_title_key_restore_code:nn { @name }
-  {
-    \cs_set_eq:cc { title~parameter@pre #1 } { title~tmpstore@pre #1 }
-    \cs_set_eq:cc { title~parameter@post #1 } { title~tmpstore@post #1 }
+
+\cs_new_protected:Npn \cus_setup_title_store_restore:nn #1
+  { 
+    \keyval_parse:nnn 
+      { \__cus_setup_title_store_restore:nn {#1} } 
+      { \__cus_setup_title_store_restore:nnn {#1} } 
   }
-\cus_set_title_key_restore_code:nn { @name-preto }
-  { \cs_set_eq:cc { title~parameter@pre #1 } { title~tmpstore@pre #1 } }
-\cus_set_title_key_restore_code:nn { @name-appto }
-  { \cs_set_eq:cc { title~parameter@post #1 } { title~tmpstore@post #1 } }
-\cus_set_title_key_restore_code:nn { @number }
+\cs_new:Npn \cus_setup_title_store_restore:n { \cus_setup_title_store_restore:nn { } }
+\cs_new:Npn \__cus_setup_title_store_restore:nn #1#2
+  { \__cus_setup_title_store_restore:nnnn {#1} {#2} { } { } }
+\cs_new:Npn \__cus_setup_title_store_restore:nnn #1#2#3
   {
-    \cs_set_eq:cc { title~parameter@the #1 } { title~tmpstore@the #1 }
+    % \bool_lazy_and:nnTF 
+    %   { \tl_if_head_is_group_p:n {#3} }
+    %   { \int_compare_p:nNn { 2 } = { \tl_count:n {#3} } }
+    \tl_if_head_is_group:nTF {#3}
+      { \__cus_setup_title_store_restore:nnnn {#1} {#2} #3 }
+      { \__cus_setup_title_store_restore:nnN {#1} {#2} {#3} }
   }
-\cs_new_protected:Npn \cus_ignore_title_key_store_restore:n #1
+\cs_new_protected:Npn \__cus_setup_title_store_restore:nnnn #1#2#3#4
   {
-    \cus_set_title_key_store_code:nn {#1}   { }
-    \cus_set_title_key_restore_code:nn {#1} { }
+    \cus_set_title_key_store_code:nn   { #1@#2 } {#3}
+    \cus_set_title_key_restore_code:nn { #1@#2 } {#4}
   }
-\cus_ignore_title_key_store_restore:n { @style } 
-\cus_ignore_title_key_store_restore:n { @number-from } 
-\cus_ignore_title_key_store_restore:n { @number-within } 
-\cus_ignore_title_key_store_restore:n { @number-without } 
-\cus_ignore_title_key_store_restore:n { @number-format } 
-\cus_ignore_title_key_store_restore:n { @label-format } 
-\cus_ignore_title_key_store_restore:n { @tags+ } 
-\cus_ignore_title_key_store_restore:n { @bookmark } 
-\cus_ignore_title_key_store_restore:n { @bookmark* } 
-\cs_new_protected:Npn \cus_set_title_key_special_store:nn #1#2
+\cs_new_protected:Npn \__cus_setup_title_store_restore:nnN #1#2#3
+  {
+    \use:c { __cus_setup_title_store_restore_ #3 :nn } {#1} {#2}
+  }
+\cs_new_protected:cpn { __cus_setup_title_store_restore_ :nn } #1#2
+  { \__cus_setup_title_store_restore:nnnn {#1} {#2} { } { } }
+\cs_new_protected:cpn { __cus_setup_title_store_restore_@:nn } #1#2
+  {
+    \cs_set_eq:cc { title~store@#1@#2@command } { title~store@@#2@command }
+    \cs_set_eq:cc { title~restore@#1@#2@command } { title~restore@@#2@command }
+  }
+\cs_new_protected:cpn { __cus_setup_title_store_restore_&:nn } #1#2
+  {
+    \cs_set_eq:cN { title~store@#1@#2@command } \scan_stop:
+    \cs_set_eq:cN { title~restore@#1@#2@command } \scan_stop:
+  }
+\cs_new_protected:Npn \cus_setup_title_store_restore:nnN #1#2#3
   {
     \clist_map_inline:nn {#2}
-      {
-        \cs_set_eq:cc { title~store@#1@##1@command }
-          { title~store@@##1@command }
-      }
+      { \__cus_setup_title_store_restore:nnN {#1} {##1} {#3} }
   }
-\cs_new_protected:Npn \cus_set_title_key_special_restore:nn #1#2
+\cus_setup_title_store_restore:n 
   {
-    \clist_map_inline:nn {#2}
+    style ,
+    number-from ,
+    number-within ,
+    number-without ,
+    number-format ,
+    label-format ,
+    tags+ ,
+    bookmark ,
+    bookmark* ,
+
+    , name=
       {
-        \cs_set_eq:cc { title~restore@#1@##1@command }
-          { title~restore@@##1@command }
+        \seq_put_right:Nn \l__cus_title_restore_key_seq { name }
+        \cs_set_eq:cc { title~tmpstore@pre #1 } { title~parameter@pre #1 }
+        \cs_set_eq:cc { title~tmpstore@post #1 } { title~parameter@post #1 }
       }
-  }
-\cs_new_protected:Npn \cus_set_title_key_special_store_restore:nn #1#2
-  {
-    \cus_set_title_key_special_store:nn {#1} {#2}
-    \cus_set_title_key_special_restore:nn {#1} {#2}
+      {
+        \cs_set_eq:cc { title~parameter@pre #1 } { title~tmpstore@pre #1 }
+        \cs_set_eq:cc { title~parameter@post #1 } { title~tmpstore@post #1 }
+      }
+    , name-preto=
+      {
+        \seq_put_right:Nn \l__cus_title_restore_key_seq { name-preto }
+        \cs_set_eq:cc { title~tmpstore@pre #1 } { title~parameter@pre #1 }
+      }
+      { \cs_set_eq:cc { title~parameter@pre #1 } { title~tmpstore@pre #1 } }
+    , name-appto=
+      {
+        \seq_put_right:Nn \l__cus_title_restore_key_seq { name-appto }
+        \cs_set_eq:cc { title~tmpstore@post #1 } { title~parameter@post #1 }
+      }
+      { \cs_set_eq:cc { title~parameter@post #1 } { title~tmpstore@post #1 } }
+    , number=
+      {
+        \seq_put_right:Nn \l__cus_title_restore_key_seq { number }
+        \cs_set_eq:cc { title~tmpstore@the #1 } { title~parameter@the #1 }
+      }
+      { \cs_set_eq:cc { title~parameter@the #1 } { title~tmpstore@the #1 } }
   }
 
 \cs_new_protected:Npn \__cus_title_keys_preamble_set:nn #1 % warning words, set code 
@@ -1906,9 +1953,11 @@
 \newdimen\titlewidth 
 
 % 例如：\part
+\def\title@classkeys@page{}
 \def\title@classinitial@page{pagestyle=plain,level=part,hang=false,}
 \def\title@classhook@pagebegin{}
 \def\title@classhook@pageend{}
+\def\title@classhook@pageafterdef{}
 \protected\def\title@class@page #1#2{%
   \title@break{#1}%
   \title@classhook@pagebegin
@@ -1967,9 +2016,11 @@
   \fi 
   \if@tempswa \twocolumn \fi}
 % 例如：\chapter 
+\def\title@classkeys@top{}
 \def\title@classinitial@top{pagestyle=plain,level=chapter,hang=false}
 \def\title@classhook@topbegin{}
 \def\title@classhook@topend{}
+\def\title@classhook@topafterdef{}
 \protected\def\title@class@top #1#2{%
   \title@break{#1}%
   \title@classhook@topbegin
@@ -2044,9 +2095,11 @@
   \title@iffixskip{#1}{\title@fixheadingskip}{}%
   \vskip\title@headingskip}
 % 例如：\section 
+\def\title@classkeys@normal{}
 \def\title@classinitial@normal{}
 \def\title@classhook@normalbegin{}
 \def\title@classhook@normalend{\title@floatbarrier@hook}
+\def\title@classhook@normalafterdef{}
 \let\title@floatbarrier@hook\@empty 
 \protected\def\title@class@normal #1#2{%
   \title@iffloatbarrier{#1}
@@ -2138,9 +2191,11 @@
       \@afterheading}%
   \title@classhook@normalend 
   \ignorespaces}
+\def\title@classkeys@free{}
 \def\title@classinitial@free{}
 \def\title@classhook@freebegin{}
 \def\title@classhook@freeend{}
+\def\title@classhook@freeafterdef{}
 \protected\def\title@class@free #1#2{%
   \title@iffloatbarrier{#1}
     {\FloatBarrier
@@ -2200,9 +2255,11 @@
   \fi 
   \title@classhook@freeend 
   \ignorespaces}
+\def\title@classkeys@wrap{}
 \def\title@classinitial@wrap{}
 \def\title@classhook@wrapbegin{}
 \def\title@classhook@wrapend{}
+\def\title@classhook@wrapafterdef{}
 \protected\def\title@class@wrap #1#2#3#4{%
   \title@iffloatbarrier{#1}
     {\FloatBarrier

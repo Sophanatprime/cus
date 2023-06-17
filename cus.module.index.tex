@@ -87,20 +87,22 @@
         \exp_args:Ncx \prop_gput_from_keyval:Nn { g__cus_index-#2_prop } 
           { \exp_not:n {#1} , name=#2 }
         \prop_get:cnN { g__cus_index-#2_prop } { filename } \l__cus_filename_tl 
-        \quark_if_no_value:NT \l__cus_filename_tl
+        \quark_if_no_value:NTF \l__cus_filename_tl
           { 
             \tl_set:Nx \l__cus_filename_tl { \c_sys_jobname_str @ #2 .idx } 
             \prop_gput:cno { g__cus_index-#2_prop } { filename } \l__cus_filename_tl
           }
+          { \prop_gput:cnx { g__cus_index-#2_prop } { filename } \l__cus_filename_tl }
         \iow_open:cn { @indexfile #2 } { \l__cus_filename_tl }
         \prop_get:cnN { g__cus_index-#2_prop } { output } \l__cus_output_tl
-        \quark_if_no_value:NT \l__cus_output_tl
+        \quark_if_no_value:NTF \l__cus_output_tl
           {
             \file_parse_full_name:nNNN { ./ \l__cus_filename_tl } \l__cus_file_dir_tl 
               \l__cus_file_name_tl \l__cus_file_ext_tl 
             \prop_put:cnx { g__cus_index-#2_prop } { output }
               { \l__cus_file_dir_tl / \l__cus_file_name_tl . ind }
           }
+          { \prop_put:cnx { g__cus_index-#2_prop } { output } \l__cus_output_tl }
         \use:e 
           {
             \exp_not:N \cus_hook_gput_aa:n 

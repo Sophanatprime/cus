@@ -152,13 +152,13 @@
 \dim_new:N \fmulticol@extra@height 
 \dim_new:N \fmulticol@extra@width 
 \ctex_patch_cmd:Nnn \page@sofar 
-  { \hbox to\full@width { \mc@align@columns \rlap{ \phantom p } } }
+  { \hbox to\full@width { \mc@align@columns \rlap{ \phantom \multicolmindepthstring } } }
   { 
     \fmulticol@update@box 
       {
         \hbox to\full@width 
           { \fmulticol@update@boxes\LR@column@boxes\RL@column@boxes\mc@align@columns 
-            \rlap{ \phantom p } }
+            \rlap{ \phantom \multicolmindepthstring } }
       }
   }
 \ctex_patch_cmd:Nnn \prepare@multicols { \hsize\linewidth }

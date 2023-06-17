@@ -502,6 +502,43 @@
       }
     \__cus_iterate_thread_code:nwn { 7 }
   }
+
+
+% map nest 
+\cs_new_protected:Npn \cus_map_nest_code:Nnnn #1#2#3#4
+  {
+    \int_compare:nNnT {#3} > { 0 }
+      {
+        \cs_set:cpn { __cus_map_nest_tmp_-1:n } ##1 {#4}
+        \int_step_inline:nn { #3 }
+          {
+            \cs_set:cpx { __cus_map_nest_tmp_##1:nn } ####1####2
+              { 
+                \exp_not:n { #1 {#2} }
+                  { \exp_not:c { __cus_map_nest_tmp_ \int_eval:n { ##1 - 1 } :nn } {####1####2} }
+              }
+          }
+        \cs_set:cpx { __cus_map_nest_tmp_0:nn } ##1##2 
+          { \exp_not:c { __cus_map_nest_tmp_-1:n } {##1##2} }
+        \use:c { __cus_map_nest_tmp_ \int_eval:n {#3} :nn } { } { }
+      }
+  }
+\cs_new_protected:Npn \cus_map_nest_variable:NnnNn #1#2#3#4#5
+  {
+    \int_compare:nNnT {#3} > { 0 }
+      {
+        \int_step_inline:nn { #3 }
+          {
+            \cs_set:cpx { __cus_map_nest_tmp_##1:nn } ####1####2
+              { 
+                \exp_not:n { #1 {#2} }
+                  { \exp_not:c { __cus_map_nest_tmp_ \int_eval:n { ##1 - 1 } :nn } {####1####2} }
+              }
+          }
+        \cs_set:cpn { __cus_map_nest_tmp_0:nn } ##1##2 { \tl_set:Nn #4 {##1##2} #5 }
+        \use:c { __cus_map_nest_tmp_ \int_eval:n {#3} :nn } { } { }
+      }
+  }
 %endregion
 
 
@@ -528,12 +565,24 @@
     \__cus_arg_to_keyval:nn {#1} {#2}
     \exp_args:No #3 { \ProcessedArgument }
   }
+\cs_new_protected:Npn \cus_arg_to_keyval_apply:nnn #1#2#3 % key, maybe key=value, tokens 
+  {
+    \__cus_arg_to_keyval:nn {#1} {#2}
+    \exp_args:Nno \use:n {#3} { \ProcessedArgument }
+  }
 \cs_new_protected:Npn \cus_if_keyval_apply:nNN #1#2#3 % arg, true apply, false apply 
   {
     \__cus_arg_to_keyval:nn { \exp_not:N \q__cus_mark } {#1}
     \cus_exp_args:Nd \tl_if_head_eq_meaning:nNTF { \ProcessedArgument } \q__cus_mark
       { #3 {#1} }
       { \exp_args:No #2 { \ProcessedArgument } }
+  }
+\cs_new_protected:Npn \cus_if_keyval_apply:nnn #1#2#3 % arg, true apply, false apply 
+  {
+    \__cus_arg_to_keyval:nn { \exp_not:N \q__cus_mark } {#1}
+    \cus_exp_args:Nd \tl_if_head_eq_meaning:nNTF { \ProcessedArgument } \q__cus_mark
+      { #3 {#1} }
+      { \exp_args:Nno \use:n {#2} { \ProcessedArgument } }
   }
 \cs_new_protected:Npn \cus_if_keyval_variable:nNnn #1#2#3#4 % arg, var, true, false 
   {
@@ -779,6 +828,47 @@
 \NewDocumentCommand \__cus_use_none_om:w  { +o +m } { }
 \NewDocumentCommand \__cus_use_none_oom:w { +o +o +m } { }
 \NewDocumentCommand \__cus_use_none_omm:w { +o +m +m } { }
+\cs_new_protected:Npn \__cus_peek_arg_m:nnw #1#2#3 { #2{#3} #1 }
+\cs_new_protected:Npn \__cus_peek_arg_l:nnw #1#2#3#{ #2{#3} #1 }
+\cs_new_protected:Npn \__cus_generate_peek_arg:nNN #1#2#3
+  {
+    \cs_gset_protected:cpn { __cus_peek_arg_#1_aux:nnw } ##1##2#2##3#3
+      { ##2{##3} ##1 }
+    \cs_gset_protected:cpn { __cus_peek_arg_#1:nnw } ##1##2
+      { 
+        \peek_meaning:NTF #2 % do not ignore space 
+          { \use:c { __cus_peek_arg_#1_aux:nnw } {##1} {##2} }
+          { \exp_args:Nno \use:n {##2} { \c_novalue_tl } ##1 }
+      }
+  }
+\cs_new_protected:Npn \__cus_generate_peek_arg:nN #1#2
+  {
+    \cs_gset_protected:cpn { __cus_peek_arg_#1:nnw } ##1##2
+      {
+        \peek_meaning_remove:NTF #2 % do not ignore space 
+          { ##2 { \c_true_bool } ##1 }
+          { ##2 { \c_false_bool } ##1 }
+      }
+  }
+\__cus_generate_peek_arg:nNN o [ ]
+\__cus_generate_peek_arg:nN  s  *
+% \cs_new_protected:Npn \__cus_generate_peek_arg:NNN #1#2#3
+%   { \NewDocumentCommand #1 { +m +m +d#2#3 } { ##2{##3} ##1 } }
+% \cs_new_protected:Npn \__cus_egenerate_peek_arg:NN #1#2
+%   { \NewDocumentCommand #1 { +m +m +t#2 } { ##2{##3} ##1 } }
+% \NewDocumentCommand \cus_peek_arg_m:nnw { +m +m +m } { #2{#3} #1 }
+% \NewDocumentCommand \cus_peek_arg_o:nnw { +m +m +o } { #2{#3} #1 }
+% \NewDocumentCommand \cus_peek_arg_v:nnw { +m +m +v } { #2{#3} #1 }
+% \NewDocumentCommand \cus_peek_arg_l:nnw { +m +m +l } { #2{#3} #1 }
+% \NewDocumentCommand \cus_peek_arg_g:nnw { +m +m +g } { #2{#3} #1 }
+% \cs_set_eq:NN       \cus_peek_arg_db:nnw \cus_peek_arg_o:nnw 
+% \cs_set_eq:NN       \cus_peek_arg_dg:nnw \cus_peek_arg_g:nnw 
+% \NewDocumentCommand \cus_peek_arg_dp:nnw { +m +m +d() } { #2{#3} #1 }
+% \NewDocumentCommand \cus_peek_arg_da:nnw { +m +m +d<> } { #2{#3} #1 }
+% \NewDocumentCommand \cus_peek_arg_s:nnw { +m +m s } { #2{#3} #1 }
+% \cs_set_eq:NN       \cus_peek_arg_ts:nnw \cus_peek_arg_s:nnw 
+% \NewDocumentCommand \cus_peek_arg_tp:nnw { +m +m t+ } { #2{#3} #1 }
+% \NewDocumentCommand \cus_peek_arg_tm:nnw { +m +m t- } { #2{#3} #1 }
 \cs_new:Npn \cus_exp_not_use_i:nnnnnnnnn    #1#2#3#4#5#6#7#8#9 { \exp_not:n {#1} }
 \cs_new:Npn \cus_exp_not_use_ii:nnnnnnnnn   #1#2#3#4#5#6#7#8#9 { \exp_not:n {#2} }
 \cs_new:Npn \cus_exp_not_use_iii:nnnnnnnnn  #1#2#3#4#5#6#7#8#9 { \exp_not:n {#3} }
@@ -1039,11 +1129,7 @@
     }
   }
 \cs_new:Npn \cus_exp_last_unbraced:Nd #1#2
-  {
-    \exp_after:wN #1 \exp:w \exp_end_continue_f:w
-    \exp_after:wN \exp_after:wN \exp_after:wN
-    \exp_stop_f: #2
-  }
+  { \exp_after:wN \exp_after:wN \exp_after:wN #1 #2 }
 \cs_new:Npn \cus_exp_last_unbraced:NNd #1#2#3
   {
     \exp_after:wN #1 \exp_after:wN #2 \exp:w \exp_end_continue_f:w
@@ -1052,10 +1138,8 @@
   }
 \cs_new:Npn \cus_exp_last_unbraced:Nnd #1#2#3
   {
-    \__cus_expanded:w { \exp_not:n { #1 {#2} } \exp_after:wN }
-    \exp:w \exp_end_continue_f:w
-    \exp_after:wN \exp_after:wN \exp_after:wN
-    \exp_stop_f: #3
+    \__cus_expanded:w { \__cus_unexpanded:w { #1 {#2} }
+      \exp_after:wN \exp_after:wN \exp_after:wN } #3
   }
 
 
@@ -1635,108 +1719,54 @@
     \group_end:
     \legacy_if:nT { @nobreak } { \mode_if_vertical:T { \nobreak } }
   }
-\cus_pkg_code:nnn { hyperref }
+% #1, #3, #4, #5 总是立即展开
+\cs_gset_protected:Npn \cus_newlabel_now:nnnnnn #1#2#3#4#5#6
   {
-    % label, data, page, currentlabelname, anchor, ..
-    \cs_gset_protected:Npn \cus_newlabel_now:nnnnnn #1#2#3#4#5#6
-      {
-        \__cus_protect_iow_now:Nnx \@auxout { \str_set:Nx \@currentlabel {#1} }
-        {
-          \token_to_str:N \newlabel {#1}
-          { { \exp_not:n {#2} } {#3} }
-        }
-      }
-    \cs_gset_protected:Npn \cus_newlabel_now:xxxxxx #1#2#3#4#5#6 
-      {
-        \__cus_protect_iow_now:Nnx \@auxout { \str_set:Nx \@currentlabel {#1} }
-        {
-          \token_to_str:N \newlabel {#1}
-          { {#2} {#3} }
-        }
-      }
-    \cs_gset_protected:Npn \cus_newlabel_shipout:nnnnnn #1#2#3#4#5#6
-      {
-        \__cus_protect_iow_shipout:Nnx \@auxout { \str_set:Nx \@currentlabel {#1} }
-        {
-          \token_to_str:N \newlabel {#1}
-          { { \exp_not:n {#2} } {#3} }
-        }
-      }
-    \cs_gset_protected:Npn \cus_newlabel_shipout:xxxxxx #1#2#3#4#5#6 
-      {
-        \__cus_protect_iow_now:Nnx \@auxout { \str_set:Nx \@currentlabel {#1} }
-        {
-          \token_to_str:N \newlabel {#1}
-          { {#2} {#3} }
-        }
-      }
-    \cs_gset_protected:Npn \cus_newlabel_shipout_x:nnnnnn #1#2#3#4#5#6
-      {
-        \__cus_protect_iow_shipout_x:Nnx \@auxout { \str_set:Nx \@currentlabel {#1} }
-        {
-          \token_to_str:N \newlabel {#1}
-          { \exp_not:n { {#2} } {#3} }
-        }
-      }
-    \cs_gset_protected:Npn \cus_newlabel_shipout_x:xxxxxx #1#2#3#4#5#6 
-      {
-        \__cus_protect_iow_shipout_x:Nnx \@auxout { \str_set:Nx \@currentlabel {#1} }
-        {
-          \token_to_str:N \newlabel {#1}
-          { {#2} {#3} }
-        }
-      }
+    \__cus_protect_iow_now:Nnx \@auxout { \str_set:Nx \@currentlabel {#1} }
+    {
+      \token_to_str:N \newlabel {#1}
+      { { \exp_not:n {#2} } {#3} {#4} {#5} { \exp_not:n {#6} } }
+    }
   }
+\cs_gset_protected:Npn \cus_newlabel_now:xxxxxx #1#2#3#4#5#6 
   {
-    % #1, #3, #4, #5 总是立即展开
-    \cs_gset_protected:Npn \cus_newlabel_now:nnnnnn #1#2#3#4#5#6
-      {
-        \__cus_protect_iow_now:Nnx \@auxout { \str_set:Nx \@currentlabel {#1} }
-        {
-          \token_to_str:N \newlabel {#1}
-          { { \exp_not:n {#2} } {#3} {#4} {#5} { \exp_not:n {#6} } }
-        }
-      }
-    \cs_gset_protected:Npn \cus_newlabel_now:xxxxxx #1#2#3#4#5#6 
-      {
-        \__cus_protect_iow_now:Nnx \@auxout { \str_set:Nx \@currentlabel {#1} }
-        {
-          \token_to_str:N \newlabel {#1}
-          { {#2} {#3} {#4} {#5} {#6} }
-        }
-      }
-    \cs_gset_protected:Npn \cus_newlabel_shipout:nnnnnn #1#2#3#4#5#6
-      {
-        \__cus_protect_iow_shipout:Nnx \@auxout { \str_set:Nx \@currentlabel {#1} }
-        {
-          \token_to_str:N \newlabel {#1}
-          { { \exp_not:n {#2} } {#3} {#4} {#5} { \exp_not:n {#6} } }
-        }
-      }
-    \cs_gset_protected:Npn \cus_newlabel_shipout:xxxxxx #1#2#3#4#5#6 
-      {
-        \__cus_protect_iow_now:Nnx \@auxout { \str_set:Nx \@currentlabel {#1} }
-        {
-          \token_to_str:N \newlabel {#1}
-          { {#2} {#3} {#4} {#5} {#6} }
-        }
-      }
-    \cs_gset_protected:Npn \cus_newlabel_shipout_x:nnnnnn #1#2#3#4#5#6
-      {
-        \__cus_protect_iow_shipout_x:Nnx \@auxout { \str_set:Nx \@currentlabel {#1} }
-        {
-          \token_to_str:N \newlabel {#1}
-          { \exp_not:n { {#2} } {#3} {#4} {#5} \exp_not:n { {#6} } }
-        }
-      }
-    \cs_gset_protected:Npn \cus_newlabel_shipout_x:xxxxxx #1#2#3#4#5#6 
-      {
-        \__cus_protect_iow_shipout_x:Nnx \@auxout { \str_set:Nx \@currentlabel {#1} }
-        {
-          \token_to_str:N \newlabel {#1}
-          { {#2} {#3} {#4} {#5} {#6} }
-        }
-      }
+    \__cus_protect_iow_now:Nnx \@auxout { \str_set:Nx \@currentlabel {#1} }
+    {
+      \token_to_str:N \newlabel {#1}
+      { {#2} {#3} {#4} {#5} {#6} }
+    }
+  }
+\cs_gset_protected:Npn \cus_newlabel_shipout:nnnnnn #1#2#3#4#5#6
+  {
+    \__cus_protect_iow_shipout:Nnx \@auxout { \str_set:Nx \@currentlabel {#1} }
+    {
+      \token_to_str:N \newlabel {#1}
+      { { \exp_not:n {#2} } {#3} {#4} {#5} { \exp_not:n {#6} } }
+    }
+  }
+\cs_gset_protected:Npn \cus_newlabel_shipout:xxxxxx #1#2#3#4#5#6 
+  {
+    \__cus_protect_iow_now:Nnx \@auxout { \str_set:Nx \@currentlabel {#1} }
+    {
+      \token_to_str:N \newlabel {#1}
+      { {#2} {#3} {#4} {#5} {#6} }
+    }
+  }
+\cs_gset_protected:Npn \cus_newlabel_shipout_x:nnnnnn #1#2#3#4#5#6
+  {
+    \__cus_protect_iow_shipout_x:Nnx \@auxout { \str_set:Nx \@currentlabel {#1} }
+    {
+      \token_to_str:N \newlabel {#1}
+      { \exp_not:n { {#2} } {#3} {#4} {#5} \exp_not:n { {#6} } }
+    }
+  }
+\cs_gset_protected:Npn \cus_newlabel_shipout_x:xxxxxx #1#2#3#4#5#6 
+  {
+    \__cus_protect_iow_shipout_x:Nnx \@auxout { \str_set:Nx \@currentlabel {#1} }
+    {
+      \token_to_str:N \newlabel {#1}
+      { {#2} {#3} {#4} {#5} {#6} }
+    }
   }
 %endregion
 
@@ -1745,15 +1775,12 @@
 \cs_new:Npn \cus_label_info:nn #1#2 
   { 
     \exp_args:Nne \use:c { __cus_get_label_#1:n }
-      { 
-        \tl_if_blank:eTF {#2} 
-          { \tl_to_str:N \@currentlabel } 
-          {#2} 
-      }
+      { \tl_if_blank:eTF {#2} { \tl_to_str:N \@currentlabel } {#2} }
   }
 \cs_new_eq:NN \labelinfo \cus_label_info:nn 
-\cs_new:Npn \__cus_get_label_name:n #1 {#1}
-\cs_new:Npn \__cus_get_label_data:n #1
+\cs_new:Npn \__cus_get_label_name:n #1 
+  { \cs_if_exist:cTF { r@#1 } {#1} { \c_novalue_tl } }
+\cs_new:Npn \__cus_get_label_ref:n #1
   { \cs_if_exist:cTF { r@#1 } { \tl_item:cn { r@#1 } { 1 } } { \c_novalue_tl } }
 \cs_new:Npn \__cus_get_label_page:n #1
   { \cs_if_exist:cTF { r@#1 } { \tl_item:cn { r@#1 } { 2 } } { 0 } }
@@ -1761,12 +1788,15 @@
   { 
     \cs_new:Npn \__cus_get_label_anchor:n #1 { Doc-Start } 
     \cs_new_eq:NN \__cus_get_label_pageanchor:n \__cus_get_label_anchor:n
+    \cs_new:Npn \__cus_get_label_extra:n #1 { \c_novalue_tl }
   }
   {
     \cs_gset:Npn \__cus_get_label_anchor:n #1
       { \cs_if_exist:cTF { r@#1 } { \tl_item:cn { r@#1 } { 4 } } { Doc-Start } }
     \cs_gset:Npn \__cus_get_label_pageanchor:n #1
-      { \cs_if_exist:cTF { r@#1 } { page. \tl_item:cn { r@#1 } { 2 } } { Doc-Start } }
+      { \cs_if_exist:cTF { r@#1 } { \exp_not:e { page. \tl_item:cn { r@#1 } { 2 } } } { Doc-Start } }
+    \cs_gset:Npn \__cus_get_label_extra:n #1
+      { \cs_if_exist:cTF { r@#1 } { \tl_item:cn { r@#1 } { 5 } } { \c_novalue_tl } }
   }
 
 
@@ -1974,37 +2004,38 @@
   }
 \cs_gset_protected:Npn \cus_hyper_link_launch:nnn #1#2#3 { \group_begin: #2 \group_end: }
 \cs_gset_protected:Npn \cus_hyper_link_named:nn #1#2 { \group_begin: #2 \group_end: }
-\cus_pkg_code:nnn { hyperref }
-  {
-    \cs_new:Npn \cus_if_pdfstring:TF #1#2 {#2}
-    \cs_new:Npn \cus_if_pdfstring:T  #1   {  }
-    \cs_new:Npn \cus_if_pdfstring:F  #1   {#1}
-    \cs_new:Npn \cus_if_pdfstring_p: { \c_false_bool }
-    \tl_gset:Nn \g_cus_anchor_tl { Doc-Start }
-    \cs_gset_protected:Npn \cus_hyper_anchor:n #1 { }
-    \cs_gset_protected:Npn \cus_hyper_anchor_start:n #1 { }
-    \cs_gset_protected:Npn \cus_hyper_anchor_stop: { }
-    \cs_gset_protected:Npn \cus_hyper_link:nnn #1#2#3 { \group_begin: #3 \group_end: }
-    \cs_gset_protected:Npn \cus_hyper_link_start:nn #1#2 { \group_begin: }
-    \cs_gset_protected:Npn \cus_hyper_link_stop: { \group_end: }
-    \cs_gset_protected:Npn \cus_hyper_link_file:nnn #1#2#3 { \group_begin: #1 \group_end: }
-    \cs_gset_protected:Npn \cus_hyper_link_url:nn #1#2 { \group_begin: #1 \group_end: }
-    \cs_new_protected_nopar:Npn \cus_make_target:n #1 { }
-    \cs_new_protected_nopar:Npn \cus_make_unique_target:n #1 { }
-    \cs_new_protected_nopar:Npn \cus_gset_next_anchor_name:n #1 { }
-    \cs_new_protected_nopar:Npn \cus_gset_next_anchor_raise:n #1 { }
-    \cs_new_protected_nopar:Npn \cus_ref_label:nn #1#2 { \group_begin: #2 \group_end: }
-    \cs_new_protected_nopar:Npn \cus_ref_target:nn #1#2 { \group_begin: #2 \group_end: }
-    \cs_new_protected_nopar:Npn \cus_ref_label_box:nn #1
-      { \__cus_ref_box_aux:nw { \hbox_unpack_drop:N \l__cus_tmpc_box } }
-    \cs_new_protected_nopar:Npn \cus_ref_target_box:nn #1
-      { \__cus_ref_box_aux:nw { \hbox_unpack_drop:N \l__cus_tmpc_box } }
-    \cs_new_protected_nopar:Npn \cus@update@PL@page #1 { }
-    \cs_new_protected_nopar:Npn \cus_gset_page_label:n #1 { }
-    \cs_new_protected_nopar:Npn \cus_gset_next_page_label:n #1 { }
-    \cs_new_protected_nopar:Npn \cus_gset_page_label_code:n #1 { }
-    \cs_new_protected_nopar:Npn \cus_reset_page_label_code: { }
-  }
+\cs_new:Npn \cus_if_pdfstring:TF #1#2 {#2}
+\cs_new:Npn \cus_if_pdfstring:T  #1   {  }
+\cs_new:Npn \cus_if_pdfstring:F  #1   {#1}
+\cs_new:Npn \cus_if_pdfstring_p: { \c_false_bool }
+\tl_gset:Nn \g_cus_anchor_tl { Doc-Start }
+\cs_gset_protected:Npn \cus_hyper_anchor:n #1 { }
+\cs_gset_protected:Npn \cus_hyper_anchor_start:n #1 { }
+\cs_gset_protected:Npn \cus_hyper_anchor_stop: { }
+\cs_gset_protected:Npn \cus_hyper_link:nnn #1#2#3 { \group_begin: #3 \group_end: }
+\cs_gset_protected:Npn \cus_hyper_link_start:nn #1#2 { \group_begin: }
+\cs_gset_protected:Npn \cus_hyper_link_stop: { \group_end: }
+\cs_gset_protected:Npn \cus_hyper_link_file:nnn #1#2#3 { \group_begin: #1 \group_end: }
+\cs_gset_protected:Npn \cus_hyper_link_url:nn #1#2 { \group_begin: #1 \group_end: }
+\cs_new_protected_nopar:Npn \cus_make_target:n #1 { }
+\cs_new_protected_nopar:Npn \cus_make_unique_target:n #1 { }
+\cs_new_protected_nopar:Npn \cus_gset_next_anchor_name:n #1 { }
+\cs_new_protected_nopar:Npn \cus_gset_next_anchor_raise:n #1 { }
+\cs_new_protected_nopar:Npn \__cus_make_raised_target:nn #1#2 { }
+\cs_new_protected_nopar:Npn \cus_ref_label:nn #1#2 { \group_begin: #2 \group_end: }
+\cs_new_protected_nopar:Npn \cus_ref_target:nn #1#2 { \group_begin: #2 \group_end: }
+\cs_new_protected_nopar:Npn \cus_ref_label_box:nn #1
+  { \__cus_ref_box_aux:nw { \hbox_unpack_drop:N \l__cus_tmpc_box } }
+\cs_new_protected_nopar:Npn \cus_ref_target_box:nn #1
+  { \__cus_ref_box_aux:nw { \hbox_unpack_drop:N \l__cus_tmpc_box } }
+\cs_new_protected_nopar:Npn \cus@update@PL@page #1 { }
+\cs_new_protected_nopar:Npn \cus_gset_page_label:n #1 { }
+\cs_new_protected_nopar:Npn \cus_gset_next_page_label:n #1 { }
+\cs_new_protected_nopar:Npn \cus_gset_page_label_code:n #1 { }
+\cs_new_protected_nopar:Npn \cus_reset_page_label_code: { }
+\cus_pkg_code:nnn { hyperref } { } 
+  { \c__cus_hyperref_define_tl \tl_clear:N \c__cus_hyperref_define_tl }
+\tl_const:Nn \c__cus_hyperref_define_tl
   {
     \cs_gset:Npn \cus_if_pdfstring:TF { \legacy_if:nTF { Hy@pdfstring } }
     \cs_gset:Npn \cus_if_pdfstring:T  { \legacy_if:nT  { Hy@pdfstring } }
@@ -2049,7 +2080,24 @@
         \use:e 
           {
             \hook_gput_next_code:nn {__hyp/target/setname}
-              { \dim_set:Nn \normalbaselineskip { \dim_eval:n {#1} } }
+              { 
+                \normalbaselineskip = \dim_eval:n {#1} \relax  % \__hyp_target_raise:n
+                \edef\HyperRaiseLinkDefault{\the\normalbaselineskip} % \Hy@raisedlink
+              }
+          }
+      }
+    % \def\HyperRaiseLinkDefault{\normalbaselineskip}
+    \cs_gset_protected_nopar:Npn \__cus_make_raised_target:nn #1#2
+      {
+        \mode_if_vertical:TF { #2 }
+          {
+            \Hy@SaveSpaceFactor \penalty\@M
+            \smash
+              {
+                \box_move_up:nn { #1 }
+                  { \hbox:n { \Hy@RestoreSpaceFactor #2 \Hy@SaveSpaceFactor } }
+              }
+            \Hy@RestoreSpaceFactor
           }
       }
     \cs_gset_protected_nopar:Npn \cus_ref_label:nn #1 { \hyperref [{#1}] } % label, text 
@@ -2094,4 +2142,4 @@
 
 
 
-\cs_new:Npn \cus@pdfliteral #1 { \tex_special:D { pdf:literal ~ #1 } }
+\cs_new_eq:NN \cus@pdfliteral \__kernel_backend_literal_pdf:x 

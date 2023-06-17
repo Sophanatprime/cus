@@ -1,4 +1,4 @@
-\DocumentMetadata{pdfversion=1.7}
+% \DocumentMetadata{pdfversion=1.7}
 \documentclass[twoside]{book}
 % \overfullrule10pt 
 \PassOptionsToPackage{silent}{xeCJK}
@@ -352,6 +352,17 @@ Logo。输出 \CusTeX，\CusLaTeX。
 为了使用 \cs{cussetup} 来设置这些键值，需要指定 \meta{key path}。
 \end{function}
 
+在本文档中，键的说明文字旁的表格中列出了键的完整写法，\meta{key path} 即为灰色的部分。
+如键 \keyreflist[frame]{outer-sep,sep} 可以写成 
+\begin{xample}
+\cussetup[frame]{outer-sep=0pt, sep=20pt}
+或 
+\cussetup{ frame/outer-sep=0pt, frame/sep=20pt }
+\stopxamplecode
+\xamplecode\medskip
+\end{xample}
+
+
 \begin{function}{\cussetstyle}
 \begin{syntax}
   \verb|\cussetstyle|   \oarg{key path} \marg{key} \marg{key-vals}
@@ -424,13 +435,17 @@ Logo。输出 \CusTeX，\CusLaTeX。
 带星号的环境还会设置段落间距和每项的间距为 0pt。
 \end{function}
 
-\begin{function}{\cusemoji,\cusemojilowerratio}
+\begin{function}{\cusemoji,\cusemojitotalratio,\cusemojilowerratio}
   \begin{syntax}
     \V\cusemoji \marg{pic filename}
   \end{syntax}
-插入一张图片，它的（总）高度为当前文字的高度，向下移动 \cs{cusemojilowerra\-tio} 个文字的高度。
-\cs{cusemojilowerratio} 必须为 \texttt{0} 或 \veta{a}\texttt/\veta{b}，其中 \veta{a}、
-\veta{b} 为非零整数；如果是负数则向上移动。\cs{cusemojilowerratio} 默认为 \texttt{1/8}。
+插入一张图片，它的（总）高度为当前文字的高度的 \cs{cusemojitotalratio} 倍，
+并向下移动 \cs{cusemojilowerratio} 个文字的高度。
+\cs{cusemojitotalratio} 和 \cs{cusemojilowerratio} 
+必须为 \texttt{0} 或 \veta{a}\texttt/\veta{b}，其中 \veta{a}、
+\veta{b} 为非零整数。
+\cs{cusemojitotal\-ratio} 默认为 \texttt{8/9}，如果是负数则上下翻转，但宽度也会变成负值。
+\cs{cusemoji\-lowerratio} 默认为 \texttt{1/7}，如果是负数则向上移动。
 
 可以用于数学模式，会根据是否处于上下标而改变大小。
 
@@ -2511,6 +2526,20 @@ Unicode 代码点。
 根据当前章节有无名字展开得到不同内容（通常是格式命令）。
 \end{function}
 
+\begin{function}[EXP]{\ifintitle}
+  \begin{syntax}
+    \V\ifintitle \marg{在标题中执行} \marg{不在标题中执行}
+  \end{syntax}
+根据是否在标题中执行相应代码。从正要设置键值之前到恢复键值原来的定义之间这段代码都算作在标题中。另见 \cs{ifincblentry}。
+\end{function}
+
+\begin{function}[EXP]{\ifincblentry}
+  \begin{syntax}
+    \V\ifincblentry \marg{写入目录条目时} \marg{非写入目录条目时}
+  \end{syntax}
+判断是否正在写入目录条目。
+\end{function}
+
 每一个标题都有一个对应的 \texttt{\textbackslash titlethe\meta{title}} 命令，表示当前实际输出的章节标题的名字。如现在 \verb|\titlethechapter| 为 “\titlethechapter”。
 
 
@@ -2531,7 +2560,7 @@ Unicode 代码点。
 设置目录的来源。默认为 \tn{jobname}，即来自本文件。不包含文件后缀。
 \end{keyval}
 
-\begin{keyval}[path=cbl-setup]{this,write}
+\begin{keyval}[path=cbl-setup]{write,to}
   \begin{syntax}
     write = <&\TTF> & true 
     to    = \marg{file}
@@ -2731,22 +2760,32 @@ Unicode 代码点。
 \end{function}
 
 
+\begin{function}[EXP]{\text_mdfive_hash:n}
+  \begin{syntax}
+    \V*|\text_mdfive_hash:n| \marg{text}
+  \end{syntax}
+先使用 \cs{text_expand:n} 展开 \meta{text}，然后计算它的 MD5 值。
+\end{function}
+
+
 \section{\LaTeXe 的钩子机制}\label{sec:lthooks}
 
 本节简述 \LaTeXe 的钩子机制。更详细的说明见 \file{lthooks.pdf}。
 
 “钩子”（hook）是在命令或环境的定义中可以添加其它代码的位置。
 
-\begin{function}[module=lthooks]{\UseHook}
+\begin{function}[module=lthooks]{\UseHook,\UseHookWithArguments}
   \begin{syntax}
     \verb|\UseHook| \marg{hook}
+    \verb|\UseHookWithArguments| \marg{hook} \marg{number} \marg{arg_1} ... \marg{arg_n}
   \end{syntax}
 在命令或环境中执行 \meta{hook}。
 \end{function}
 
-\begin{function}[module=lthooks]{\AddToHooks}
+\begin{function}[module=lthooks]{\AddToHooks,\AddToHookWithArguments}
   \begin{syntax}
     \verb|\AddToHook| \marg{hook} \oarg{label} \marg{code}
+    \verb|\AddToHookWithArguments| \marg{hook} \oarg{label} \marg{code}
   \end{syntax}
 将 \meta{code} 添加到 \meta{hook} 中，标记为 \meta{label}。\meta{hook} 可以未被定义。
 
@@ -2761,9 +2800,10 @@ Unicode 代码点。
 移除标记了 \meta{label} 的 \meta{hook}。若 \meta{label} 未指定，则使用默认的 label。
 \end{function}
 
-\begin{function}[module=lthooks]{\AddToHookNext,\ClearHookNext}
+\begin{function}[module=lthooks]{\AddToHookNext,\AddToHookNextWithArguments,\ClearHookNext}
   \begin{syntax}
     \verb|\AddToHookNext| \marg{hook} \marg{code}
+    \verb|\AddToHookNextWithArguments| \marg{hook} \marg{code}
     \verb|\ClearHookNext| \marg{hook}
   \end{syntax}
 将 \meta{code} 添加到 \meta{hook} 的下一次调用中。在正常的 \meta{hook} 代码执行完毕后再执行 \meta{code}。
@@ -2774,7 +2814,9 @@ Unicode 代码点。
 
 \subsection{交叉引用、超链接和书签}
 
-\LaTeX 的 \tn{label} 可以标记位置用于交叉引用，\pkg{hyperref} 宏包还提供了超链接的功能，\pkg{bookmark} 宏包则提供了书签功能。本模块封装了其中的某些命令，但不会自动加载这些宏包，需要用户自行加载或使用 \CusTeX 提供的宏包加载机制来加载。
+\LaTeX 的 \tn{label} 可以标记位置用于交叉引用，\pkg{hyperref} 宏包还提供了超链接的功能，\pkg{bookmark} 宏包则提供了书签功能。本模块封装了其中的某些命令，但不会自动加载这些宏包
+（如果没有加载所需的宏包，这些命令不会报错，只是被忽略掉了），
+需要用户自行加载或使用 \CusTeX 提供的宏包加载机制来加载。
 
 \begin{function}[EXP]{\labelinfo,\cus_label_info:nn}
   \begin{syntax}
@@ -2784,9 +2826,9 @@ Unicode 代码点。
 
 可获得的信息 \meta{info} 为：
 \begin{itemize}[nosep]
-  \item \texttt{name}，\meta{label} 的值；
+  \item \texttt{name}，\meta{label} 的值，若 \meta{label} 不存在则为 \cs{c_novalue_tl} 的值；
   \item \texttt{page}，获得 \meta{label} 所在页的 \tn{thepage} 值，若 \meta{label} 不存在则为 \texttt{0}；
-  \item \texttt{data}，获得 \meta{label} 中的第一个数据项，若 \meta{label} 不存在则为 \cs{c_novalue_tl}，可使用 \cs{IfNoValueTF} 或 \cs{tl_if_novalue:nTF} 判断；
+  \item \texttt{ref}，获得 \meta{label} 中的第一个数据项，也就是 \tn{ref}\marg{label} 显示的内容，若 \meta{label} 不存在则为 \cs{c_novalue_tl} 的值，可使用 \cs{IfNoValueTF} 或 \cs{tl_if_novalue:nTF} 判断；
   \item \texttt{anchor}，获得链接到 \meta{label} 所在位置的锚点，若 \meta{label} 不存在或未加载 \pkg{hyperref} 则为 \texttt{Doc-Start}；
   \item \texttt{pageanchor}，获得链接到 \meta{label} 所在页的锚点，若 \meta{label} 不存在或未加载 \pkg{hyperref} 则为 \texttt{Doc-Start}。
 \end{itemize}
@@ -2801,12 +2843,19 @@ Unicode 代码点。
   \cus_newlabel_shipout:nnnnnn,\cus_newlabel_shipout:xxxxxx,
   \cus_newlabel_shipout_x:nnnnnn,\cus_newlabel_shipout_x:xxxxxx}
   \begin{syntax}
-    \V*|\cus_new_label_now:nnnnnn| \marg{label} \marg{data} \marg{thepage} 
+    \V*|\cus_new_label_now:nnnnnn| \marg{label} \marg{ref data} \marg{thepage} 
     ~~~~\marg{current label name} \marg{anchor} \marg{extra}
   \end{syntax}
-定义一个新的 \meta{label}。当未加载 \pkg{hyperref} 宏包时，后三个参数无效。
+定义一个新的 \meta{label}。
 
 \meta{label}、\meta{thepage}、\meta{current label name}、\meta{anchor} 总是立即展开。
+
+它们\emph{不会}执行 \hook{label} 钩子。
+
+作为一个例子，\verb|\label{#}| 类似于 
+\verb|\cus_newlabel_shipout:nnnnnn| \verb|{#}|
+\verb|{\@currentlabel}| \verb|{\thepage}| \verb|{\@currentlabelname}|
+\verb|{\@currentHref}| \verb|{\@kernel@reserved@label@data}|。
 \end{function}
 
 \begin{function}{\cus_make_target:n,\cus_make_unique_target:n}
@@ -2831,6 +2880,7 @@ Unicode 代码点。
 \cs{cus_gset_next_anchor_name:n} 设置下一个锚点的名称。\meta{name} 被立刻展开。
 
 \cs{cus_gset_next_anchor_raise:n} 设置下一个锚点要升高的高度。\meta{dim} 立即被计算。
+直接使用的 \tn{Hy@raisedlink} 不会受影响。% 它的高度保存在 \HyperRaiseLinkDefault 宏里。
 
 它们也会影响 \pkg{hyperref} 宏包中其它创建锚点的命令。
 \end{function}
@@ -3035,23 +3085,27 @@ Unicode 代码点。
 \xampleprint
 \end{xample}
 
-\begin{function}{\cus_arg_to_keyval_apply:nnN}
+\begin{function}{\cus_arg_to_keyval_apply:nnN,\cus_arg_to_keyval_apply:nnn}
   \begin{syntax}
     \V*|\cus_arg_to_keyval_apply:nnN| \marg{key name} \marg{arg} \meta{function}
+    \V*|\cus_arg_to_keyval_apply:nnn| \marg{key name} \marg{arg} \marg{tokens}
   \end{syntax}
 判断 \meta{arg} 是否为键值对；如果不是则把 \meta{key name} 作为键名，\meta{arg} 作为值，
-形成一个键值对。再将这键值对作为 \meta{function} 的第一个参数。
+形成一个键值对。再把这键值放在 \meta{function}（或 \meta{tokens}） 的后面。
 \end{function}
 
-\begin{function}{\cus_if_keyval_apply:nNN,\cus_if_keyval_variable:nNnn}
+\begin{function}{\cus_if_keyval_apply:nNN,\cus_if_keyval_apply:nnn}
   \begin{syntax}
     \V*|\cus_if_keyval_apply:nNN| \marg{arg} \meta{true function} \meta{false function}
+    \V*|\cus_if_keyval_apply:nnn| \marg{arg} \marg{true tokens} \marg{false tokens}
+  \end{syntax}
+首先检查 \meta{arg} 是否为键值对，如果是，则使用 \meta{true} 分支，否则使用 \meta{false} 分支。
+\end{function}
+
+\begin{function}{\cus_if_keyval_variable:nNnn}
+  \begin{syntax}
     \V*|\cus_if_keyval_variable:nNnn| \marg{arg} \meta{variable} \marg{true code} \marg{false code}
   \end{syntax}
-首先检查 \meta{arg} 是否为键值对，如果是，则使用 \meta{true function} 或 
-\meta{true code}，否则，使用 \meta{false function} 或 \meta{false code}。
-
-把处理后的 \meta{arg} 传递给 \meta{function} 作为其第一个参数，
 或把处理后的 \meta{arg} 保存到 \meta{variable} 中，\meta{code} 可以使用这个 \meta{variable}。
 \end{function}
 
@@ -3392,6 +3446,39 @@ Unicode 代码点。
 或者测试方式多样，如既要使用 \cs{token_if_eq_meaning:NNTF} 又要使用 
 \cs{token_if_eq_charcode:NNTF}，因此不能直接使用 \cs{token_case_mean\-ing:\-NnTF}
 和 \cs{token_case_charcode:NnTF}。
+
+\begin{function}{\cus_map_nest_code:Nnnn,\cus_map_nest_variable:NnnNn}
+  \begin{syntax}
+    \V*|\cus_map_nest_code:Nnnn|      \meta{map tokens function} \marg{arg} \marg{nest} \marg{code}
+    \V*|\cus_map_nest_variable:NnnNn| \meta{map tokens function} \marg{arg} \marg{nest} \meta{variable} \marg{code}
+  \end{syntax}
+使用 \meta{map tokens function} 迭代 \meta{arg}，嵌套 \meta{nest} 次。
+\meta{map tokens function} 为以 \verb|_map_tokens:..| 结尾的宏，如 
+\cs{tl_map_tokens:nn}，\cs{seq_map_tokens:Nn}。根据第一个参数的不同，\meta{arg} 也要随之改变。
+
+\meta{code} 可以使用嵌套的结果，嵌套结果的长度为 \meta{nest}，\meta{code} 的执行次数为 
+\underline{第一层 \meta{code} 执行次数的 \meta{nest} 次幂}。
+\end{function}
+
+\begin{xample}
+\ExplSyntaxOn 
+\cs_set:Npn \__this_box:n #1
+  {
+    \hbox_set:Nn \l_tmpa_box { \scriptsize #1 }
+    \hbox_to_wd:nn { \box_wd:N \l_tmpa_box }
+      { % 上面显示十进制数字，下面显示二进制数字
+        \oalign { 
+          \hfil \int_from_bin:n {#1} \hfil \cr 
+          \box_use_drop:N \l_tmpa_box 
+        } 
+      }
+  }
+\cus_map_nest_code:Nnnn \tl_map_tokens:nn { 01 } { 4 }
+  { [ \__this_box:n {#1} ] } % 共执行 (len("01"))^4=16 次
+\ExplSyntaxOff
+\stopxamplecode
+\xampleprint
+\end{xample}
 
 \subsection{\cusmodule{psr}，处理器}
 
@@ -3922,6 +4009,20 @@ cbl 列表除了 \cs{cus@type@contentsline}、\cs{cus@type@contentsline@}、
 
 
 \section{title class，标题类}\label{sec:struct-title-class}
+
+标题类规定了一个标题总体上是如何显示的，可以使用一些键值选项来微调具体的显示效果。
+
+\CusLaTeX 预定义了 5 个标题类，分别为：\texttt{page}、\texttt{top}、\texttt{normal}、\texttt{free}、\texttt{wrap}。
+
+用户可以自己定义标题类 \meta{class}。只需定义如下 6 个命令：
+\begin{itemize}
+  \item[\cs{title@class@\meta{class}}] 用于显示标题的代码，有两个参数，第一个为标题的名称，第二个表示是否为带星号的标题（用 \cs{title@ifstar}）判断；
+  \item[\cs{title@classkeys@\meta{class}}] 此标题类额外的键；
+  \item[\cs{title@classinitial@\meta{class}}] 初始值；
+  \item[\cs{title@classhook@\meta{class}afterdef}] 钩子，可选，使用此标题类定义标题时，定义结束后执行的代码；
+  \item[\cs{title@classhook@\meta{class}begin}] 钩子，可选，此标题开始时要执行的代码，一般用在 \cs{title@class@\meta{class}} 中；
+  \item[\cs{title@classhook@\meta{class}end}] 钩子，可选，此标题结束时要执行的代码，一般用在 \cs{title@class@\meta{class}} 中；
+\end{itemize}
 
 
 \section{输出\LaTeX 原始风格的目录}
@@ -5346,6 +5447,9 @@ s_0,s_1,s_2&w_0&g_0&w_1&g_1&w_2\rlap{ (in \texttt{pt})}\\\hline
 \linespread{1}\selectfont \small 
 \obeylines
 
+\CHToA{l3text}{\cs{text_mdfive_hash:n}};
+\CHToA{l3token}{\cs{token_if_cs_word:NTF},\cs{token_if_control_word:NTF}};
+
 \section{\CHFrom{module.util}}
 \CHToI{l3seq}{\cs{__seq_item:n}};
 \CHToI{latex}{\tn{c@page}};
@@ -5370,6 +5474,12 @@ s_0,s_1,s_2&w_0&g_0&w_1&g_1&w_2\rlap{ (in \texttt{pt})}\\\hline
 \CHToI{hyperref}{\hook{__hyp/target/setname}};
 \CHToP{hyperref}{\tn{HyPL@EveryPage}};
 \CHToM{hyperref}{\tn{HyPL@page}, \tn{HyPL@thisLabel}};
+\CHToI{hyperref}{\tn{Hy@SaveSpaceFactor}, \tn{Hy@RestoreSpaceFactor}};
+\CHToI{l3kernel}{\cs{__kernel_backend_literal_pdf:x}};
+
+
+\section{\CHFrom{module.algo}}
+\CHToI{l3tl}{\cs{__tl_map_function:Nnnnnnnnn}, \cs{\__tl_map_tokens:nnnnnnnnn} \tn{s__tl_stop}};
 
 
 \section{\CHFrom{module.layout}}
