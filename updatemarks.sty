@@ -136,7 +136,7 @@
           \g_updatemarks_seq
       }
       {
-        \seq_clear:N \g__updatemarks_seq
+        \seq_gclear:N \g__updatemarks_seq
         \__updatemarks_gput:Nn \g__updatemarks_seq {#1}
         \updatemarks_extract:nN 
           { 
@@ -151,7 +151,7 @@
     \tl_if_novalue:nTF {#1}
       { \updatemarks_extract_split:N \g_updatemarks_seq }
       {
-        \seq_clear:N \g__updatemarks_seq
+        \seq_gclear:N \g__updatemarks_seq
         \__updatemarks_gput:Nn \g__updatemarks_seq {#1}
         \updatemarks_extract_split:N \g__updatemarks_seq
       }
@@ -208,6 +208,11 @@
     \bool_if:cT { l__updatemarks_#1_bool }
       { \updatemarks_extract:nN { #2 } \g_updatemarks_seq }
   }
+\cs_new_protected:Npn \extractsplitmarks@of #1
+  {
+    \bool_if:cT { l__updatemarks_#1_bool }
+      { \updatemarks_extract_split:N \g_updatemarks_seq }
+  }
 % minipage 
 \let\updatemarks@endminipage\endminipage
 \patchcmd \endminipage 
@@ -215,14 +220,60 @@
   { \color@endgroup\egroup\extractmarks@of{minipage}{\unvcopy\@tempboxa} } 
   { } { \ERROR }
 \apptocmd \endminipage { \updatemarks@of{minipage} } { } { \ERROR }
-\@ifpackageloaded{tcolorbox}{}
-  {\AddToHook{package/tcolorbox/after}{\let\endtcb@lrbox\updatemarks@endminipage}}
+% tcolorbox
+\cs_new_protected:Npn \updatemarks@tcolorbox@patch 
+  {
+    \tcbset{updatemarks/.is~choice,
+      updatemarks/true/.code=\bool_set_true:N \l__updatemarks_tcolorbox_bool,
+      updatemarks/false/.code=\bool_set_false:N \l__updatemarks_tcolorbox_bool,
+      updatemarks/.default=true}
+    \patchcmd \tcbox@inner@hbox { \tcbdimto }
+      { \extractmarks@of{tcolorbox}{\unhcopy\tcb@upperbox}\tcbdimto }
+      { } { \ERROR }
+    \patchcmd \endtcb@lrbox 
+      { \color@endgroup\egroup } 
+      { \color@endgroup\egroup\extractmarks@of{tcolorbox}{\unvcopy\@tempboxa} } 
+      { } { \ERROR }
+    \patchcmd \tcb@drawing@env@end { \csname }
+      { \updatemarks@of{tcolorbox}\csname } { } { \ERROR }
+    % breakable library
+    \ifdefined \tcb@vsplit@upper 
+      \apptocmd \tcb@vsplit@upper { \extractsplitmarks@of{tcolorbox} } { } { \ERROR }
+      \apptocmd \tcb@vsplit@lower { \extractsplitmarks@of{tcolorbox} } { } { \ERROR }
+      \patchcmd \tcb@split@start { \iftcb@final@box }
+        { \iftcb@final@box 
+          \extractmarks@of{tcolorbox}{\unvcopy\tcb@upperbox\unvcopy\tcb@lowerbox} } 
+        { } { \ERROR }
+      \patchcmd \tcb@split@start 
+        { \tcb@comp@h@page\tcb@check@for@final@box\iftcb@final@box }
+        { \tcb@comp@h@page\tcb@check@for@final@box\iftcb@final@box 
+          \extractmarks@of{tcolorbox}{\unvcopy\tcb@upperbox\unvcopy\tcb@lowerbox}}
+        { } { \ERROR }
+      \patchcmd \tcb@split@USL { \iftcb@final@box }
+        { \iftcb@final@box 
+          \extractmarks@of{tcolorbox}{\unvcopy\tcb@totalupperbox 
+            \iftcb@lowerspace\unvcopy\tcb@totallowerbox\fi } 
+        } 
+        { } { \ERROR }
+      \patchcmd \tcb@split@SL@displayed { \iftcb@final@box }
+        { \iftcb@final@box 
+          \extractmarks@of{tcolorbox}{\unvcopy\tcb@totallowerbox} } 
+        { } { \ERROR }
+      \patchcmd \tcb@split@L { \iftcb@final@box }
+        { \iftcb@final@box 
+          \extractmarks@of{tcolorbox}{\unvcopy\tcb@totallowerbox} } 
+        { } { \ERROR }
+    \fi 
+  }
+\@ifpackageloaded{tcolorbox}{\updatemarks@tcolorbox@patch}
+  {\AddToHook{package/tcolorbox/after}{\let\endtcb@lrbox\updatemarks@endminipage
+    \AtBeginDocument{\updatemarks@tcolorbox@patch}}}
 
 
 \keys_define:nn { updatemarks }
   {
     minipage  .bool_set:N = \l__updatemarks_minipage_bool  ,
-%    tcolorbox .bool_set:N = \l__updatemarks_tcolorbox_bool ,
+    tcolorbox .bool_set:N = \l__updatemarks_tcolorbox_bool ,
 %    multicols .bool_set:N = \l__updatemarks_multicols_bool ,
 %    paracol   .bool_set:N = \l__updatemarks_paracol_bool   ,
   }
