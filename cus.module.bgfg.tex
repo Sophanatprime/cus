@@ -1,138 +1,127 @@
 \CUSDependency{ package={geometry,graphicx} }
 \CUSProvideExplModule{bgfg}{\cus@d@te}{\cus@versi@n}{background and foreground}
 
+\box_new:N \l__cus_bgfg_box 
 \cs_generate_variant:Nn \hook_gput_code:nnn { nne }
 \cs_generate_variant:Nn \hook_gput_next_code:nn { ne }
 
-\cs_new:Npn \__cwdoc_bfground:nnn #1#2#3 { #1#2{#3} }
-\cs_generate_variant:Nn \__cwdoc_bfground:nnn { nee, neo }
-\cs_new_protected:Npn \__cwdoc_bfground_lt:n #1
+\cs_new_protected:Npn \__cus_bfground_lt:n #1
   {
-    \put (0,0) 
-      {
-        \vbox_to_zero:n
-          {
-            \hbox_overlap_right:n {#1}
-            \tex_vss:D
-          }
-      }
+    \hbox_set:Nn \l__cus_bgfg_box { \hbox_overlap_right:n {#1} }
+    \put (\Gm@layouthoffset,-\Gm@layoutvoffset) 
+      { \vbox_to_zero:n { \box_use_drop:N \l__cus_bgfg_box \tex_vss:D } }
   }
-\cs_new_protected:Npn \__cwdoc_bfground_rt:n #1
+\cs_new_protected:Npn \__cus_bfground_rt:n #1
   {
-    \put (0,0) 
-      {
-        \vbox_to_zero:n
-          {
-            \hbox_to_wd:nn { \Gm@layoutwidth } { \tex_hfil:D #1 }
-            \tex_vss:D
-          }
-      }
+    \hbox_set_to_wd:Nnn \l__cus_bgfg_box { \Gm@layoutwidth } { \tex_hfil:D #1 }
+    \put (\Gm@layouthoffset,-\Gm@layoutvoffset) 
+      { \vbox_to_zero:n { \box_use_drop:N \l__cus_bgfg_box \tex_vss:D } }
   }
-\cs_new_protected:Npn \__cwdoc_bfground_lb:n #1
+\cs_new_protected:Npn \__cus_bfground_lb:n #1
   {
-    \hbox_set:Nn \l__cus_tmpa_box { \hbox_overlap_right:n {#1} }
-    \put (0,-\Gm@layoutheight)
+    \hbox_set:Nn \l__cus_bgfg_box { \hbox_overlap_right:n {#1} }
+    \put (\Gm@layouthoffset,-\Gm@layoutvoffset-\Gm@layoutheight)
       {
         \hbox:n 
           {
-            \box_move_up:nn { \box_dp:N \l__cus_tmpa_box } 
-              { \box_use_drop:N \l__cus_tmpa_box } 
+            \box_move_up:nn { \box_dp:N \l__cus_bgfg_box } 
+              { \box_use_drop:N \l__cus_bgfg_box } 
           }
       }
   }
-\cs_new_protected:Npn \__cwdoc_bfground_rb:n #1
+\cs_new_protected:Npn \__cus_bfground_rb:n #1
   {
-    \hbox_set:Nn \l__cus_tmpa_box 
-      { \hbox_to_wd:nn { \Gm@layoutwidth } { \tex_hfil:D #1 } }
-    \put (0,-\Gm@layoutheight)
+    \hbox_set_to_wd:Nnn \l__cus_bgfg_box { \Gm@layoutwidth } { \tex_hfil:D #1 }
+    \put (\Gm@layouthoffset,-\Gm@layoutvoffset-\Gm@layoutheight)
       {
         \hbox:n 
           {
-            \box_move_up:nn { \box_dp:N \l__cus_tmpa_box }
-              { \box_use_drop:N \l__cus_tmpa_box }
+            \box_move_up:nn { \box_dp:N \l__cus_bgfg_box }
+              { \box_use_drop:N \l__cus_bgfg_box }
           }
       }
   }
-\cs_new_protected:Npn \__cwdoc_bfground_cm:n #1
+\cs_new_protected:Npn \__cus_bfground_cm:n #1
   {
-    \hbox_set:Nn \l__cus_tmpa_box {#1}
-    \put (\dim_eval:n {.5\Gm@layoutwidth-.5\box_wd:N \l__cus_tmpa_box} , 
-          \dim_eval:n {-.5\Gm@layoutheight-.5\box_ht:N \l__cus_tmpa_box+.5\box_dp:N \l__cus_tmpa_box} )
-      { \tex_vbox:D { \box_use_drop:N \l__cus_tmpa_box } }
+    \hbox_set:Nn \l__cus_bgfg_box {#1}
+    \put ({\Gm@layouthoffset+.5\Gm@layoutwidth-.5\box_wd:N \l__cus_bgfg_box} , 
+          {-\Gm@layoutvoffset-.5\Gm@layoutheight-.5\box_ht:N \l__cus_bgfg_box+.5\box_dp:N \l__cus_bgfg_box} )
+      { \tex_vbox:D { \box_use_drop:N \l__cus_bgfg_box } }
   }
-\cs_new:Npn \__cwdoc_bfground_ot:n 
-  {
-    \legacy_if:nTF { @twoside }
-      {
-        \if_int_odd:w \c@page 
-          \exp_after:wN \__cwdoc_bfground_rt:n
-        \else:
-          \exp_after:wN \__cwdoc_bfground_lt:n
-        \fi
-      }
-      { \__cwdoc_bfground_rt:n }
-  }
-\cs_new:Npn \__cwdoc_bfground_it:n 
+\cs_new:Npn \__cus_bfground_ot:n 
   {
     \legacy_if:nTF { @twoside }
       {
         \if_int_odd:w \c@page 
-          \exp_after:wN \__cwdoc_bfground_lt:n
+          \exp_after:wN \__cus_bfground_rt:n
         \else:
-          \exp_after:wN \__cwdoc_bfground_rt:n
+          \exp_after:wN \__cus_bfground_lt:n
         \fi
       }
-      { \__cwdoc_bfground_lt:n }
+      { \__cus_bfground_rt:n }
   }
-\cs_new:Npn \__cwdoc_bfground_ob:n 
+\cs_new:Npn \__cus_bfground_it:n 
   {
     \legacy_if:nTF { @twoside }
       {
         \if_int_odd:w \c@page 
-          \exp_after:wN \__cwdoc_bfground_rb:n
+          \exp_after:wN \__cus_bfground_lt:n
         \else:
-          \exp_after:wN \__cwdoc_bfground_lb:n
+          \exp_after:wN \__cus_bfground_rt:n
         \fi
       }
-      { \__cwdoc_bfground_rb:n }
+      { \__cus_bfground_lt:n }
   }
-\cs_new:Npn \__cwdoc_bfground_ib:n 
+\cs_new:Npn \__cus_bfground_ob:n 
   {
     \legacy_if:nTF { @twoside }
       {
         \if_int_odd:w \c@page 
-          \exp_after:wN \__cwdoc_bfground_lb:n
+          \exp_after:wN \__cus_bfground_rb:n
         \else:
-          \exp_after:wN \__cwdoc_bfground_rb:n
+          \exp_after:wN \__cus_bfground_lb:n
         \fi
       }
-      { \__cwdoc_bfground_lb:n }
+      { \__cus_bfground_rb:n }
   }
-\cs_new_protected:Npn \__cwdoc_bfground_:n #1 {#1}
+\cs_new:Npn \__cus_bfground_ib:n 
+  {
+    \legacy_if:nTF { @twoside }
+      {
+        \if_int_odd:w \c@page 
+          \exp_after:wN \__cus_bfground_lb:n
+        \else:
+          \exp_after:wN \__cus_bfground_rb:n
+        \fi
+      }
+      { \__cus_bfground_lb:n }
+  }
+\cs_new_protected:Npn \__cus_bfground_:n #1 {#1}
+\cs_new_eq:cN { __cus_bfground_~:n } \__cus_bfground_:n 
 %%t #1: + : all; no + : next shipout
 %%D (#2){lt}: position, lt, lb, rt, rb, it, ib, ot, ob, cm; l: left, r: right, i: inner, o: outer, t: top, b: bottom, c: center, m: middle
 %%O [#3]{./fg}: hook label
 %%D (#4){}: #2
 %%+m #5: code (long)
-\NewDocumentCommand \foreground { t+ D(){cm} O{./fg} D(){#2} +m }
+\ekeysdeclarecmd \foreground { t+ #W{ [] () }{ {./fg} {cm} } m }
   {
-    \__cwdoc_bfground:neo { }
+    \exp_args:Nno \__cus_expanded:w 
       {
-        \IfBooleanTF {#1}
-          { \hook_gput_code:nnn { shipout/foreground } {#3} }
+        \bool_if:NTF #1
+          { \hook_gput_code:nnn { shipout/foreground } {#2} }
           { \hook_gput_next_code:nn { shipout/foreground }  }
       }
-      { \cs:w __cwdoc_bfground_ #4 :n \cs_end: {#5} }
+      { \cs:w __cus_bfground_ #3 :n \cs_end: {#4} }
   }
-\NewDocumentCommand \background { t+ D(){cm} O{./bg} D(){#2} +m }
+\ekeysdeclarecmd \background { t+ #W{ [] () }{ {./fg} {cm} } m }
   {
-    \__cwdoc_bfground:neo { }
+    \exp_args:Nno \__cus_expanded:w 
       {
-        \IfBooleanTF {#1}
-          { \hook_gput_code:nnn { shipout/background } {#3} }
+        \bool_if:NTF #1
+          { \hook_gput_code:nnn { shipout/background } {#2} }
           { \hook_gput_next_code:nn { shipout/background }  }
       }
-      { \cs:w __cwdoc_bfground_ #4 :n \cs_end: {#5} }
+      { \cs:w __cus_bfground_ #3 :n \cs_end: {#4} }
   }
 
 %%t #1: + : all; no + : next shipout
@@ -141,50 +130,44 @@
 %%O [#4]{./bgpic}: hook label
 %%D (#5){}: #3
 %%m #6: graphics filename
-\NewDocumentCommand \backgroundpicture { t+ s D(){lt} O{./bgpic} D(){#3} m }
-  {
-    \__cwdoc_bfground:nee { }
+\ekeysdeclarecmd \backgroundpicture { &t+ s #W{ [] [] () } { {} {./bgpic} {lt} } m }
+  { 
+    \exp_args:Nne \use:n 
+      { \background #1 [{#4}] ({#5}) }
       {
-        \IfBooleanTF {#1}
-          { \background + (#5) [#4] }
-          { \background   (#5) [#4] }
-      }
-      {
-        \exp_not:N \includegraphics
-        \IfBooleanTF {#2}
-          { [ width  = \Gm@layoutwidth ] }
+        \exp_not:N \includegraphics 
+        \bool_if:NTF #2
+          { [ width  = \Gm@layoutwidth , \exp_not:n {#3} ] }
           {
             [
               keepaspectratio = false ,
               width  = \Gm@layoutwidth ,
-              height = \Gm@layoutheight
+              height = \Gm@layoutheight,
+              \exp_not:n {#3}
             ]
           }
-          {#6}
+          { \exp_not:n {#6} }
       }
   }
-\NewDocumentCommand \foregroundpicture { t+ s D(){lt} O{./fgpic} D(){#3} m }
-  {
-    \__cwdoc_bfground:nee { }
+\ekeysdeclarecmd \foregroundpicture { &t+ s #W{ [] [] () } { {} {./bgpic} {lt} } m }
+  { 
+    \exp_args:Nne \use:n 
+      { \foreground #1 [{#4}] ({#5}) }
       {
-        \IfBooleanTF {#1}
-          { \foreground + (#5) [#4] }
-          { \foreground   (#5) [#4] }
-      }
-      {
-        \exp_not:N \includegraphics
-        \IfBooleanTF {#2}
-          { [ width  = \Gm@layoutwidth ] }
+        \exp_not:N \includegraphics 
+        \bool_if:NTF #2
+          { [ width  = \Gm@layoutwidth , \exp_not:n {#3} ] }
           {
             [
               keepaspectratio = false ,
               width  = \Gm@layoutwidth ,
-              height = \Gm@layoutheight
+              height = \Gm@layoutheight ,
+              \exp_not:n {#3}
             ]
           }
-          {#6}
+          { \exp_not:n {#6} }
       }
   }
 
-\NewDocumentCommand \removeforeground { } { \RemoveFromHook { shipout/foreground } }
-\NewDocumentCommand \removebackground { } { \RemoveFromHook { shipout/background } }
+\ekeysdeclarecmd \removeforeground { } { \RemoveFromHook { shipout/foreground } }
+\ekeysdeclarecmd \removebackground { } { \RemoveFromHook { shipout/background } }

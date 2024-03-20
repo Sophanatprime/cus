@@ -1,4 +1,5 @@
 \CUSProvideLibrary{pgf}{\cus@d@te}{\cus@versi@n}{pgf and tikz support}
+\usetikzlibrary{spath3}
 
 % shade text, see: https://tex.stackexchange.com/questions/192496/
 \newbox\cus@picturebox 
@@ -7,7 +8,7 @@
   \tikz[baseline=0,line width=0pt]\path \pgfextra{\rlap{\copy\cus@picturebox}} [#1] 
     (0,-\dp\cus@picturebox) rectangle (\wd\cus@picturebox,\ht\cus@picturebox);}
 \protected\def\shadetextbox#1{%
-  \cus@collectbox\cus@picturebox\hbox{\shadetext{#1}{\unhbox\cus@picturebox}}} 
+  \@collectn@box\cus@picturebox\hbox{\shadetext{#1}{\unhbox\cus@picturebox}}} 
 
 \newbox\cus@phantombox 
 \protected\def\cus@phantomtobox#1{%
@@ -29,4 +30,58 @@
   \end{tikzpicture}% 
 }
 \newcommand\shadecontentbox[2][]{%
-  \cus@collectbox\cus@picturebox\hbox{\shadecontent[{#1}]{#2}{\unhbox\cus@picturebox}}}
+  \@collectn@box\cus@picturebox\hbox{\shadecontent[{#1}]{#2}{\unhbox\cus@picturebox}}}
+
+
+\def\cus@pgf@initbfnodes{%
+  \cus@pgf@initpagenode
+  \cus@pgf@initlayoutnode
+}
+\def\cus@pgf@initpagenode{%
+  \@namedef{pgf@sh@ns@page}{rectangle}%
+  \@namedef{pgf@sh@nt@page}{{1}{0}{0}{1}{0pt}{0pt}}%
+  \@namedef{pgf@sh@pi@page}{\pgfpictureid}%
+  \@namedef{pgf@sh@np@page}{%
+    \def\southwest{\pgfpointorigin}%
+    \def\northeast{\pgfpoint{\paperwidth}{\paperheight}}%
+  }%
+}
+\def\cus@pgf@initlayoutnode{%
+  \@namedef{pgf@sh@ns@layout}{rectangle}%
+  \@namedef{pgf@sh@nt@layout}{{1}{0}{0}{1}{0pt}{0pt}}%
+  \@namedef{pgf@sh@pi@layout}{\pgfpictureid}%
+  \@namedef{pgf@sh@np@layout}{%
+    \def\southwest{\pgfpoint{\layoutloffset}{\the\layoutboffset}}%
+    \def\northeast{\pgfpoint{\layoutloffset+\layoutwidth}{\paperheight-\layouttoffset}}%
+  }%
+}
+\long\@namedef{__cus_bfground_tikz:n}#1{%
+  \put(0pt,-\paperheight){\hb@xt@\z@{\begin{tikzpicture}
+    \cus@pgf@initbfnodes
+    \path[use as bounding box](page.south west)rectangle(page.north east);
+    #1\end{tikzpicture}\hss}}}
+
+
+\def\cus@tikz@pathend{}
+\def\cus@tmp#1\tikz@path@do@at@end#2\@nil{%
+  \def\tikz@finish{#1#2\cus@tikz@pathend\tikz@path@do@at@end}}
+\expandafter\cus@tmp\tikz@finish\@nil
+\pgfkeys{
+  /tikz/tangent/.code=\@tangent@process#1\@nil,
+  /tikz/at tangent/.style={shift=(tangent point #1),
+    x=(tangent unit vector #1),y=(tangent orthogonal unit vector #1)}
+}
+\def\@tangent@process #1 at#2\@nil{\pgfkeysalso{spath/save=#1}%
+  \g@addto@macro\cus@tikz@pathend{\global\let\cus@tikz@pathend\@empty
+    \@tangent@getcoordinate{#1}{#1}{\@firstofone#2}}}
+\def\@tangent@getcoordinate#1#2#3{\path
+  [spath/use=#2,postaction=decorate,decoration={
+    markings,
+    mark=at position {#3}
+      with
+        {%
+          \coordinate (tangent point #1) at (0pt,0pt);
+          \coordinate (tangent unit vector #1) at (1,0pt);
+          \coordinate (tangent orthogonal unit vector #1) at (0pt,1);
+        }
+  }];}

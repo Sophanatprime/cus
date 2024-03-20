@@ -1,6 +1,6 @@
 \CUSProvideExplLibrary{bnf}{\cus@d@te}{\cus@versi@n}{Backus-Naur Form (BNF)}
 
-\tl_new:N \l__cus_bnf_grometry_tl
+\tl_new:N \l__cus_bnf_geometry_tl
 \newcounter{texbnf@internal}
 \cs_set_protected_nopar:Npn \cus@mathrule 
   { \hbox{\setbox\z@\hbox{$()$}\vrule\@height\ht\z@\@depth\dp\z@\@width.1\wd\z@} }
@@ -48,9 +48,10 @@
     label-suffix .tl_set:N = \l__cus_bnf_label_suffix_tl ,
     hyper .bool_set:N = \l__cus_bnf_hyper_bool ,
     hyper-color .code:n = \tl_set:Nn \__cus_bnf_hyper_color: { \cus_color_select:n {#1} } ,
-    indent .code:n = \tl_put_right:Nn \l__cus_bnf_grometry_tl { \setlength\listparindent{#1} } ,
-    itemsep .code:n = \tl_put_right:Nn \l__cus_bnf_grometry_tl { \setlength\itemsep{#1} } ,
-    parsep .code:n = \tl_put_right:Nn \l__cus_bnf_grometry_tl { \setlength\parsep{#1} } ,
+    indent .code:n = \tl_put_right:Nn \l__cus_bnf_geometry_tl { \setlength\listparindent{#1} } ,
+    itemsep .code:n = \tl_put_right:Nn \l__cus_bnf_geometry_tl { \setlength\itemsep{#1} } ,
+    parsep .code:n = \tl_put_right:Nn \l__cus_bnf_geometry_tl { \setlength\parsep{#1} } ,
+    geometry .code:n = \tl_put_right:Nn \l__cus_bnf_geometry_tl {#1} ,
   }
 
 \cs_set:Npn \__cus_bnf_hyper_color: { \cus@colorlink }
@@ -214,6 +215,8 @@
     \l__cus_bnf_N_right_tl
     \group_end:
   }
+\cs_new_protected:Npn \cus_bnf_nonterminal:n #1
+  { \cus_bnf_nonterminal_start: #1 \cus_bnf_nonterminal_stop: }
 \cs_new_protected:Npn \cus_bnf_is:
   { 
     \mode_leave_vertical:
@@ -239,16 +242,39 @@
     \l__cus_bnf_T_right_tl 
     \group_end:
   }
+\cs_new_protected:Npn \cus_bnf_terminal:n #1 
+  { \cus_bnf_terminal_start: #1 \cus_bnf_terminal_stop: }
 \cs_new_protected_nopar:Npn \BNFItem 
   { 
-    \item \relax 
-    \cs_set_eq:NN \__cus_bnf_hyper:n \__cus_bnf_hyper_anchor:n 
+    \peek_charcode_remove:NTF *
+      { 
+        \item \relax 
+        \cs_set_eq:NN \__cus_bnf_hyper:n \__cus_bnf_hyper_ref:n 
+      }
+      { 
+        \item \relax 
+        \cs_set_eq:NN \__cus_bnf_hyper:n \__cus_bnf_hyper_anchor:n 
+      }
   }
-\cs_new_protected_nopar:Npn \BNFN #1
-  { 
+\ekeysdeclarecmd \BNFN { p{*+} }
+  {
     \bool_if:NTF \l__cus_bnf_hyper_bool 
-      { \__cus_bnf_hyper:n {#1} }
-      { \cus_bnf_nonterminal_start: #1 \cus_bnf_nonterminal_stop: }
+      {
+        \NumberCase {#1}
+          {
+            { \__cus_bnf_hyper_ref:n }
+            { \cus_peek_verbatim:nn \__cus_bnf_hyper_ref:n }
+            { \cus_peek_verbatim:nw \__cus_bnf_hyper_ref:n }
+          } { }
+      }
+      {
+        \NumberCase {#1}
+          {
+            { \cus_bnf_nonterminal:n }
+            { \cus_peek_verbatim:nn \cus_bnf_nonterminal:n }
+            { \cus_peek_verbatim:nw \cus_bnf_nonterminal:n }
+          } { }
+      }
   }
 \cs_new_protected_nopar:Npn \BNFI 
   { 
@@ -256,8 +282,15 @@
     \cs_set_eq:NN \__cus_bnf_hyper:n \__cus_bnf_hyper_ref:n 
   }
 \cs_new_protected_nopar:Npn \BNFO { \cus_bnf_or: }
-\NewDocumentCommand \BNFT { v } 
-  { \cus_bnf_terminal_start: \tl_to_str:n {#1} \cus_bnf_terminal_stop: }
+\ekeysdeclarecmd \BNFT { p{*+} }
+  {
+    \NumberCase {#1}
+      {
+        { \cus_bnf_terminal:n }
+        { \cus_peek_verbatim:nn { \cus_bnf_terminal:n } }
+        { \cus_peek_verbatim:nw { \cus_bnf_terminal:n } }
+      } { }
+  }
 
 \NewDocumentEnvironment { latexbnf } { !+O{} }
   {
@@ -273,7 +306,7 @@
         \dim_set_eq:NN \leftmargin \c_zero_dim 
         \dim_set:Nn \rightmargin \c_zero_dim 
         \dim_set:Nn \listparindent { 2em }
-        \l__cus_bnf_grometry_tl
+        \l__cus_bnf_geometry_tl
       }
   }
   { \endlist \cus_bnf_stop: }

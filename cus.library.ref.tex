@@ -1,8 +1,8 @@
 \CUSProvideExplLibrary{ref}{\cus@d@te}{\cus@versi@n}{cross reference}
 
 \int_new:N \g__cus_ref_record_page_int 
-\cs_gset_protected:Npn \ifPageOdd { \__cus_ref_if_page_odd:N \c@page }
-\cs_gset_protected:Npn \ifAbsPageOdd 
+\cs_gset_protected:Npn \IfPageOdd { \__cus_ref_if_page_odd:N \c@page }
+\cs_gset_protected:Npn \IfAbsPageOdd 
   { \__cus_ref_if_page_odd:N \g_shipout_readonly_int }
 \cs_gset_protected:Npn \__cus_ref_if_page_odd:N #1
   {
@@ -18,29 +18,10 @@
         \int_if_odd:nTF { \int_value:w \__cus_get_label_page:n { cus@ref/pageodd/cnt/ \int_use:N \g__cus_ref_record_page_int } }
           { \use_i:nn } { \use_ii:nn }
       }
-      { \G@refundefinedtrue \use_ii:nn }
-  }
-\cs_new_protected:Npn \ifLabelOdd #1
-  {
-    \tl_if_blank:nTF {#1} 
-      { \__cus_ref_if_label_odd_aux:n { \@currentlabel } }
-      { \__cus_ref_if_label_odd_aux:n {#1} }
-  }
-\cs_new:Npn \__cus_ref_if_label_odd_aux:n #1
-  {
-    \cus_label_if_exist:nTF {#1}
-      {
-        \exp_args:Nf \__cus_if_head_digit:nTF 
-          { \__cus_get_label_page:n {#1} \exp_stop_f: \exp_stop_f: }
-          {
-            \if_int_odd:w \__cus_get_label_page:n {#1} \exp_stop_f: 
-              \exp_after:wN \use_i:nn
-            \else: \exp_after:wN \use_ii:nn
-            \fi:
-          }
-          { \use_ii:nn }
+      { 
+        \G@refundefinedtrue 
+        \if_int_odd:w #1 \exp_after:wN \use_i:nn \else: \exp_after:wN \use_ii:nn \fi:
       }
-      { \G@refundefinedtrue \use_ii:nn }
   }
 
 \NewDocumentCommand \HyperRef { s m O{} }
@@ -51,7 +32,7 @@
   }
 \NewDocumentCommand \HyperBoxRef { s m m O{c} O{\relax} O{s} }
   {
-    \IfBooleanTF{#1} \cus_peek_varwidth:Nnnnnnw \cus_peek_minipage:Nnnnnnw 
+    \IfBooleanTF{#1} \collectn_varwidth:Nnnnnnw \collectn_width:Nnnnnnw 
       \l__cus_tmpc_box
       { \cus_ref_label:nn {#2} { \XeTeXLinkBox { \box_use_drop:N \l__cus_tmpc_box } } }
       {#4} {#5} {#6} {#3}
@@ -64,7 +45,7 @@
   }
 \NewDocumentCommand \HyperBoxLink { s m m O{c} O{\relax} O{s} }
   {
-    \IfBooleanTF{#1} \cus_peek_varwidth:Nnnnnnw \cus_peek_minipage:Nnnnnnw 
+    \IfBooleanTF{#1} \collectn_varwidth:Nnnnnnw \collectn_width:Nnnnnnw 
       \l__cus_tmpc_box
       { \cus_ref_target:nn {#2} { \XeTeXLinkBox { \box_use_drop:N \l__cus_tmpc_box } } }
       {#4} {#5} {#6} {#3}

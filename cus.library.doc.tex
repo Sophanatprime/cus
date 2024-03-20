@@ -147,7 +147,7 @@
 \tl_new:N \l__cus_doc_cmd_module_tl
 \bool_new:N \l__cus_doc_cmd_noindex_bool
 \bool_new:N \l__cus_doc_cmd_replace_bool
-\__cus_int_let:Nw \l__cus_doc_cmd_hyper_int 2~
+\int_const:Nn \l__cus_doc_cmd_hyper_int { 2 }
 \tl_new:N \l__cus_doc_cmd_target_tl 
 \bool_new:N \l__cus_doc_in_implementation_bool
 \bool_new:N \g__cus_doc_typeset_documentation_bool
@@ -278,6 +278,8 @@
     target    .tl_set:N     = \l__cus_doc_cmd_target_tl       ,
     target*   .meta:n       = { hyper=raw, target={#1} }      ,
     type      .tl_set:N     = \l__cus_doc_type_tl             ,
+    hyphen-opacity .meta:nn = { cus/typo } { dischyph-opacity = {#1} } ,
+    break-at-any .bool_set:N = \l__cus_doc_cmd_breakany_bool  ,
   }
 
 \prop_new:N \g_cus_doc_type_alias_prop 
@@ -285,7 +287,7 @@
 \prop_put:Nnn \g_cus_doc_module_alias_prop { hyp } { hyperref }
 \cs_new_protected:Npn \__cus_doc_get_hyper_target:nN #1#2
   {
-    \__kernel_tl_set:Nx #2 { \tl_to_str:n {#1} }
+    \elkernel_tl_set:Nx #2 { \tl_to_str:n {#1} }
     \tl_replace_all:Nxn #2 { \c_underscore_str } { / }
     \tl_remove_all:Nx   #2 { \c_backslash_str }
     \exp_args:NNo \prop_get:NnNT 
@@ -306,6 +308,9 @@
     \tl_set:Nn \l__cus_doc_cmd_module_tl { \q_no_value }
     \tl_set:Nn \l__cus_doc_cmd_target_tl { \q_no_value }
     \tl_set:Nn \l__cus_doc_type_tl { \q_no_value }
+    \cs_set_eq:Nc \@dischyph { @dischyph/opacity }
+    \cs_set_eq:NN \- \@dischyph
+    \cs_set_eq:NN \usc@dischyph \@dischyph
     \keys_set:nn { cus/doc/cmd } {#1}
     \tl_set:Nn \l__cus_doc_cmd_tl {#2}
     \bool_if:NT \l__cus_doc_cmd_replace_bool
@@ -326,7 +331,7 @@
         \verbatim@font
         \__cus_doc_if_almost_str:VT \l__cus_doc_cmd_tl
           {
-            \__kernel_tl_set:Nx \l__cus_doc_cmd_tl { \tl_to_str:N \l__cus_doc_cmd_tl }
+            \elkernel_tl_set:Nx \l__cus_doc_cmd_tl { \tl_to_str:N \l__cus_doc_cmd_tl }
             \bool_if:NT \g__cus_doc_cs_break_bool
               {
                 \regex_replace_all:nnN
@@ -334,10 +339,12 @@
                   { \1 \c{BreakableUnderscore} \2 }
                   \l__cus_doc_cmd_tl
               }
+            \bool_if:NTF \l__cus_doc_macro_visible_space_bool
+              { \tl_replace_all:Nnn \l__cus_doc_cmd_tl { ~ } { \textvisiblespace } }
+              { \tl_replace_all:Nnn \l__cus_doc_cmd_tl { ~ } { \@xobeysp } }
+            \bool_if:NT \l__cus_doc_cmd_breakany_bool 
+              { \__cus_doc_cmd_breakany_action:N \l__cus_doc_cmd_tl }
           }
-        \bool_if:NTF \l__cus_doc_macro_visible_space_bool
-          { \tl_replace_all:Nnn \l__cus_doc_cmd_tl { ~ } { \textvisiblespace } }
-          { \tl_replace_all:Nnn \l__cus_doc_cmd_tl { ~ } { \@xobeysp } }
         \tl_set:Nn \cus@doc@thetext  { \l__cus_doc_cmd_tl }
         \int_case:nn { \l__cus_doc_cmd_hyper_int }
           {
@@ -375,15 +382,16 @@
       {
         \bool_if:NF \l__cus_doc_cmd_noindex_bool
           {
-            \quark_if_no_value:NF \l__cus_doc_cmd_index_tl
+            \quark_if_no_value:NTF \l__cus_doc_cmd_index_tl
+              { \tl_remove_all:Nn \l__cus_doc_cmd_tl { \- } }
               {
-                \__kernel_tl_set:Nx \l__cus_doc_cmd_tl
+                \elkernel_tl_set:Nx \l__cus_doc_cmd_tl
                   { \c_backslash_str \exp_not:o { \l__cus_doc_cmd_index_tl } }
               }
             \exp_args:No \__cus_doc_key_get:n { \l__cus_doc_cmd_tl }
             \quark_if_no_value:NF \l__cus_doc_cmd_module_tl
               {
-                \__kernel_tl_set:Nx \l__cus_doc_index_module_tl
+                \elkernel_tl_set:Nx \l__cus_doc_index_module_tl
                   { \tl_to_str:N \l__cus_doc_cmd_module_tl }
               }
             \__cus_doc_special_index_module:ooonN
@@ -451,6 +459,32 @@
         \group_end:
       }
   }
+\tl_new:N \l__cus_doc_cmd_nobreak_tl 
+\tl_set:Nf \l__cus_doc_cmd_nobreak_tl
+  {
+    \cs_to_str:N \\ \- \@dischyph 
+    \@xobeysp \BreakableUnderscore
+  }
+\tl_put_right:No \l__cus_doc_cmd_nobreak_tl { \c_colon_str }
+\cs_new_protected:Npn \__cus_doc_cmd_breakany_action:N #1
+  {
+    \tl_if_empty:NF #1
+      {
+        \exp_args:NNNo \tl_clear:N #1
+        \tl_map_inline:nn { #1 \q__cus_stop }
+          {
+            \token_if_eq_meaning:NNTF ##1 \q__cus_stop
+              { \tl_map_break: }
+              {
+                \tl_if_in:NnTF \l__cus_doc_cmd_nobreak_tl {##1}
+                  { \tl_put_right:Nn #1 {##1} }
+                  { \tl_put_right:Nn #1 {##1\-} }
+              }
+          }
+        \exp_args:Ne \tl_if_eq:nnT { \tl_item:Nn #1 { -1 } } { \- }
+          { \tl_set:Nx #1 { \tl_range:Nnn #1 { 1 } { -2 } } }
+      }
+  }
 \prg_new_protected_conditional:Npnn \__cus_doc_if_almost_str:n #1 { TF , T , F }
   {
     \int_compare:nNnTF
@@ -463,7 +497,7 @@
 \cs_new_protected:Npn \__cus_doc_trim_right:Nn #1#2
   {
     \cs_set:Npn \__cus_doc_tmp:w ##1 #2 ##2 \q_stop { \exp_not:n {##1} }
-    \__kernel_tl_set:Nx #1 { \exp_after:wN \__cus_doc_tmp:w #1 #2 \q_stop }
+    \elkernel_tl_set:Nx #1 { \exp_after:wN \__cus_doc_tmp:w #1 #2 \q_stop }
   }
 \cs_generate_variant:Nn \__cus_doc_trim_right:Nn { No }
 \prg_new_protected_conditional:Npnn \__cus_doc_str_if_begin:nn #1#2 { TF , T , F }
@@ -548,14 +582,14 @@
     \__cus_doc_if_almost_str:nTF {#1}
       {
         \__cus_doc_key_get_base_TF:nN {#1} \l__cus_doc_tmpa_tl
-        \__kernel_tl_set:Nx #2
+        \elkernel_tl_set:Nx #2
           { \__cus_doc_split_function_do:on \l__cus_doc_tmpa_tl { \__cus_doc_base_form_aux:nnN } }
       }
       { \tl_set:Nn #2 {#1} }
   }
 \cs_new:Npx \__cus_doc_key_get_base_TF:nN #1#2
   {
-    \__kernel_tl_set:Nx #2 { \exp_not:N \tl_to_str:n {#1} }
+    \elkernel_tl_set:Nx #2 { \exp_not:N \tl_to_str:n {#1} }
     \tl_if_in:NoF #2 { \tl_to_str:n {:} }
       { \exp_not:N \prg_break: }
     \tl_if_in:onT { #2 z } { \tl_to_str:n {TF} z }
@@ -611,7 +645,7 @@
 \cs_new_protected:Npn \__cus_doc_key_get:n #1
   {
     \__cus_doc_key_get_base:nN {#1} \l__cus_doc_index_macro_tl
-    \__kernel_tl_set:Nx \l__cus_doc_index_key_tl
+    \elkernel_tl_set:Nx \l__cus_doc_index_key_tl
       { \tl_to_str:N \l__cus_doc_index_macro_tl }
     \tl_clear:N \l__cus_doc_index_module_tl
     \tl_if_in:NoTF \l__cus_doc_index_key_tl { \tl_to_str:n { __ } }
@@ -634,7 +668,7 @@
   }
 \cs_new_protected:Npn \__cus_doc_key_pop:
   {
-    \__kernel_tl_set:Nx \l__cus_doc_index_key_tl
+    \elkernel_tl_set:Nx \l__cus_doc_index_key_tl
       { \tl_tail:N \l__cus_doc_index_key_tl }
   }
 \cs_new_protected:Npn \__cus_doc_target:
@@ -652,7 +686,7 @@
   {
     \cs_set:Npn \__cus_doc_tmpa:w ##1 #1 ##2 \q_stop
       { \exp_not:n {##1} }
-    \__kernel_tl_set:Nx \l__cus_doc_index_module_tl
+    \elkernel_tl_set:Nx \l__cus_doc_index_module_tl
       { \exp_after:wN \__cus_doc_tmpa:w \l__cus_doc_index_module_tl #1 \q_stop }
   }
 \cs_new_protected:Npn \__cus_doc_key_drop_underscores:
@@ -771,12 +805,18 @@
       \bool_if:NTF #2 { 选项： } { 命令： }
     }
   }
+% 第一个参数为 module，
+% 第二个参数有三项，第一项为用于排序的字符，第二项为显示的字符，第三项附加到前两项后面，
+% 可使用三个参数，第一个为布尔值，表示是否是内部变量，第二个为布尔值，表示是否为键值，
+% 第三个为 module
 \cs_new_protected:Npn \cus_doc_gset_special_index_print:nn #1
   { \cs_gset:cpn { __cus_doc_special_index_module_#1:NNn } ##1##2##3 }
-\cus_doc_gset_special_index_print:nn { hook }
-  { { Hook } { \bool_if:NT #1 { 内部 } 钩子： } { } }
+\cus_doc_gset_special_index_print:nn { hook~point }
+  { { HookPoint } { \bool_if:NT #1 { 内部 } 钩子： } { } }
 \cus_doc_gset_special_index_print:nn { color~name }
   { { ColorName } { 颜色名称： } { } }
+\cus_doc_gset_special_index_print:nn { kernel }
+  { { Kernel } { 内核保留的命令： } { } }
 \cs_generate_variant:Nn \__cus_doc_special_index_module:nnnnN { ooo }
 \cs_new_protected:Npn \__cus_doc_special_index_aux:nnnnnn #1#2#3#4#5#6
   {
@@ -810,7 +850,7 @@
   }
 \cs_new_protected:Npn \__cus_doc_special_index_set:Nn #1#2
   {
-    \__kernel_tl_set:Nx #1 { \tl_to_str:n {#2} }
+    \elkernel_tl_set:Nx #1 { \tl_to_str:n {#2} }
     \__cus_doc_if_almost_str:nTF {#2}
       {
         \tl_replace_all:Non #1 { \tl_to_str:n { __ } }
@@ -828,7 +868,7 @@
                 \token_to_str:N \verb * \verbatimchar
               }
           }
-        \__kernel_tl_set:Nx #1
+        \elkernel_tl_set:Nx #1
           {
             \token_to_str:N \verb * \verbatimchar
             #1 \verbatimchar
@@ -1042,7 +1082,7 @@
 
 \cs_new_protected:Npn \__cus_doc_names_get_seq:nN #1#2
   {
-    \__kernel_tl_set:Nx \l__cus_doc_tmpa_tl { \tl_to_str:n {#1} }
+    \elkernel_tl_set:Nx \l__cus_doc_tmpa_tl { \tl_to_str:n {#1} }
     \bool_if:NTF \l__cus_doc_names_verb_bool
       {
         \seq_clear:N #2
@@ -1266,6 +1306,7 @@
     path .tl_set:N = \l__cus_doc_key_path_tl ,
     frame .clist_set:N = \l__cus_doc_framed_setting_tl ,
     frame+ .code:n = \clist_put_right:Nn \l__cus_doc_framed_setting_tl {#1} ,
+    needspace .tl_set:N = \l__cus_doc_needspace_tl ,
     %syntax-lineno .bool_set:N = \l__cus_doc_syntax_lineno_bool ,
     %lineno .meta:n = { syntax-lineno = {#1} } ,
   }
@@ -1314,8 +1355,8 @@
 \NewDocumentCommand \csref { O{function} D(){#3} m } % type , label , cs name 
   {
     \group_begin:
-    \__kernel_tl_set:Nx \l__cus_doc_type_tl { \tl_trim_spaces:n {#1} }
-    \__kernel_tl_set:Nx \l__cus_doc_tmpa_tl { \exp_not:n {#2} }
+    \elkernel_tl_set:Nx \l__cus_doc_type_tl { \tl_trim_spaces:n {#1} }
+    \elkernel_tl_set:Nx \l__cus_doc_tmpa_tl { \exp_not:n {#2} }
     \tl_remove_all:Nn \l__cus_doc_tmpa_tl { \- }
     \__cus_doc_get_hyper_target:oN \l__cus_doc_tmpa_tl \l__cus_doc_tmpa_tl 
     \hypersetup { linkcolor=cus/color/doc~cs }
@@ -1325,7 +1366,7 @@
 \NewDocumentCommand \csreflist { O{function} m }
   {
     \group_begin:
-    \__kernel_tl_set:Nx \l__cus_doc_type_tl { \tl_trim_spaces:n {#1} }
+    \elkernel_tl_set:Nx \l__cus_doc_type_tl { \tl_trim_spaces:n {#1} }
     \seq_clear:N \l__cus_tmpa_seq
     \hypersetup { linkcolor=cus/color/doc~cs }
     \clist_map_inline:nn {#2}
@@ -1340,8 +1381,8 @@
 \NewDocumentCommand \envref { O{environment} D(){#3} m } % type , label , env name
   {
     \group_begin:
-    \__kernel_tl_set:Nx \l__cus_doc_type_tl { \tl_trim_spaces:n {#1} }
-    \__kernel_tl_set:Nx \l__cus_doc_tmpa_tl { \exp_not:n {#2} }
+    \elkernel_tl_set:Nx \l__cus_doc_type_tl { \tl_trim_spaces:n {#1} }
+    \elkernel_tl_set:Nx \l__cus_doc_tmpa_tl { \exp_not:n {#2} }
     \tl_remove_all:Nn \l__cus_doc_tmpa_tl { \- }
     \__cus_doc_get_hyper_target:oN \l__cus_doc_tmpa_tl \l__cus_doc_tmpa_tl 
     \hypersetup { linkcolor=cus/color/doc~env }
@@ -1353,7 +1394,7 @@
 \NewDocumentCommand \envreflist { O{environment} m }
   {
     \group_begin:
-    \__kernel_tl_set:Nx \l__cus_doc_type_tl { \tl_trim_spaces:n {#1} }
+    \elkernel_tl_set:Nx \l__cus_doc_type_tl { \tl_trim_spaces:n {#1} }
     \seq_clear:N \l__cus_tmpa_seq
     \hypersetup { linkcolor=cus/color/doc~env }
     \clist_map_inline:nn {#2}
@@ -1373,13 +1414,15 @@
 \NewDocumentCommand \keyref { s >{\TrimSpaces} O{} D(){#4} m } % key path , key 
   {
     \group_begin:
-    \__kernel_tl_set:Nx \l__cus_doc_type_tl { keyval }
+    \elkernel_tl_set:Nx \l__cus_doc_type_tl { keyval }
     \__cus_doc_get_hyper_target:xN 
       { #2 \tl_if_empty:nF {#2} / \exp_not:n {#3} } \l__cus_doc_tmpa_tl
     \hypersetup { linkcolor=cus/color/doc~key }
     \use:e 
       {
-        \key [ target*={\l__cus_doc_tmpa_tl}, format=\exp_not:N \cus@doc@keyref@format ]
+        \key [ target*={\l__cus_doc_tmpa_tl}, 
+        \tl_if_empty:nF {#2} { module=#2 } ,
+        format=\exp_not:N \cus@doc@keyref@format ]
           { \IfBooleanF {#1} { #2 \tl_if_empty:nF {#2} / } \exp_not:n {#4} } 
       }
     \group_end:
@@ -1387,7 +1430,7 @@
 \NewDocumentCommand \keyreflist { s >{\TrimSpaces} O{} m }
   {
     \group_begin:
-    \__kernel_tl_set:Nx \l__cus_doc_type_tl { keyval }
+    \elkernel_tl_set:Nx \l__cus_doc_type_tl { keyval }
     \seq_clear:N \l__cus_tmpa_seq
     \hypersetup { linkcolor=cus/color/doc~key }
     \clist_map_inline:nn {#3}
@@ -1428,13 +1471,13 @@
   }
 \cs_new_protected:Npn \__cus_doc_function_typeset_start:
   {
-    \par \hrule\@height\z@ \par \bigskip %\noindent
+    \par \nointerlineskip \par \goodbreak \bigskip %\noindent
   }
 \cs_new_protected:Npn \__cus_doc_function_typeset_stop:
   {
     \par
     \dim_set:Nn \prevdepth { \box_dp:N \l__cus_doc_descr_coffin }
-    \allowbreak
+    \goodbreak % \allowbreak
   }
 \cs_new_protected:Npn \__cus_doc_function_init:
   {
@@ -1455,6 +1498,7 @@
     \clist_clear:N \l__cus_doc_function_label_clist
     \tl_set:Nn \l__cus_doc_override_module_tl { \q_no_value }
     \tl_set:Nn \l__cus_doc_key_path_tl { \q_no_value }
+    \tl_set:Nn \l__cus_doc_needspace_tl { \q_no_value }
   }
 \cs_new_protected:Npn \__cus_doc_function_reset:
   {
@@ -1479,9 +1523,31 @@
   { \vcoffin_set_end: }
 \cs_new_protected:Npn \__cus_doc_function_needspace:
   {
-    \needspace
+    \quark_if_no_value:NTF \l__cus_doc_needspace_tl 
+      { \needspace { \dim_eval:n \__cus_doc_function_height: } }
+      { \needspace { \dim_eval:n \l__cus_doc_needspace_tl } }
+  }
+\cs_new:Npn \__cus_doc_function_height:
+  {
+    \bool_if:NTF \l__cus_doc_long_name_bool
       {
-        \dim_eval:n { \box_ht_plus_dp:N \g__cus_doc_syntax_box + \coffin_ht:N \l__cus_doc_functions_coffin + \coffin_dp:N \l__cus_doc_functions_coffin + \tex_baselineskip:D }
+        \dim_max:nn { \box_ht_plus_dp:N \g__cus_doc_syntax_box }
+          { 
+            \coffin_ht:N \l__cus_doc_functions_coffin +
+            \coffin_dp:N \l__cus_doc_functions_coffin
+          }
+        +
+        \coffin_ht:N \l__cus_doc_descr_coffin +
+        \coffin_dp:N \l__cus_doc_descr_coffin
+      }
+      {
+        \dim_max:nn { \box_ht_plus_dp:N \g__cus_doc_syntax_box }
+          {
+            \coffin_ht:N \l__cus_doc_functions_coffin +
+            \coffin_dp:N \l__cus_doc_functions_coffin +
+            \coffin_ht:N \l__cus_doc_descr_coffin +
+            \coffin_dp:N \l__cus_doc_descr_coffin
+          }
       }
   }
 \cs_new_protected:Npn \__cus_doc_function_assemble:
@@ -1498,8 +1564,7 @@
           \l__cus_doc_output_coffin {hc} {vc}
           \l__cus_doc_syntax_coffin {l} {T}
           {0pt} {0pt}
-        %\bool_lazy_and:nnTF { \legacy_if_p:n { @twoside } } { \c@page }
-        \legacy_if:nTF { @twoside } { \ifPageOdd \use_i:nn \use_ii:nn } { \use_ii:nn }
+        \legacy_if:nTF { @twoside } { \IfPageOdd \use_i:nn \use_ii:nn } { \use_ii:nn }
           {
             \coffin_join:NnnNnnnn
               \l__cus_doc_output_coffin {r} {t}
@@ -1534,8 +1599,6 @@
                   {0pt} {0pt}
               }
           }
-        \__cus_leave_vertical:
-        \box_use_drop:N \l__cus_tmpa_box
       }
       {
         \coffin_join:NnnNnnnn
@@ -1546,8 +1609,7 @@
           \l__cus_doc_output_coffin {l} {b}
           \l__cus_doc_descr_coffin  {l} {t}
           {0pt} {-\medskipamount}
-        %\bool_lazy_and:nnTF { \legacy_if_p:n { @twoside } } { \int_if_odd_p:n \c@page }
-        \legacy_if:nTF { @twoside } { \ifPageOdd \use_i:nn \use_ii:nn } { \use_ii:nn }
+        \legacy_if:nTF { @twoside } { \IfPageOdd \use_i:nn \use_ii:nn } { \use_ii:nn }
           {
             \coffin_join:NnnNnnnn
               \l__cus_doc_output_coffin {r} {t}
@@ -1567,9 +1629,9 @@
               {0pt} {0pt}
             \tex_hss:D 
           }
-        \__cus_leave_vertical:
-        \box_use_drop:N \l__cus_tmpa_box
       }
+    \__cus_leave_vertical:
+    \box_use_drop:N \l__cus_tmpa_box
   }
 \cs_new_protected:Npn \__cus_doc_typeset_functions:
   {
@@ -1633,13 +1695,30 @@
     \__cus_doc_typeset_aux:n { \__cus_doc_get_function_name:n {#1} }
     :
     \int_compare:nTF { \seq_count:N \g__cus_doc_variants_seq == 1 }
-      { \seq_use:Nn \g__cus_doc_variants_seq { } }
-      {
-        \textrm(
-          \seq_use:Nn \g__cus_doc_variants_seq { \textrm| }
-        \textrm)
+      { 
+        \seq_use:Nn \g__cus_doc_variants_seq { } 
+        \bool_if:NT #2 { \__cus_doc_typeset_TF: }
       }
-    \bool_if:NT #2 { \__cus_doc_typeset_TF: }
+      {
+        \hbox_set:Nn \l_tmpa_box
+          { \seq_use:Nn \g__cus_doc_variants_seq { \textrm| \nolinebreak[2] } }
+        \textrm(
+        \dim_compare:nNnTF { \box_wd:N \l_tmpa_box } > { .4\columnwidth }
+          {
+            \parbox[t]{.4\columnwidth}
+              {
+                \raggedright
+                \hbox_unpack_drop:N \l_tmpa_box
+                \textrm)
+                \bool_if:NT #2 { \__cus_doc_typeset_TF: }
+              }
+          }
+          {
+            \hbox_unpack_drop:N \l_tmpa_box
+            \textrm)
+            \bool_if:NT #2 { \__cus_doc_typeset_TF: }
+          }
+      }
     \__cus_doc_typeset_expandability:
   }
 \cs_new_protected:Npn \__cus_doc_function_extra_labels:
@@ -1677,7 +1756,7 @@
     \tl_if_empty:NF \l__cus_doc_date_added_tl
       {
         %\bool_lazy_and:nnTF { \legacy_if_p:n { @twoside } } { \c@page }
-        \legacy_if:nTF { @twoside } { \ifPageOdd \use_i:nn \use_ii:nn } { \use_ii:nn }
+        \legacy_if:nTF { @twoside } { \IfPageOdd \use_i:nn \use_ii:nn } { \use_ii:nn }
           {
             \multicolumn { 2 } { @{} l @{} } 
               { \scriptsize New: \, \l__cus_doc_date_added_tl } \\
@@ -1691,7 +1770,7 @@
     \tl_if_empty:NF \l__cus_doc_date_updated_tl
       {
         %\bool_lazy_and:nnTF { \legacy_if_p:n { @twoside } } { \c@page }
-        \legacy_if:nTF { @twoside } { \ifPageOdd \use_i:nn \use_ii:nn } { \use_ii:nn }
+        \legacy_if:nTF { @twoside } { \IfPageOdd \use_i:nn \use_ii:nn } { \use_ii:nn }
           {
             \multicolumn { 2 } { @{} l @{} }
               { \scriptsize Updated: \, \l__cus_doc_date_updated_tl } \\
@@ -1752,10 +1831,10 @@
     \hbox_gset:Nn \g__cus_doc_syntax_box { \box_use_drop:N \g__cus_doc_syntax_box }
     \bool_if:NF \l__cus_doc_in_function_bool
       {
-        \__cus_leave_vertical:
-        \begin{quote}
+        \begin{enumlist}{}{}{}{}\item\__cus_leave_vertical:
           \box_use_drop:N \g__cus_doc_syntax_box
-        \end{quote}
+        \end{enumlist}
+        \nointerlineskip
       }
   }
 \cs_new_protected:Npn \__cus_doc_shorthand:

@@ -1,12 +1,12 @@
 % \DocumentMetadata{pdfversion=1.7}
 \documentclass[twoside]{book}
-% \overfullrule10pt 
 \PassOptionsToPackage{silent}{xeCJK}
 \usepackage{ctex}
 \usepackage{fontawesome5}
 
 \usepackage[library={doc,box,bnf,ref,counter,pgf}]{cus}
-\newcommand{\hook}{\cmd[module=hook,type=hook]}
+\SetKeys[updatemarks]{multicol}
+\newcommand{\hook}{\cmd[module=hook point,type=hook point]}
 \newcommand{\colna}{\key[module=color name,type=color name]}
 \usepackage{marginnote}
 
@@ -68,7 +68,7 @@
 
 \usepackage{lineno}
 \usepackage{caption}
-% \expandafter\let\csname caption@ifoddpage\endcsname\ifPageOdd
+% \expandafter\let\csname caption@ifoddpage\endcsname\IfPageOdd
 \usepackage{floatrow}
 \usepackage{tikz}
 \usetikzlibrary{shadings}
@@ -76,8 +76,8 @@
 \usepackage{listings}
 % \usepackage{siunitx}
 \usepackage{adjustbox}
-% \usepackage[strict]{changepage}
-% \renewcommand{\cplabel}{@}
+\usepackage[strict]{changepage}
+\renewcommand{\cplabel}{@}
 \usepackage{array,booktabs,tabularx,makecell}
 \usepackage{tabularray}
 
@@ -149,7 +149,8 @@
 \setuptitle[chapter]{pagestyle=fancy, 
   fixskip, break=\needspace{100pt}, 
   beforeskip=30pt, afterskip=25pt, format=\zihao{-2}\bfseries\centering,}
-\setuptitle[section]{fixskip, name={\texorpdfstring{\S~}{\S}},
+\setuptitle[section]{fixskip, break=\addpenalty{-5000},
+  name={\texorpdfstring{\S~}{\S}},
   beforeskip=20pt plus 5pt minus 5pt, afterskip=15pt plus 2pt minus 2pt,
   format=\zihao{-3}\bfseries\raggedright,}
 \setuptitle[subsection]{fixskip,
@@ -225,11 +226,11 @@
 \def\xampletext{\par\input{\jobname.exambuff}}
 \def\xampleprint{\xamplecode \xampleline \xampletext}
 \NewDocumentEnvironment {xample} { O{} O{} }
-  {\penalty-599 \def\xampleOPTlst{#1}%
+  {\penalty-1000 \def\xampleOPTlst{#1}%
     \fboxset{breakable=true,#2}%
     \expandafter\expandafter\expandafter\startxamplecode
       \expandafter\string\@firstofone}
-  {\end{longfbox}\xample@test}
+  {\end{longfbox}\xample@test\goodbreak}
 
 \lstdefinelanguage[BNF]{TeX}[common]{TeX}{
   texcs=[1]{BNFItem}, texcs=[2]{BNFN}, texcs=[3]{BNFT}, 
@@ -252,6 +253,11 @@
 \makeatother
 %endregion
 
+\ExplSyntaxOn
+\cs_new:Npn \UseList { \cus_tl_use:nn }
+\cs_new:Npn \UseClist { \clist_use:nn }
+\ExplSyntaxOff
+
 \crefformat{figure}{#2图#1#3}
 \crefformat{table}{#2表#1#3}
 \crefformat{example}{#2例#1#3}
@@ -261,6 +267,8 @@
 \crefformat{subsection}{第 #2#1#3 小节}
 
 \setlist{nosep}
+\setlist[itemize,1]{label=\textbullet}
+\setlist[itemize,2]{label=$\smwhtcircle$}
 
 \def\nofuncskip{\par\vskip-\bigskipamount\vskip\parskip\par}
 
@@ -281,11 +289,51 @@
 \maketitle
 
 \frontmatter
-\setpagestyle+{fancy.contents}[fancy]{\sethead[or,el]{\UseName{head@fc}\firstmark}}
+\setpagestyle+{fancy.contents}[fancy]{}
 \setuptitle[chapter]{numbering=false,pagestyle=}
 \renewcommand{\contentsname}{总目录}
-{\long\def\chaptermark#1{\mark{{\noexpand\hyperlink{\UseName{@currentHref}}{\contentsname}}{}}}
-  \tableofcontents[ragged,outer-sep=0pt,sep=1.5em,2]}
+{% \tableofcontents[ragged,outer-sep=0pt,sep=1.5em,2]
+\makeatletter
+\ekeysdeclarecmd\fixedwidthtext{smm}{\leavevmode@ifvmode
+  \setbox\z@\hbox{{#3}}%
+  \ifdim\dimeval{#2}>\wd\z@ 
+    \hbox to\dimeval{#2}{%
+      \IfBooleanTF{#1}{\xeCJKsetup{CJKglue=\hskip 0pt plus 1fill\relax,
+        CJKecglue=\hskip 0pt plus 1fill\relax}%
+        \spaceskip 0pt plus 1fill\relax 
+        \CJKglue #3\CJKglue}{#3\hfill}}%
+  \else
+    \resizebox{\dimeval{#2}}{\height}{#3}%
+  \fi}
+\definecolor{toccol1}{HTML}{006DAA}
+\definecolor{toccol2}{HTML}{C4D4E3}
+\newcommand*{\zhphantom}{\vphantom{好hig}}
+
+\tocsetstyle{chapter}{}
+  {}
+  {\begingroup\noindent \bfseries\large \fboxrule\z@ 
+    \fcolorbox{toccol1}{toccol1}{\zhphantom\color{white}%
+      \tocifnumbered{\fixedwidthtext*{4\ccwd}{\tocthenumber\unskip}}
+        {\fixedwidthtext*{4\ccwd}{\tocthename}}}%
+    \toclinkbox{\fcolorbox{toccol2}{toccol2}{\zhphantom
+      \fixedwidthtext{\linewidth-4\ccwd-4\fboxsep-1.3em}
+        {\tocifnumbered{\tocthename}{}}%
+      \makebox[1.3em][r]{\tocthepage}}}
+    \endgroup\par \medskip}
+  {\bigskip}{}
+\tocsetstyle{section}{}{}
+  {\@dottedtocline{\tocthelevel}{1.5em}{2.3em}{\tocthenumber\enskip\tocthename}
+    {\toclink{\tocthepage}\hspace{\fboxsep}}}
+  {}{}
+\tocsetstyle{subsection}{}{}
+  {\@dottedtocline{\tocthelevel}{3.8em}{3.2em}{\tocthenumber\enskip\tocthename}
+    {\toclink{\tocthepage}\hspace{\fboxsep}}}
+  {}{}
+\makeatother
+\startmulticolumns[ragged,outer-sep=0pt,column-sep=1.5em,heading=\chapter\contentsname]
+\specifiedtoc 
+\stopmulticolumns
+}
 
 
 \mainmatter
@@ -299,7 +347,7 @@
 
 {\color{red}\bfseries 目前 \CusTeX 还处于早期的开发状态中，很多功能还并不完善。}
 
-\CusTeX （\CusLaTeX）宏集意为 \textcolor{purple}Chinese \textcolor{purple}User
+\CusTeX （\CusLaTeX）宏集意为 a \textcolor{purple}Chinese \textcolor{purple}User
 \textcolor{purple}Scheme \textcolor{purple}\TeX（\textcolor{purple}{\LaTeX}），
 为中文 \LaTeX 用户定制的文档类框架。
 
@@ -416,6 +464,29 @@ Logo。输出 \CusTeX，\CusLaTeX。
 \meta{lap to} 默认值为 \texttt{c}。
 \end{function}
 
+\begin{function}[rEXP]{\numberfixedwidth,\numerzerofill}
+  \begin{syntax}
+    \V\numberfixedwidth \marg{width} \marg{filler} \marg{printer} \marg{number}
+    \V\numberzerofill \marg{width} \marg{number}
+  \end{syntax}
+先将 \meta{printer} 作用于 \meta{number}，然后用 \meta{filler} 向左或向右填充，
+填充 \meta{filler} 的次数为 $\veta{width}-\mathrm{len}(\veta{printer}(\meta{number}))$。
+当 \meta{width} 小于 0 时，在右边填充，否则在左边填充。
+\meta{printer} 必须是可展的。
+
+\cs{numberzerofill} 用 0 填充数字。
+\end{function}
+
+\begin{xample}
+\ExplSyntaxOn
+\numberfixedwidth { 6 } { 0 } { \int_to_Hex:n } { 42 } \quad 
+\numberfixedwidth { 6 } { 0 } { \int_to_Hex:n } { `好 } \quad 
+\numberzerofill { 5 } { 12478 }
+\ExplSyntaxOff
+\stopxamplecode
+\xampleprint
+\end{xample}
+
 \begin{function}{\zkern}
 相当于 \verb|\kern\z@|。
 \end{function}
@@ -458,6 +529,29 @@ Logo。输出 \CusTeX，\CusLaTeX。
 \stopxamplecode
 \xampleprint
 \end{xample}
+
+\begin{function}{\IfGraphicsExists}
+  \begin{syntax}
+    \V\IfGraphicsExists \marg{graphics name} \marg{true code} \marg{false code}
+  \end{syntax}
+判断图片文件是否存在。\tn{@curr@file} 展开为此文件名，若无此文件则为 \tn{relax}。
+
+它会自动查找 \tn{graphicspath} 设置的路径，且可以自动补全文件扩展名。
+
+需要用户自行加载 \pkg{graphicx} 宏包。
+\end{function}
+
+\begin{function}{\InputIfGraphicsExists}
+  \begin{syntax}
+    \V\InputIfGraphicsExists * \oarg{key-val list} \marg{file}
+    \V\InputIfGraphicsExists * \oarg{llx,lly} \oarg{urx,ury} \marg{file}
+  \end{syntax}
+如果图片存在时使用图片，否则什么也不做。
+
+它会自动查找 \tn{graphicspath} 设置的路径，且可以自动补全文件扩展名。
+
+需要用户自行加载 \pkg{graphicx} 宏包。
+\end{function}
 
 \subsection{参数处理器，Argument processors}
 
@@ -616,28 +710,50 @@ Logo。输出 \CusTeX，\CusLaTeX。
 支持的正则表达式语法请参考 \file{interface3.pdf}。
 \end{texnote}
 
+\begin{keyval}[path=typo]{special-dischyph,dischyph-opacity}
+  \begin{syntax}
+    special-dischyph = <&normal|opacity|none>
+    dischyph-opacity = <{0--1之间的数}>
+  \end{syntax}
+\verb|special-dischyph| 可以让 \tn{-} （和 \tn{@dischyph}）显示的文字具有透明度。
+\opt{normal} 为默认的显示效果。\opt{none} 移除显示的字符。
+
+\opt{dischyph-opacity} 设置透明度，但不会直接修改 \opt{special-dischyph}。
+
+使用 \cs{DocumentMetadata} 后效果更好。
+\end{keyval}
+
 
 \section{\cusmodule{util}模块}
 
-\begin{function}[rEXP]{\MapClist,\MapList}
+\nofuncskip
+\begin{function}[rEXP]{\MapClist,\MapList,\MapInteger}
 \begin{syntax}
-  \verb|\MapClist| \marg{comma list} \marg{tokens}
-  \verb|\MapList|  \marg{list} \marg{tokens}
+  \V\MapClist \marg{comma list} \marg{tokens}
+  \V\MapList  \marg{list} \marg{tokens}
+  \V\MapInteger \oarg{initial value} \oarg{step} \marg{final value} \meta{function}
 \end{syntax}
-\cs{MapClist} 使用 \meta{tokens} 迭代逗号分隔的列表 \meta{comma list}，它将 \meta{tokens} 
-置于列表项之前。
+\cs{MapClist} 使用 \meta{tokens} 迭代逗号分隔的列表 \meta{comma list}，
+它将 \meta{tokens} 置于列表项之前。
 
 \cs{MapList} 使用 \meta{tokens} 迭代记号列表 \meta{list}，它将 \meta{tokens} 置于列表项之前。
+
+\cs{MapInteger} 从 \meta{initial value} 到 \meta{final value} 以 \meta{step} 为步长，
+来迭代 \meta{function}。
 \end{function}
 
-\begin{function}{\IterateClist,\IterateList}
+\begin{function}{\IterateClist,\IterateList,\IterateInteger}
 \begin{syntax}
-  \verb|\IterateClist| \marg{comma list} \marg{inline code}
-  \verb|\IterateList|  \marg{list} \marg{inline code}
+  \V\IterateClist \marg{comma list} \marg{inline code}
+  \V\IterateList  \marg{list} \marg{inline code}
+  \V\IterateInteger \oarg{initial value} \oarg{step} \marg{final value} \marg{inline code}
 \end{syntax}
-\cs{IterateCist} 使用 \meta{inline code} 迭代逗号分隔的列表 \meta{comma list}，\meta{inline code} 可带一个参数 \verb|#1|，它为当前迭代项。
+\cs{IterateClist} 使用 \meta{inline code} 迭代逗号分隔的列表 \meta{comma list}，\meta{inline code} 可带一个参数 \verb|#1|，它为当前迭代项。
 
 \cs{IterateList} 使用 \meta{inline code} 迭代记号列表 \meta{list}，\meta{inline code} 可带一个参数 \verb|#1|，它为当前迭代项。
+
+\cs{IterateInteger} 从 \meta{initial value} 到 \meta{final value} 以 \meta{step} 为步
+长，来迭代 \meta{inline code}，\meta{inline code} 可以带一个参数 \verb|#1|，它为当前整数。
 \end{function}
 
 \begin{xample}
@@ -716,13 +832,18 @@ Unicode 代码点。
 \texttt{\Verbatimize{\#\$\%\ \{\}\\\^}}，即，使用 \verb|\#\$\%\ \{\}\\\^|。
 \end{function}
 
-\begin{function}{\ifPageOdd,\ifAbsPageOdd}
+\begin{function}{\IfPageOdd,\IfAbsPageOdd}
   \begin{syntax}
-    \verb|\ifPageOdd| \marg{true} \marg{false}
+    \verb|\IfPageOdd| \marg{true} \marg{false}
   \end{syntax}
-判断当前页码是否为奇数。\cs{ifAbsPageOdd} 仅在 shipout 时有效（如在 \hook{shipout/\allowbreak foreground}，\hook{shipout/background}，\hook{shipout/after} 钩子中）。
+判断当前页码是否为奇数。\cs{IfAbsPageOdd} 仅在 shipout 时有效（如在 \hook{shipout/\allowbreak foreground}，\hook{shipout/background}，\hook{shipout}，
+\hook{shipout/after} 钩子中）。
 
 平常使用时并不一定准确，\cusmodule{ref} 库改进了这一点，见\cref{sec:lib-ref}。
+\end{function}
+
+\begin{function}[EXP]{\@ifpageodd,\@ifabspageodd}
+同上，但可展。
 \end{function}
 
 
@@ -750,7 +871,7 @@ Unicode 代码点。
 % \thisfloatsetup{margins=hangoutside,capposition=beside,
 % capbesideposition={top,inside},floatwidth=\textwidth}
 \begin{figure}
- \ifPageOdd{\raggedleft}{\raggedright}\small
+ \IfPageOdd{\raggedleft}{\raggedright}\small
  {\unitlength=.65pt
  \begin{picture}(450,250)(0,-10)
  \put(20,0){\framebox(170,230){}}
@@ -828,7 +949,7 @@ Unicode 代码点。
 \end{keyval}
 
 \begin{table}[thb]
-  \ifPageOdd{\makebox[\linewidth][l]}{\makebox[\linewidth][r]}%
+  \IfPageOdd{\makebox[\linewidth][l]}{\makebox[\linewidth][r]}%
     {\includegraphics{cus-aux/tab-defined-papername}}
   \caption{预定义的纸张名}\label{tab:defined-papername}
 \end{table}
@@ -855,11 +976,21 @@ Unicode 代码点。
 
 \opt{layout} 或 \opt{layoutname} 会根据纸张方向自动交换长宽，因此纸张方向必须先于它们设置。
 
-\opt{centerlayout} 通过将 \opt{layoutfoffset} 和 \opt{layoutvoffset} 设置为合适的值，以将 
+\opt{centerlayout} 通过将 \opt{layoutfoffset} 和 \opt{layoutvoffset} 
+设置为合适的值，以将 
 \gpart{layout} 部分置于纸张中心。
 
 见 \pkgdoc{geometry}。
 \end{keyval}
+
+\begin{function}{\layoutwidth,\layoutheight,
+  \layoutloffset,\layouttoffset,\layoutroffset,\layoutboffset}
+\gpart{layout} 的大小，以及距离纸张左、上、右、下侧的长度。在 \TikZ 中使用时可能需要用 
+\tn{the} 获取它们的值，
+使用 \cs{dimeval}、\tn{dimexpr} 等命令以及 \pkg{calc} 宏包的功能时则不需要。
+
+若是设置了 \opt{twoside}，它们\emph{不会}自动切换左侧和右侧的值。
+\end{function}
 
 \subsection{主体尺寸}
 
@@ -1027,7 +1158,7 @@ Unicode 代码点。
  \end{picture}}
  \captionsetup{labelsep=newline}
  \caption[不同模式下的 total part]{\small
- \ifLabelOdd{fig:geometry-modes}{\raggedright}{\raggedleft}%
+ \IfLabelOdd{fig:geometry-modes}{\raggedright}{\raggedleft}%
   不同模式下的 \gpart{total body}。
   (a) \opt{includeheadfoot}，(b) \opt{includeall}，(c) \opt{includefoot}
   及 (d) \opt{includefoot}，\opt{includemp}。
@@ -1045,6 +1176,13 @@ Unicode 代码点。
 设置两个值，将另一个留空或 \verb|*|。
 \end{keyval}
 
+\begin{function}{\bodylmargin,\bodytmargin,\bodyrmargin,\bodybmargin}
+\gpart{total body} 的边界距离 \gpart{layout} 边界的左、上、右、下侧的长度。
+在 \TikZ 中使用时可能需要用 \tn{the} 获取它们的值，
+使用 \cs{dimeval}、\tn{dimexpr} 等命令以及 \pkg{calc} 宏包的功能时则不需要。
+
+若是设置了 \opt{twoside}，它们\emph{不会}自动切换左侧和右侧的值。
+\end{function}
 
 \subsection{边距}
 
@@ -1143,7 +1281,7 @@ Unicode 代码点。
  \end{picture}}
  \captionsetup{labelsep=newline}
  \caption[\texttt{bindingoffset} 选项]{%
-  \ifLabelOdd{fig:bindingoffset}{\raggedright}{\raggedleft}\small
+  \IfLabelOdd{fig:bindingoffset}{\raggedright}{\raggedleft}\small
   The option \opt{bindingoffset} adds the specified length to the inner margin.
   Note that \opt{twoside} option swaps the horizontal margins and the
   marginal notes together with \opt{bindingoffset} on even pages (see
@@ -1552,11 +1690,11 @@ Unicode 代码点。
 
 \begin{keyval}[path=filler]{space,hspace,hspace*,vspace,vspace*,not-space}
   \begin{syntax}
-    space   = \marg{code}
-    hspace  = \marg{skip expr}
-    hspace* = \marg{skip expr}
-    vspace  = \marg{skip expr}
-    vspace* = \marg{skip expr}
+    space   = <&*|\meta{code}>
+    hspace  = <&*|\meta{skip expr}>
+    hspace* = <&*|\meta{skip expr}>
+    vspace  = <&*|\meta{skip expr}>
+    vspace* = <&*|\meta{skip expr}>
     not-space &&
   \end{syntax}
 使用空白填充。使用它后，其它选项无效。
@@ -1565,14 +1703,20 @@ Unicode 代码点。
 
 \opt{hspace} 相当于设置 \verb|space=\hspace|\marg{skip expr}。
 
-\opt{hspace*} 相当于设置 \verb|space=\hspace*|\marg{skip expr}。
+\opt{hspace*} 相当于设置 \verb|space=\breakablehspace|\marg{skip expr}。
 
 \opt{vspace} 相当于设置 \verb|space=\vspace|\marg{skip expr}。
 
-\opt{vspace*} 相当于设置 \verb|space=\vspace*|\marg{skip expr}。
+\opt{vspace*} 相当于设置 \verb|space=\breakablevspace|\marg{skip expr}。
+
+当值为 \texttt{*} 时，使用 \keyref[filler]{size} 或 \keyref[filler]{size*} 设置的值。
+若设置 \verb|space=*|，则会根据是否处于垂直模式而使用 \tn{vspace} 或 \tn{hspace}。
 
 由于用 space 填充的优先级最高，若设置使用 space 填充后，要使用其它类型来填充，需使用
 \opt{not-space} 或将 \opt{space} 设置为空。若后续仍设置了 \opt{space}，则仍会使用 space 填充。
+
+\cs{breakablehspace} 和 \cs{breakablevspace} 是可断开的水平或垂直空白。实际给出的空白
+与要求的有一定的误差。
 \end{keyval}
 
 \begin{xample}
@@ -1694,7 +1838,7 @@ Unicode 代码点。
     \verb|\breakablefiller|
     \verb|\breakablefiller| \oarg{filler key-val}
   \end{syntax}
-可自动断行的 filler。
+可自动断行的 filler。默认使用空格填充。
 \end{function}
 
 \begin{xample}
@@ -1845,7 +1989,7 @@ Unicode 代码点。
 
 \begin{keyval}[path=multicolumns]{framed,framed-options,framed-options+}
   \begin{syntax}
-    framed = <&fbox|...>
+    framed = <&none|fbox|...>
     framed-options = \marg{options}
   \end{syntax}
 控制多栏文字整体用哪种盒子框住，多栏文字仍然可以分页。
@@ -1858,20 +2002,45 @@ Unicode 代码点。
 使用此选项时，最好把 \keyref[multicolumns]{overflow} 设置为 \texttt{0pt}，否则可能无法正常分页。
 \end{keyval}
 
-\begin{keyval}[path=multicolumns]{adj,adj-inner,adj-outer}
+\begin{keyval}[path=multicolumns]{adj,adj*,adj-inner,adj-outer,shorten,widen}
   \begin{syntax}
-    adj = <&\TTF> & false 
+    adj  = <&\TTF> & false 
+    adj* &&
     adj-inner = \marg{内侧长度}
     adj-outer = \marg{外侧长度}
+    shorten   = \marg{长度} | \{ \meta{内侧长度}, \meta{外侧长度} \}
+    widen     = \marg{长度} | \{ \meta{内侧长度}, \meta{外侧长度} \}
   \end{syntax}
-多栏文字还可以通过调整边距来调整总的文字宽度。\opt{adj} 用于启用此功能。
+多栏文字还可以通过调整边距来调整总的文字宽度。\opt{adj} 用于启用或关闭此功能。
+\opt{adj*} 设置 \verb|adj=true| 及 \keyref[multicolumns]{not-balanced}。
 
-\meta{内侧长度} 和 \meta{外侧长度} 分别调整文字的内侧和外侧边距。正值表示向文字内调整
+\opt{adj-inner} 的 \meta{内侧长度} 和 \opt{adj-outer} 的 \meta{外侧长度} 
+分别调整文字的内侧和外侧边距。正值表示向文字内调整
 （总的文字宽度减少），负值表示向文字外调（总的文字宽度增加）。
 它们自动设置 \opt{adj} 为 \opt{true}。
+
+\opt{shorten} 的 \meta{内侧长度} 和 \meta{外侧长度} 表示内侧和外侧缩短指定值，
+如果只有一项，则内侧和外侧均缩短该长度。如果任意一项为空，则相当于设置为 \texttt{0pt}。
+它自动设置 \opt{adj} 为 \opt{true}。
+
+\opt{widen} 的 \meta{内侧长度} 和 \meta{外侧长度} 表示内侧和外侧伸长指定值，
+如果只有一项，则内侧和外侧均伸长该长度。如果任意一项为空，则相当于设置为 \texttt{0pt}。
+它自动设置 \opt{adj} 为 \opt{true}。
 \end{keyval}
 
 \sdanger
+
+\begin{keyval}[path=multicolumns]{wrap-box}
+  \begin{syntax}
+    wrap-box = <&\TTF> & false
+  \end{syntax}
+当增加了多栏文字的宽度时，如果这些文字还被放在一个盒子中，则可能会造成 Overfull，
+设置本选项为真，则不会出现 Overfull。
+
+这种情况常见于把这些文字放在浮动体中，因此，在浮动体中自动设置该选项为真。
+
+一般情况无需特别设置该选项。
+\end{keyval}
 
 \begin{keyval}[path=multicolumns]{addto-baselineskip}
   \begin{syntax}
@@ -1926,6 +2095,31 @@ Unicode 代码点。
 使用 \tn{LRmulticolcolumns} 或 \tn{RLmulticolcolumns}。默认为 \opt{left-to-right}。
 \end{keyval}
 
+\subsection{额外增加文字的宽度}
+
+基于多栏文字的功能，提供了 \env{extrawidth} 环境，用以为部分文字增加额外的宽度，
+以及 \env{fullpagewidth} 环境，用于输出占整个纸张宽的文字。它们都有多栏环境的功能。
+
+\begin{function}{\startextrawidth,\stopextrawidth}
+  \begin{syntax}
+    \V\startextrawidth \marg{inner extra width} \marg{outer extra width}
+    \V\startextrawidth \oarg{multicolumns key-val} \marg{inner extra width} \marg{outer extra width}
+    ~~\meta{material}
+    \V\stopextrawidth
+  \end{syntax}
+\meta{material} 的内侧伸长 \meta{inner extra width}，外侧伸长 \meta{outer extra width}，这两个值可以为空，表示不增加额外的宽度。
+\end{function}
+
+\begin{function}{\startfullpagewidth,\stopfullpagewidth}
+  \begin{syntax}
+    \V\startfullpagewidth
+    \V\startfullpagewidth \oarg{multicolumns} \string<\meta{inner shrink},\meta{outer shrink}\string>
+    ~~<material>
+    \V\stopfullpagewidth
+  \end{syntax}
+\meta{material} 占整个纸张的宽度。内侧留白 \meta{inner shrink}，外侧留白 \meta{outer shrink}，它们都可以为空，表示不留白。
+\end{function}
+
 \subsection{旋转的盒子}
 
 \CusTeX 封装了 \pkg{rotating} 宏包，提供了旋转的盒子。
@@ -1977,7 +2171,7 @@ Unicode 代码点。
 
 \cusmodule{bgfg} 是对 \texttt{shipout} 钩子的简单封装。
 
-关于“钩子”机制，\cref{sec:lthooks}对其作了简单的介绍，更详细的用法请参考：\file{lthooks.pdf}。
+关于“钩子”机制，\cref{sec:lthooks}对其作了简单的介绍，更详细的用法请参考：\file{lthooks-doc.pdf}。
 
 本手册前几页的水印使用如下代码实现：
 \begin{xample}
@@ -2005,21 +2199,18 @@ Unicode 代码点。
 
 \begin{itemize}[nosep]
   \item \meta{content} 为要放置的内容，该内容将完整地嵌于页面内；
-  \item \meta{位置} 是 \meta{content} 要放置的位置，为两个字符，前一个为水平位置；后一个为垂直位置。水平位置包括：左（\texttt{l}）、右（\texttt{r}）、内侧（\texttt{i}）、外侧（\texttt{o}）；垂直位置包括：顶部（\texttt{t}）、底部（\texttt{b}）；它们的组合也就是 \gpart{layout} 的四个角。此外还有一个 \texttt{cm}，它表示 \gpart{layout} 的正中心，这也是默认值；
+  \item \meta{位置} 是 \meta{content} 要放置的位置，为两个字符，前一个为水平位置；后一个为垂直位置。水平位置包括：左（\texttt{l}）、右（\texttt{r}）、内侧（\texttt{i}）、外侧（\texttt{o}）；垂直位置包括：顶部（\texttt{t}）、底部（\texttt{b}）；它们的组合也就是 \gpart{layout} 的四个角。此外还有一个 \texttt{cm}，它表示 \gpart{layout} 的正中心，这也是默认值；还可以置为空，此时 \meta{content} 中可以使用 \tn{put} 命令指定文字的位置，纸张\emph{左上角}为原点；
   \item \meta{hook label} 为 hook 的 label；此参数与 \meta{位置} 的先后位置可交换；\\ 
   \cs{foreground} 默认为 \texttt{./fg}，\cs{background} 默认为 \texttt{./bg}；\\
-  关于 hook label 的作用，请参考\cref{sec:lthooks}或 \file{lthooks.pdf}；
-  \item 默认情况下 \meta{content} 仅添加到当前页，使用 \texttt{+} 可将 \meta{content} 添加到往后各页。
+  关于 hook label 的作用，请参考\cref{sec:lthooks}或 \file{lthooks-doc.pdf}；
+  \item 默认情况下 \meta{content} 仅添加到当前页，使用 \texttt{+} 可将 \meta{content} 添加到往后各页。不带 \texttt+ 的，\meta{hook label} 无效。
 \end{itemize}
 \end{function}
 
 本例展示在页面样式的代码中为本页增加背景文字：
-% \setpagestyle 总是局部的
-\edef\next{\setpagestyle.{tmpstyle}[\UseName{@currpagestyle}]}
-\next{\background(lt){\textcolor{red}{\LARGE\CusTeX}}}
+\needspace{3cm}
 \begin{xample}
-\edef\next{\setpagestyle.{tmpstyle}[\UseName{@currpagestyle}]}
-\next{\background(lt){\textcolor{red}{\LARGE\CusTeX}}}
+\background(lt){\textcolor{red}{\LARGE\CusTeX}}
 \stopxamplecode
 \xampleprint
 如本页左上角所示。
@@ -2034,10 +2225,11 @@ Unicode 代码点。
     \verb|\foregroundpicture|   * \marg{图片}
     \verb|\foregroundpicture| + * \marg{图片}
     \verb|\foregroundpicture| + * \parg{位置} \oarg{hook label} \marg{图片}
+    \verb|\foregroundpicture| + * \oarg{图片选项} \parg{位置} \oarg{hook label} \marg{图片}
   \end{syntax}
 将 \meta{图片} 添加到前景或背景中。
 
-\texttt{+}、\meta{位置}、\meta{hook label} 的用法如前所述。
+\texttt{+}、\meta{位置}、\meta{hook label} 的用法如前所述。其中 \meta{位置} 只能是关于位置的值。
 
 不带 \verb|*| 的图片被伸缩到与 \gpart{layout} 同宽高。而带星号的则仅缩放宽度，保持纵横比例不变。
 \end{function}
@@ -2177,27 +2369,35 @@ Unicode 代码点。
 
 \begin{function}{\part,\chapter,\section,\subsection,\subsubsection,\paragraph,\subparagraph}
   \begin{syntax}
-    \verb|\part|   \marg{标题}
-    \verb|\part| * \marg{标题}
-    \verb|\part|   \oarg{list entry} \marg{标题}
-    \verb|\part|   \oarg{title key-val} \marg{标题}
-    \verb|\part| * \oarg{title key-val} \marg{标题}
-    \verb|\part|   \oarg{title key-val} \oarg{list entry} \marg{标题}
+    \V\part   \marg{标题}
+    \V\part   \oarg{list entry} \marg{标题}
+    \V\part   \oarg{title key-val} \marg{标题}
+    \V\part   \oarg{title key-val} \oarg{list entry} \marg{标题}
+    \V\part - \marg{标题}
+    \V\part - \oarg{list entry} \marg{标题}
+    \V\part - \oarg{title key-val} \marg{标题}
+    \V\part - \oarg{title key-val} \oarg{list entry} \marg{标题}
+    \V\part * \marg{标题}
+    \V\part * \oarg{title key-val} \marg{标题}
   \end{syntax}
 与标准的章节标题命令相比，增加了 \meta{title key-val} 可选项，用于暂时修改样式。
 
 \meta{标题} 为实际显示的标题，\meta{list entry} 为目录、页眉等内容中的文字，它在带星号的命令中无效。
+
+带 \texttt{-} 的命令不会增加计数器的值，也不会显示编号，其它的与不带 \texttt{-} 的命令一致。
+相当于 \verb|mode=nonumber|，见 \keyref*[title/...]{mode}。
 \end{function}
 
 若要修改它们的样式，一般仅需使用下述的 \cs{setuptitle} 修改键值选项，而无需重新定义它们。
 
 \begin{function}{\setuponetitle,\setuptitle}
   \begin{syntax}
-    \V\setuponetitle <{title}> <{key-val}>
+    \V\setuponetitle  <{title level}> <{key-val}>
+    \V\setuponetitleq <{title}> <{key-val}>
     \V\setuptitle \marg{title key-val}
-    \V\setuptitle \oarg{title list} \marg{title key-val}
+    \V\setuptitle \oarg{title level list} \marg{title key-val}
   \end{syntax}
-设置标题的样式。\meta{title} 为章节标题命令名称，如：\verb|chapter|、\verb|section|，而非标题命令的列表（\verb|\chapter|、\verb|\section|）。
+设置标题的样式。\meta{title level} 为章节标题层级，如：\verb|chapter|、\verb|section|、\verb|1|。\meta{title} 为章节标题名，而非标题命令（\verb|\chapter|、\verb|\section|）。
 \end{function}
 
 以下几节描述了章节标题中可用的键值选项，它们均可以被设置，但并不一定在所有的标题类中都有效。
@@ -2236,12 +2436,22 @@ Unicode 代码点。
 设置章节标题的层级。将影响是否对标题进行编号。
 \end{keyval}
 
+\begin{function}[EXP]{\CurrentTitleName}
+在正文中展开为此前的标题的名称。例如现在它的值为“\CurrentTitleName”。
+\end{function}
+
 \begin{function}[EXP]{\CurrentTitleLevel}
 在正文中展开为此前的标题的 \veta{level}。在没有使用标题前，它展开为 $-10001$。
 
 例如，现在它的值为 $ \CurrentTitleLevel $。
 \end{function}
 
+\begin{function}[EXP]{\thetitlecount,\PreviousTitleCount}
+展开为章节标题的使用次数。
+
+\cs{thetitlecount} 为到目前为止的使用次数，
+\cs{PreviousTitleCount} 为上一次运行时章节标题的使用次数或为 0。
+\end{function}
 
 \subsection{编号}
 
@@ -2477,6 +2687,14 @@ Unicode 代码点。
 \subsection{杂项}
 
 \nofuncskip
+\begin{keyval}[path=title/...]{beforerecord,beforerecord>,beforerecord<}
+  \begin{syntax}
+    beforerecord = \marg{code}
+  \end{syntax}
+在写入辅助文件之前执行一些必要的设置。例如，如果需要保存 \opt{xpos} 和 \opt{ypos}，
+必须要先执行 \tn{pdfsavepos}，则可以使用该键。
+\end{keyval}
+
 \begin{keyval}[path=title/...]{tocline}
   \begin{syntax}
     tocline = \marg{格式定义}
@@ -2495,6 +2713,18 @@ Unicode 代码点。
 在 \cs{section} 中，为 \tn{sectionmark}。初始情况下，不写入标记。
 \end{keyval}
 
+\begin{keyval}[path=title/...]{properties,properties+}
+  \begin{syntax}
+    properties = \marg{properties list}
+  \end{syntax}
+使用 \cs{RecordProperties} 向 \texttt{.aux} 文件写入辅助信息。
+
+写入的 \veta{label} 名为 \texttt{cus.title.}\cs{thetitlecount}。
+
+可以使用 \verb|\RefProperty{cus.title.|\cs{thetitlecount}\verb|}|\marg{property} 获得
+在当前标题下写入的 \meta{property} 的值。
+\end{keyval}
+
 \begin{keyval}[path=title/...]{bookmark,bookmark*}
   \begin{syntax}
     bookmark  = \marg{text}
@@ -2502,21 +2732,43 @@ Unicode 代码点。
   \end{syntax}
 设置\emph{此条}标题在书签中的文字。
 
-\opt{bookmark*} 还会在 \pkg{bookmark} 宏包设置了 \opt{numbered} 选项后，把数字也加上。
+\opt{bookmark} 会在 \pkg{bookmark} 宏包设置了 \opt{numbered} 选项后，把数字也加上。
+\opt{bookmark} 则直接设置书签为 \meta{text}。
 \end{keyval}
 
-\begin{keyval}[path=title/...]{tags,tags+}
+\begin{function}{\titleaddinfo,\titleremoveinfo,\titleremoveallinfo}
   \begin{syntax}
-    tags = \marg{tag list}
+    \V\titleaddinfo   \marg{property} \marg{value}
+    \V\titleaddinfo * \marg{property} \marg{value}
+    \V\titleremoveinfo  \marg{property} 
+    \V\titleremoveinfo * \marg{property} 
+    \V\titleremoveallinfo 
+    \V\titleremoveallinfo *
   \end{syntax}
-有关此标题的额外信息。
-\end{keyval}  
+为下一个（或多个）标题添加（或移除）额外的信息，以 \meta{property} 标识。
+
+当 \verb|\titleaddinfo| 和 \verb|\titleaddinfo*| 有同一个 \meta{property} 时，
+不带星号的具有更高优先级。
+\end{function}
 
 \begin{keyval}[path=title/...]{style}
   \begin{syntax}
     style = \marg{style}
   \end{syntax}
 设置已有的样式。
+\end{keyval}
+
+\begin{keyval}[path=title/...]{mode}
+  \begin{syntax}
+    mode = <&normal|nonumber|starred|...>
+  \end{syntax}
+设置标题的模式。具体效果取决于标题类的定义。
+
+带星号的标题相当于 \verb|mode=starred|，但带星号的命令优先级更高，设置 \opt{mode}
+不能取消带星号的效果。
+
+\verb|numbering=true| 相当于 \verb|mode=normal|，\verb|numbering=false| 相当于 
+\verb|mode=nonumber|。
 \end{keyval}
 
 \begin{function}[EXP]{\titleifname}
@@ -2598,7 +2850,7 @@ Unicode 代码点。
     \V\multicollocalplaincombinedlist \oarg{multicolumns keyval}
     ~~~~\marg{title} \marg{cbl type} \marg{min} \marg{max}
   \end{syntax}
-输出多栏局部目录。局部目录从 \meta{min} 开始，到 \meta{max} 终止。
+输出多栏局部目录。局部目录从 \meta{min} 开始，到 \meta{max} 终止。如果 \meta{title} 为空，则不输出标题。
 
 实际上，\cs{localtableofcontents} 根据 \meta{level} 和 \meta{index} 隐式计算了 \meta{min} 和 \meta{max}。
 
@@ -2626,13 +2878,13 @@ Unicode 代码点。
 
 \begin{function}{\SaveSpecifiedCombinedListStyle}
   \begin{syntax}
-    \V\SaveSpecifiedCombinedListStyle \marg{cs} \marg{style code}
+    \V\SaveSpecifiedCombinedListStyle \marg{cmd} \marg{style code}
   \end{syntax}
-把 \meta{style code} 中设置的样式保存在 \meta{cs} 中。这些样式是由 \cs{tocsetstyle}、
-\cs{Set\-SpecifiedCombinedListStyle} 等命令设置的。当要保存其它内容到 \meta{cs} 中时，
+把 \meta{style code} 中设置的样式保存在 \meta{cmd} 中。这些样式是由 \cs{tocsetstyle}、
+\cs{Set\-SpecifiedCombinedListStyle} 等命令设置的。当要保存其它内容到 \meta{cmd} 中时，
 可以使用 \cs{+} 命令。
 
-相比把 \cs{tocsetstyle} 等直接保存到 \meta{cs} 中，在实际使用 \meta{cs} 时，
+相比把 \cs{tocsetstyle} 等直接保存到 \meta{cmd} 中，在实际使用 \meta{cmd} 时，
 还会有其它处理，而使用 \cs{SaveSpecifiedCombinedListStyle} 保存则不会有多余的处理。
 
 类似 \cs{keys_precompile:nnN} 之于 \cs{keys_set:nn}。
@@ -2770,21 +3022,21 @@ Unicode 代码点。
 
 \section{\LaTeXe 的钩子机制}\label{sec:lthooks}
 
-本节简述 \LaTeXe 的钩子机制。更详细的说明见 \file{lthooks.pdf}。
+本节简述 \LaTeXe 的钩子机制。更详细的说明见 \file{lthooks-doc.pdf}。
 
 “钩子”（hook）是在命令或环境的定义中可以添加其它代码的位置。
 
-\begin{function}[module=lthooks]{\UseHook,\UseHookWithArguments}
+\begin{function}[module=hook]{\UseHook,\UseHookWithArguments}
   \begin{syntax}
-    \verb|\UseHook| \marg{hook}
+    \verb|\UseHook|              \marg{hook}
     \verb|\UseHookWithArguments| \marg{hook} \marg{number} \marg{arg_1} ... \marg{arg_n}
   \end{syntax}
 在命令或环境中执行 \meta{hook}。
 \end{function}
 
-\begin{function}[module=lthooks]{\AddToHooks,\AddToHookWithArguments}
+\begin{function}[module=hook]{\AddToHook,\AddToHookWithArguments}
   \begin{syntax}
-    \verb|\AddToHook| \marg{hook} \oarg{label} \marg{code}
+    \verb|\AddToHook|              \marg{hook} \oarg{label} \marg{code}
     \verb|\AddToHookWithArguments| \marg{hook} \oarg{label} \marg{code}
   \end{syntax}
 将 \meta{code} 添加到 \meta{hook} 中，标记为 \meta{label}。\meta{hook} 可以未被定义。
@@ -2793,20 +3045,44 @@ Unicode 代码点。
 它就是宏包或文档类名，否则，它是 \texttt{top-level}。
 \end{function}
 
-\begin{function}[module=lthooks]{\RemoveFromHook}
+\begin{function}[module=hook]{\RemoveFromHook}
   \begin{syntax}
     \verb|\RemoveFromHook| \marg{hook} \oarg{label}
   \end{syntax}
 移除标记了 \meta{label} 的 \meta{hook}。若 \meta{label} 未指定，则使用默认的 label。
 \end{function}
 
-\begin{function}[module=lthooks]{\AddToHookNext,\AddToHookNextWithArguments,\ClearHookNext}
+\begin{function}[module=hook]{\AddToHookNext,\AddToHookNextWithArguments,\ClearHookNext}
   \begin{syntax}
-    \verb|\AddToHookNext| \marg{hook} \marg{code}
+    \verb|\AddToHookNext|              \marg{hook} \marg{code}
     \verb|\AddToHookNextWithArguments| \marg{hook} \marg{code}
     \verb|\ClearHookNext| \marg{hook}
   \end{syntax}
 将 \meta{code} 添加到 \meta{hook} 的下一次调用中。在正常的 \meta{hook} 代码执行完毕后再执行 \meta{code}。
+\end{function}
+
+
+\section{\cusmodule{ltx}模块}
+
+\nofuncskip
+\begin{function}[EXP]{\cus@filename}
+  \begin{syntax}
+    \V*|\cus@filename| \marg{filename}
+  \end{syntax}
+自动处理 \meta{filename} 中的特殊符号（活动字符和双引号等），展开为一个文件名。
+
+目录的分隔符必须为 \texttt/，即是是在 Windows 系统上。
+\end{function}
+
+\begin{function}{\cus@getgraphicsname}
+  \begin{syntax}
+    \V*|\cus@getgraphicsname| \meta{cmd} \marg{filename}
+  \end{syntax}
+将 \meta{cmd} 设置为 \meta{filename} 对应的图片文件名，若图片不存在则为 \tn{relax}。
+
+它会自动查找 \tn{graphicspath} 设置的路径，且可以自动补全文件扩展名。
+
+需要用户自行加载 \pkg{graphicx} 宏包。
 \end{function}
 
 
@@ -2913,6 +3189,13 @@ Unicode 代码点。
 \xampleprint 
 \end{xample}
 
+\begin{function}{\cus@colorfile,\cus@colorlink,\cus@colorcite,
+  \cus@colorurl,\cus@colorrun,\cus@colormenu}
+把文字的颜色改为对应的颜色。
+
+注意：使用 \verb|\hypersetup{linkcolor=red}| 等修改的颜色仅在 PDF 阅读器中显示，在打印时不会显示，而使用上述 6 个命令以及 \tn{color}、\cs{color_select:n} 等修改的颜色会在打印时显示。
+\end{function}
+
 \begin{function}{\cus_bookmark:nn,\cus_gset_next_bookmark_text:n}
   \begin{syntax}
     \V*|\cus_bookmark:nn| \marg{options} \marg{bookmark}
@@ -2990,6 +3273,15 @@ Unicode 代码点。
 
 \LaTeXiii 的以 \texttt{peek} 为模块名的命令可以用于向前查找、检测和分析记号，\pkg{collectbox} 宏包提供了向前收集内容存进盒子的功能。本模块也实现了类似的命令。
 
+\begin{function}{\cus_peek_verbatim:nw}
+  \begin{syntax}
+    \V*|\cus_peek_verbatim:nw| \marg{tokens_1} \marg{balanced tokens}
+    \V*|\cus_peek_verbatim:nw| \marg{tokens_1} \meta{token} \meta{tokens} \meta{token}
+  \end{syntax}
+以纯文字的形式向后收集一段代码，然后把它们放在一个组中，然后把 \meta{tokens} 放到它前面。
+\meta{balanced tokens} 或 两个相同 \meta{token} 之间的 \meta{tokens} 不能作为命令的参数。
+\end{function}
+
 \begin{function}{\cus_peek_act:nnnnn}
   \begin{syntax}
     \V*|\cus_peek_act:nnnnn| 
@@ -2999,60 +3291,6 @@ Unicode 代码点。
 
 \meta{else} 的情况一般是后面的记号为 \tn{outer} 宏。
 \end{function}
-
-% peek or pick or collect?
-\begin{function}{\cus_peek_box:Nnw}
-  \begin{syntax}
-    \V*|\cus_peek_box:NNnw| \meta{box} \meta{primitive box cs} \marg{code} \meta{material}
-  \end{syntax}
-先将 \meta{material} 保存到 \meta{box} 中，此盒子为 \meta{primitive box cs}，
-可为 \tn{hbox}、\tn{vbox}、\tn{vtop} 之一。之后再使用 \meta{code} 处理。
-
-\meta{material} 可以是 \texttt\{\BNFN{horizontal/vertical mode material}\texttt\}，也可以有 \BNFN{box specification}。左右括号可以是隐式的。
-
-这种方式与 \cs{peek_charcode_remove:NTF} 类似。另见 \pkg{collectbox} 宏包。
-
-\meta{code} 与 \cs{cus_peek_box:Nnw} 在同一个组中执行。
-
-注意：\cs{hbox:n}、\cs{vbox:n}、\cs{vbox_top:n} 并不分别等于 \tn{hbox}、\tn{vbox}、\tn{vtop}。
-\end{function}
-
-\begin{xample}
-\ExplSyntaxOn
-\cs_set:Npn \myfbox 
-  {
-    \cus_peek_box:NNnw \l_tmpa_box \tex_hbox:D 
-      { \fbox { \box_use_drop:N \l_tmpa_box } }
-  }
-\ExplSyntaxOff
-\myfbox{\verb|\myfbox| 与 \verb|\fbox|}
-\myfbox{\parbox{3cm}{可分段的\par fbox}}
-\stopxamplecode 
-\xampleprint 
-\end{xample}
-
-\begin{function}{\cus_peek_value:Nnw}
-  \begin{syntax}
-    \V*|\cus_peek_value:Nnw| \meta{register} \marg{code} \meta{value}
-  \end{syntax}
-将 \meta{value} 保存到 \meta{register} 中，再使用 \meta{code} 处理。
-\meta{value} 必须确实可以保存到 \meta{register} 中。
-
-\meta{code} 与此命令在同一个组中执行。
-\end{function}
-
-\begin{xample}
-\ExplSyntaxOn
-\cs_set:Npn \showintval 
-  { \cus_peek_value:Nnw \l_tmpa_int { 值为 $ \int_use:N \l_tmpa_int $ } }
-\ExplSyntaxOff
-\showintval 3
-\showintval -310
-\showintval "3FA
-\showintval \shellescape
-\stopxamplecode 
-\xampleprint 
-\end{xample}
 
 \subsection{分析记号}
 
@@ -3099,7 +3337,9 @@ Unicode 代码点。
     \V*|\cus_if_keyval_apply:nNN| \marg{arg} \meta{true function} \meta{false function}
     \V*|\cus_if_keyval_apply:nnn| \marg{arg} \marg{true tokens} \marg{false tokens}
   \end{syntax}
-首先检查 \meta{arg} 是否为键值对，如果是，则使用 \meta{true} 分支，否则使用 \meta{false} 分支。
+首先检查 \meta{arg} 是否为键值对，如果是，则使用 \meta{true} 分支，
+否则使用 \meta{false} 分支。再把 \meta{arg} 处理后的结果
+放在 \meta{function}（或 \meta{tokens}） 的后面。
 \end{function}
 
 \begin{function}{\cus_if_keyval_variable:nNnn}
@@ -3136,8 +3376,8 @@ Unicode 代码点。
 
 \begin{function}[EXP]{\cus_split_bracket_head_default:nn,\cus_split_bracket_head:n}
 \begin{syntax}
-  \verb|\cus_split_bracket_head_default:nn| \marg{tl} \marg{default}
-  \verb|\cus_split_bracket_head:n|          \marg{tl}
+  \verb|\cus_split_bracket_head_default:nn| \marg{default} \marg{tl}
+  \verb|\cus_split_bracket_head:n|                   \;\marg{tl}
 \end{syntax}
 解析 \meta{tl}。判断其是否以一对方括号（\verb|[ ]|）起始，若是则将方括号后的内容放入一个集合中
 （\verb|{ }|）。方括号不可直接嵌套，需放入组中。
@@ -3180,11 +3420,11 @@ Unicode 代码点。
 \xampleprint
 \end{xample}
 
-\begin{function}{\cus_parse_range:nnnN,\cus_parse_range:nnvN,\cus_parse_range:nneN,
-  \cus_parse_range:nnN,\cus_parse_range:nvN,\cus_parse_range:neN}
+\begin{function}{\parserange:nnnN,\parserange:nnvN,\parserange:nneN,
+  \parserange:nnN,\parserange:nvN,\parserange:neN}
   \begin{syntax}
-    \verb|\cus_parse_range:nnnN| \marg{最小值} \marg{最大值} \marg{range list} \meta{sequence}
-    \verb|\cus_parse_range:nnnN| \marg{最大值} \marg{range list} \meta{sequence}
+    \verb|\parserange:nnnN| \marg{最小值} \marg{最大值} \marg{range list} \meta{sequence}
+    \verb|\parserange:nnnN| \marg{最大值} \marg{range list} \meta{sequence}
   \end{syntax}
 解析一个整数列表，将其保存至 \meta{sequence} 中。
 可使用 \verb|->| 标记连续的范围。若范围的开始为空，则设它为 \meta{最小值}，若终止为空，则
@@ -3195,7 +3435,7 @@ Unicode 代码点。
 如果 \meta{最小值} 被省略，则设它为 1。
 \end{function}
 
-\begin{function}{\cus_parse_range_check:,\cus_parse_range_nocheck:}
+\begin{function}{\parserange_check:,\parserange_nocheck:}
 是否检查越界值。
 
 当设置了检查越界值时，结果的项被限制在 \meta{最小值} 和 \meta{最大值} 之中（含边界）。
@@ -3205,36 +3445,45 @@ Unicode 代码点。
 
 \begin{xample}
 \ExplSyntaxOn
-\cus_parse_range:nnN { 10 } { ->2, 4->7, 8-> } \l_tmpa_seq
+\parserange:nnN { 10 } { ->2, 4->7, 8-> } \l_tmpa_seq
 \seq_use:Nn \l_tmpa_seq { ,~ } \par 
 
-\cus_parse_range:nnN { 10 } { -1->2, 4->7, 9->12, 20, 30->32 } \l_tmpa_seq
+\parserange:nnN { 10 } { -1->2, 4->7, 9->12, 20, 30->32 } \l_tmpa_seq
 \seq_use:Nn \l_tmpa_seq { ,~ } \par 
 
-\cus_parse_range_nocheck:
+\parserange_nocheck:
 % 不检查越界
-\cus_parse_range:nnN { 10 } { -1->2, 9->12, 20, 30->32 } \l_tmpa_seq
+\parserange:nnN { 10 } { -1->2, 9->12, 20, 30->32 } \l_tmpa_seq
 \seq_use:Nn \l_tmpa_seq { ,~ } \par 
 
-\cus_parse_range:nnN { 10 } { -1->2, 9->12, 20, 32->30 } \l_tmpa_seq
+\parserange:nnN { 10 } { -1->2, 9->12, 20, 32->30 } \l_tmpa_seq
 \seq_use:Nn \l_tmpa_seq { ,~ } \par % 逆序，无效
 \ExplSyntaxOff
 \stopxamplecode
 \xampleprint
 \end{xample}
 
-\begin{function}{\cus_set_parse_range_delimiter:n,\cus_set_parse_range_default_delimiter:}
+\begin{function}{\parserange_set_to_int:n}
   \begin{syntax}
-    \verb|\cus_set_parse_range_delimiter:n| \marg{delimiter}
-    \verb|\cus_set_parse_range_default_delimiter:| 
+    \V*|\parserange_set_to_int:n| \marg{code}
+  \end{syntax}
+有时，给出的值并非为整数，但可以通过某种方式转为整数。
+此时可以使用此函数设置转化为整数的方法。\meta{code} 可以使用一个参数，
+为原始的值。\meta{code} 必须为 \texttt f-expandable。
+\end{function}
+
+\begin{function}{\parserange_use_delimiter:n,\parserange_use_default_delimiter:}
+  \begin{syntax}
+    \verb|\parserange_use_delimiter:n| \marg{delimiter}
+    \verb|\parserange_use_default_delimiter:| 
   \end{syntax}
 设置范围的分隔符为 \meta{delimiter}，默认为 \verb|->|。对分隔符的修改应该是局部的。
 \end{function}
 
 \begin{xample}
 \ExplSyntaxOn
-\cus_set_parse_range_delimiter:n { - }
-\cus_parse_range:nnN { 10 } { 0-2, 7-12, 20, 32-30 } \l_tmpa_seq
+\parserange_use_delimiter:n { - }
+\parserange:nnN { 10 } { 0-2, 7-12, 20, 32-30 } \l_tmpa_seq
 \seq_use:Nn \l_tmpa_seq { ,~ } 
 \ExplSyntaxOff
 \stopxamplecode
@@ -3325,11 +3574,91 @@ Unicode 代码点。
 \xampleprint
 \end{xample}
 
+\begin{function}[EXP]{\cus_exp_args:nw,\cus_exp_args:ew}
+  \begin{syntax}
+    \V*|\cus_exp_args:nw| \marg{spec} \meta{tl}
+  \end{syntax}
+按 \meta{spec} 将 \meta{tl} 依次展开。\meta{spec} 的长度不限。
+为 \cs[no-index]{exp_args:..} 的增强版，但若 \cs[no-index]{exp_args:\meta{spec}}
+存在，则不宜使用 \cs{cus_exp_args:nw}。
+
+\meta{spec} 为下列之组合：
+\texttt{N}、\texttt{c}、\texttt{p}、
+\texttt{n}、\texttt{n_un}、
+\texttt{o}、\texttt{o_un}、
+\texttt{d}、\texttt{d_un}、
+\texttt{f}、\texttt{f_un}、
+\texttt{V}、\texttt{V_un}、
+\texttt{v}、\texttt{v_un}、
+\texttt{e}、\texttt{e_un}、
+\texttt{_un}、\texttt{\textvisiblespace _un}
+以及由括号括起来的空或空格。忽略未被保护的空格。
+
+\veta{空}的作用是把该项的内容清除，\veta{空格}的作用是添加一个空格。
+带有 \texttt{_un} 后缀的，使用时需有括号括起来，其结果不自动添加 \verb|{}|。
+
+两次展开即可得到结果。
+\end{function}
+
+\begin{xample}
+\ExplSyntaxOn
+\tl_set:Nn \l_tmpa_tl { \relax }
+\cus_exp_args:NNd \tl_set:Nn \l_tmpb_tl
+  { 
+    \cus_exp_args:nw { c v {~} o {o_un} f { } {e_un} } 
+      { l_tmpa_tl } { l_tmpa_tl } { \l_tmpa_tl } { \l_tmpa_tl }
+      { ~ 01 } {ig} { \prg_replicate:nn { 5 } { 0 } } 
+  }
+\ttfamily \tl_to_str:N \l_tmpb_tl
+\ExplSyntaxOff
+\stopxamplecode
+\xampleprint
+\end{xample}
+
+注意，\texttt{o_un}、\texttt{V_un} 和 \texttt{v_un} 的行为与
+\cs[no-index]{exp_last_unbraced:N..[o|V|v]} 的行为并不一致，
+假设有 \verb|\def\foo#1{#1}|，\verb|\exp_last_unbraced:No \~ \foo {a}|
+可以得到 \~a， \verb|\cus_exp_args:nw {N{o_un}} \~ \foo {a} | 则会出错。
+
+\begin{function}[EXP]{\cus_serial_exp_args:nnw,\cus_serial_exp_args:eew}
+  \begin{syntax}
+    \V*|\cus_serial_exp_arg:nnw| \marg{spec_{1m}} \marg{spec_{2}} \meta{tl_{1m}} \marg{tl}
+  \end{syntax}
+依次执行 
+\cs{cus_exp_args:nw} \texttt\{\meta{spec_{1m}}\meta{spec_{2i}}\texttt\} \meta{tl_i} 
+（$1\leqslant i\leqslant \veta{\meta{spec_{2}}的长度}$），
+其中 \meta{spec_{2i}} 为 \meta{spec_2} 的第 $i$ 项，
+\meta{tl_i}（$i\geqslant 2$） 为前一次的展开结果，
+\meta{tl_1} 为 \meta{tl_{1m}}\marg{tl}。
+\end{function}
+
+\begin{xample}
+\ExplSyntaxOn
+\cs_set_protected:Npn \foo #1 { \int_eval:n { 1+2+#1 } }
+\tl_set:Nn \l_tmpa_tl { \l_tmpb_tl }
+\tl_set:Nn \l_tmpb_tl { \foo }
+\cus_serial_exp_arg:nnw { N } { o o f } \tl_to_str:n { \l_tmpa_tl { 3 } }
+\ExplSyntaxOff
+\stopxamplecode
+\xampleprint
+\end{xample}
+
+\begin{function}[EXP]{\ExpandArgs}
+  \begin{syntax}
+    \V\ExpandArgs \marg{spec} \meta{token} \meta{tl}
+  \end{syntax}
+按 \meta{spec} 将 \meta{tl} 依次展开。这是由 \LaTeXe 提供的命令。本模块进一步增强了它。
+%
+当 \cs[no-index]{exp_args:N\meta{spec}} 存在时，使用它，否则使用 
+\cs{cus_exp_args:nw} \texttt\{\texttt N\meta{spec}\texttt\}。
+\end{function}
+
 \begin{function}[EXP]{\cus_use_none_num:nw}
   \begin{syntax}
     \V*|\cus_use_none_num:nw| \marg{num} \meta{tl}
   \end{syntax}
 移除 \meta{tl} 的前 \meta{num} 项。\meta{tl} 必须至少有 \meta{num} 项。忽略未被保护的空格。
+如果 \meta{num} 小于等于 0，则什么也不做。
 
 两次展开即可得到结果。
 \end{function}
@@ -3343,6 +3672,16 @@ Unicode 代码点。
 \stopxamplecode
 \xampleprint 
 \end{xample}
+
+\begin{function}[EXP]{\cus_exp_num:nN,\cus_exp_after_num:nwN}
+  \begin{syntax}
+    \V*|\cus_exp_num:nN| \marg{num} \meta{token_1}
+    \V*|\cus_exp_after_num:nwN| \marg{num} \meta{token_0} \meta{token_1}
+  \end{syntax}
+展开 \meta{token_1} \meta{num} 次。如果 \meta{num} 小于等于 0，则什么也不做。
+
+两次展开即可得到结果。
+\end{function}
 
 \begin{function}[EXP]{\cus_tl_use:Nnnn,\cus_tl_use:Nn}
   \begin{syntax}
@@ -3578,98 +3917,7 @@ Unicode 代码点。
 
 \section{\cusmodule{box}模块}\label{sec:module-box-prog}
 
-\cusmodule{box} 模块封装了一些环境或命令，用于在编程时使用。
-
-\begin{function}{\cus_varwidth:nnw,\cus_varwidth_end:}
-  \begin{syntax}
-    \V*|\cus_varwidth:nnw| \marg{vertical pos} \marg{maximum width} \meta{contents} \V*|\cus_varwidth_end:|
-  \end{syntax}
-\meta{contents} 是可变宽的，最大宽度为 \meta{maximum width}；基线的位置为 \meta{vertical pos}，可选值为 \texttt{b}、\texttt{c}、\texttt{t}，分别表示对齐底部基线、居中对齐、对齐顶部基线。
-
-该命令是对 \env{varwidth} 环境的封装。
-\end{function}
-
-\begin{function}{\cus_set_varwidth:Nnnw,\cus_set_varwidth_end:}
-  \begin{syntax}
-    \V*|\cus_set_varwidth:Nnnw| \meta{box} \marg{vertical pos} \marg{maximum width}
-    ~~~~\meta{contents} \V*|\cus_set_varwidth_end:|
-  \end{syntax}
-设置 \meta{box} 为一个包含 \meta{contents} 的最大宽度为 \meta{maximum width} 的水平盒子。
-\end{function}
-
-\begin{function}{\cus_set_vbox_width:Nnw,\cus_set_vbox_width_end:,
-  \cus_set_vbox_varwidth:Nnw,\cus_set_vbox_varwidth_end:}
-  \begin{syntax}
-    \V*|\cus_set_vbox_width:Nnw| \meta{box} \marg{width} \meta{content} \V*|\cus_set_vbox_width_end:|
-  \end{syntax}
-
-\cs{cus_set_vbox_width:Nnw} 与 \cs{vbox_set:Nw} 类似，把 \meta{content} 保存到 vbox \meta{box} 中，该 \meta{box} 的宽度为 \meta{width}。它和 \env{minipage} 环境相似。
-
-\cs{cus_set_vbox_varwidth:Nnw} 则是设置 \meta{content} 的最大宽度为 \meta{width}。它和 \env{varwidth} 环境相似。
-
-这 \meta{box} 可以使用 \cs{vbox_set_split_to_ht:NNn} 来分割。
-\end{function}
-
-\subsection{收集宽度固定和宽度可变的内容}
-
-\cusmodule{util} 模块提供了收集内容的命令，本模块则进一步提供了收集宽度固定和宽度可变的内容
-的命令。
-
-\begin{function}{\cus_peek_width:Nnnnw,\cus_peek_minipage:Nnnnw,
-  \cus_peek_varwidth:Nnnnw}
-  \begin{syntax}
-    \V*|\cus_peek_minipage:Nnnnw| \meta{box} \marg{code} \marg{vpos} \marg{width} \meta{material}
-  \end{syntax}
-先使用类似于 \env{minipage}（\env{varwidth}）的处理方式处理 \meta{material}，然后将它保存到 hbox \meta{box} 中，再使用 \meta{code} 处理。这 \meta{box} 的宽度为 \meta{width}，基线的位置为 \meta{vpos}，可选值为 \texttt{b}、\texttt{c}、\texttt{t}，分别表示底部基线、居中、顶部基线，默认为居中。
-
-\meta{material} 可以是 \texttt\{\BNFN{vertical mode material}\texttt\}，正如 \tn{vbox}
-\texttt\{\BNFN{vertical mode material}\texttt\} 那样。左右括号可以是隐式的。
-
-\meta{code} 与这些命令在同一个组中执行。
-
-\cs{cus_peek_width:Nnnnw} 是 \cs{cus_peek_minipage:Nnnnw} 的另一个名字。
-\end{function}
-
-\begin{xample}
-\ExplSyntaxOn
-\cs_set:Npn \myparfbox #1#2
-  { 
-    \cus_peek_minipage:Nnnnw \l_tmpa_box 
-      { \fbox { \box_use_drop:N \l_tmpa_box } } {#1} {#2}
-  }
-\cs_set:Npn \myvarfbox #1#2
-  {
-    \cus_peek_varwidth:Nnnnw \l_tmpa_box
-      { \fbox { \box_use_drop:N \l_tmpa_box } } {#1} {#2}
-  }
-\ExplSyntaxOff
-\myparfbox{t}{5cm}{一个可以包含 \verb|\verb| 的\par 
-  定宽 \verb|\fbox|}
-\myvarfbox{b}{5cm}{一个可以包含 \verb|\verb| 的\par 
-  变宽 \verb|\fbox|}
-\stopxamplecode 
-\xampleprint 
-\end{xample}
-
-\begin{function}{\cus_peek_width:Nnnnnnw,\cus_peek_minipage:Nnnnnnw,
-  \cus_peek_varwidth:Nnnnnnw}
-  \begin{syntax}
-    \V*|\cus_peek_minipage:Nnnnnnw| \meta{box} \marg{code} 
-    ~~~~\marg{vpos} \marg{height} \marg{inner pos} \marg{width} \meta{material}
-  \end{syntax}
-前述命令的完整形式。
-
-\begin{itemize}
-\item \meta{vpos} 表示垂直位置，可选值为 \texttt{b}、\texttt{c}、\texttt{t}，分别表示对齐底部基线、居中对齐、对齐顶部基线，默认为居中对齐；
-\item \meta{height} 表示盒子的高度，如果不设置，则为盒子的自然高度，
-\item \meta{inner pos} 表示如果设置的 \meta{height} 过大时，盒子的内容在盒子内的垂直位置，可选值为 \texttt{b}、\texttt{c}、\texttt{t}、\texttt{s}，分别表示置于盒子底部、居中、置于顶部、垂直分散对齐，默认为垂直分散对齐。
-\end{itemize}
-
-\meta{material} 可以是 \texttt\{\BNFN{vertical mode material}\texttt\}，正如 \tn{vbox}
-\texttt\{\BNFN{vertical mode material}\texttt\} 那样。左右括号可以是隐式的。
-
-\meta{code} 与这些命令在同一个组中执行。
-\end{function}
+\cusmodule{box} 模块封装了一些环境或命令，用于在编程时使用。另见 \cref{sec:collectn}。
 
 \subsection{为宽度固定和宽度可变的内容创建超链接}
 
@@ -3691,7 +3939,7 @@ Unicode 代码点。
 \ExplSyntaxOn
 \cs_set:Npn \myparfbox 
   { 
-    \cus_peek_minipage:Nnnnw \l_tmpa_box 
+    \collectn_minipage:Nnnnw \l_tmpa_box 
       { \fbox { \box_use_drop:N \l_tmpa_box } } 
   }
 \cus_ref_label_width:nnnn { sec:module-box-prog } {b} {3cm} 
@@ -3715,13 +3963,14 @@ Unicode 代码点。
 
 本模块使用此种想法定义了几个命令。
 
-\begin{function}{\cus_set_shbox:Nw,\cus_set_shbox_end:}
+\begin{function}{\cus_set_shbox:Nn,\cus_set_shbox:Nw,\cus_set_shbox_end:}
   \begin{syntax}
-    \V*|\cus_set_shbox:Nw| \meta{box}
-    ~~~~\meta{content}
-    \V*|\cus_set_shbox_end:|
+    \V*|\cus_set_shbox:Nn| \meta{box} \marg{content}
+    \V*|\cus_set_shbox:Nw| \meta{box} \meta{content} \V*|\cus_set_shbox_end:|
   \end{syntax}
 设置可正常断行的盒子。注意不允许在 \meta{content} 中手动断行。
+
+在 \XeTeX 中，断行位置与 \tn{hbox} 无区别，即不会增加额外的断行位置。以下均同。
 \end{function}
 
 \begin{function}{\cus_peek_shbox:Nnw}
@@ -3812,14 +4061,14 @@ Unicode 代码点。
 每个类型的目录条目包含为如下数据：
 
 {\centering \fbox{\parbox{.93\textwidth}{\cs{cus@type@contentsline}
-  \marg{type}\marg{cbl count}\marg{tags}\marg{level}\hfil\break
+  \marg{type}\marg{cbl count}\marg{info}\marg{level}\hfil\break
   \null\quad\marg{list entry}\marg{thepage}\marg{anchor}\cs{cus@type@contentsline@}}}\par}
 
 \begin{itemize}[nosep]
   \item \cs{cus@type@contentsline}，\cs{cus@type@contentsline@}，这两个宏标记条目的边界；
   \item \meta{type} 为目录类型名；
   \item \meta{cbl count} 为本条目在存储着所有目录项的那个列表中的位置；
-  \item \meta{tags} 为一个列表，它标记着这个目录项的某些信息，第一项一般为这个目录项层级的名称。在 \cs{chapter} 中为 \texttt{chapter}，在 figure 中，为 \texttt{figure}；
+  \item \meta{info} 为一个列表，它标记着这个目录项的某些信息，第一项一般为这个目录项层级的名称，其余的项形如 \marg{property}\marg{value}。在 \cs{chapter} 中为 \texttt{chapter}，在 figure 中，为 \texttt{figure}；
   \item \meta{level} 为这个目录项的层级，是一个整数；
   \item \meta{list entry} 为这个目录项的值，通常包含着标题或 caption；
   \item \meta{thepage} 为目录项所在页的 \tn{thepage}；
@@ -3848,7 +4097,7 @@ cbl 列表除了 \cs{cus@type@contentsline}、\cs{cus@type@contentsline@}、
   \end{syntax}
 获取 \meta{type} 列表第 \meta{count} 项 \meta{data} 的值。\meta{type} 为空，则获取 cbl 列表中的值。
 
-\meta{data} 可为 \texttt{type}、\texttt{count}、\texttt{tags}、\texttt{level}、\texttt{entry}、\texttt{thepage}、\texttt{anchor}。
+\meta{data} 可为 \texttt{type}、\texttt{count}、\texttt{info}、\texttt{level}、\texttt{entry}、\texttt{thepage}、\texttt{anchor}。
 \end{function}
 
 \begin{function}{\iteratecontents}
@@ -3941,7 +4190,7 @@ cbl 列表除了 \cs{cus@type@contentsline}、\cs{cus@type@contentsline@}、
 
 \LaTeXe 在 2022-06-01 的发行版中引入了新的 mark 机制。本节简述这一机制，更详细的说明请参考 \file{ltmarks-doc.pdf}。本说明文档的源码也使用了这个新机制。
 
-\begin{function}{\NewMarkClass,\mark_new_class:n}
+\begin{function}[module=mark]{\NewMarkClass,\mark_new_class:n}
   \begin{syntax}
     \V\NewMarkClass \marg{class}
     \V*|\mark_new_class:n| \marg{class}
@@ -3949,7 +4198,7 @@ cbl 列表除了 \cs{cus@type@contentsline}、\cs{cus@type@contentsline@}、
 声明一个新的 mark class。仅能在导言区使用。
 \end{function}
 
-\begin{function}{\InsertMark,\mark_insert:nn}
+\begin{function}[module=mark]{\InsertMark,\mark_insert:nn}
   \begin{syntax}
     \V\InsertMark \marg{class} \marg{text}
     \V*|\mark_insert:nn| \marg{class} \marg{text}
@@ -3959,11 +4208,11 @@ cbl 列表除了 \cs{cus@type@contentsline}、\cs{cus@type@contentsline@}、
 在不能使用浮动体的地方也无法使用这个命令，如在一个盒子中使用它们时无效。特别的，在 \env{multocols} 等多栏环境中使用它们将无效。
 \end{function}
 
-\begin{function}[type=hook]{insertmark}
+\begin{function}[module=hook point,type=hook point]{insertmark}
 在执行 \cs{InsertMark}、\cs{mark_insert:nn} 时，将首先执行 \hook{insertmark} 钩子。
 \end{function}
 
-\begin{function}[EXP]{\TopMark,\FirstMark,\LastMark,
+\begin{function}[EXP,module=mark]{\TopMark,\FirstMark,\LastMark,
   \mark_use_top:nn,\mark_use_first:nn,\mark_use_last:nn}
   \begin{syntax}
     \V\TopMark \oarg{region} \marg{class}
@@ -3981,7 +4230,8 @@ cbl 列表除了 \cs{cus@type@contentsline}、\cs{cus@type@contentsline@}、
 \meta{region} 默认为 \texttt{page}。
 \end{function}
 
-\begin{function}[EXP]{\IfMarksEqualTF,\mark_if_eq:nnnnTF,\mark_if_eq:nnnnnnTF}
+\begin{function}[EXP,module=mark]{\IfMarksEqualTF,
+  \mark_if_eq:nnnnTF,\mark_if_eq:nnnnnnTF}
   \begin{syntax}
     \V\IfMarksEqualTF \oarg{region} \marg{class} \marg{pos_1} \marg{pos_2} \marg{true} \marg{false}
     \V*|\mark_if_eq:nnnnTF| \marg{region} \marg{class} \marg{pos_1} \marg{pos_2} \marg{true} \marg{false}
@@ -4015,7 +4265,8 @@ cbl 列表除了 \cs{cus@type@contentsline}、\cs{cus@type@contentsline@}、
 \CusLaTeX 预定义了 5 个标题类，分别为：\texttt{page}、\texttt{top}、\texttt{normal}、\texttt{free}、\texttt{wrap}。
 
 用户可以自己定义标题类 \meta{class}。只需定义如下 6 个命令：
-\begin{itemize}
+\startfullpagewidth<1.7cm>
+\begin{itemize}[leftmargin=5cm]
   \item[\cs{title@class@\meta{class}}] 用于显示标题的代码，有两个参数，第一个为标题的名称，第二个表示是否为带星号的标题（用 \cs{title@ifstar}）判断；
   \item[\cs{title@classkeys@\meta{class}}] 此标题类额外的键；
   \item[\cs{title@classinitial@\meta{class}}] 初始值；
@@ -4023,6 +4274,7 @@ cbl 列表除了 \cs{cus@type@contentsline}、\cs{cus@type@contentsline@}、
   \item[\cs{title@classhook@\meta{class}begin}] 钩子，可选，此标题开始时要执行的代码，一般用在 \cs{title@class@\meta{class}} 中；
   \item[\cs{title@classhook@\meta{class}end}] 钩子，可选，此标题结束时要执行的代码，一般用在 \cs{title@class@\meta{class}} 中；
 \end{itemize}
+\stopfullpagewidth
 
 
 \section{输出\LaTeX 原始风格的目录}
@@ -4059,7 +4311,7 @@ cbl 列表除了 \cs{cus@type@contentsline}、\cs{cus@type@contentsline@}、
 如\cref{tab:pkg-cbl-level} 所示，使用诸如 \pkg{float} 宏包创建的不在此列。
 暂不支持 \pkg{ntheorem} 宏包。
 
-\begin{table}[h]
+\begin{table}
 \def\theadset{\normalsize\bfseries}
 \aboverulesep0pt \belowrulesep0pt 
 \begin{tabular}{|l|>{\ttfamily}c|>{\ttfamily}l|l|>{\ttfamily}c|>{\ttfamily}l|}
@@ -4192,7 +4444,8 @@ cbl 列表除了 \cs{cus@type@contentsline}、\cs{cus@type@contentsline@}、
   \item[\cmd\toctheclass] 此条目的 \veta{level name}；
   \item[\cmd\toctheindex] 表示该条目在所属的目录类型中是第几项；
   \item[\cmd\tocifcomplement]\marg{true}\marg{code}，specified cbl 会自动补全缺失的层级，该命令用于判断是否是自动补全的；
-  \item[\cmd\tocthetags] 目录条目中可能包含的某些特殊信息；
+  \item[\cmd\tocretinfo]\marg{property} 获得目录中的某些特殊信息；
+  \item[\cmd\toctheinfo] 目录条目中可能包含的某些特殊信息，为 \text{prop} 类型；
   \item[\cmd\tocthecount] 在 cbl 中的索引；
   \item[\cmd\tocthepreventry] 前一个条目的数据；
   \item[\cmd\tocthenextentry] 后一个条目的数据;
@@ -4232,10 +4485,11 @@ cbl 列表除了 \cs{cus@type@contentsline}、\cs{cus@type@contentsline@}、
 \xamplecode\medskip \label{eg:powerful-tocsetstyle}
 \end{xample}
 
-\begin{figure}[H]%\RawFloats
-\begin{pagecenterbox}
-\begin{minipage}{\dimeval{\paperwidth-3.4cm}}
-\startmulticolumns[outer-sep=0pt,framed=fbox,ragged,overflow=0pt]
+\begin{figure}\RawFloats%[H]%
+% \begin{pagecenterbox}
+% \begin{minipage}{\dimeval{\paperwidth-3.4cm}}
+% \startmulticolumns[outer-sep=0pt,framed=fbox,ragged,overflow=0pt]
+\startfullpagewidth[outer-sep=0pt,framed=fbox,ragged,overflow=0pt,2]<\bodylmargin>
 \newcommand{\ifinmiddle}[2]{\ifnum\tocthelevel=\tocthenextlevel\relax #1\else #2\fi}
 \setlist[description]{nosep}
 \tocsetstyle 
@@ -4253,9 +4507,10 @@ cbl 列表除了 \cs{cus@type@contentsline}、\cs{cus@type@contentsline@}、
   {}
   {】\par\endgroup\par}
 \specifiedtoc
-\stopmulticolumns
-\end{minipage}
-\end{pagecenterbox}
+% \stopmulticolumns
+\stopfullpagewidth
+% \end{minipage}
+% \end{pagecenterbox}
 \captionsetup{margin={\dimeval{\paperwidth-3.4cm-\textwidth},0pt}}
 \caption{\cref{eg:powerful-tocsetstyle} 的结果}
 \label{fig:powerful-tocsetstyle-result}
@@ -4302,8 +4557,8 @@ cbl 列表除了 \cs{cus@type@contentsline}、\cs{cus@type@contentsline@}、
 \xamplecode\label{eg:toc-code-order}\medskip 
 \end{xample}
 
-\startmulticolumns[cols=4,ragged,column-sep=10pt,framed=fbox,
-  adj-outer=-\dimeval{\paperwidth-3.4cm-\textwidth},overflow=0pt]
+\startfullpagewidth
+  [cols=4,ragged,column-sep=10pt,framed=fbox,overflow=0pt]<\bodylmargin>
 \label{ref:toc-code-order-1}
 % \setcaptiontype{figure}
 % \captionof{figure}{\cref{eg:toc-code-order} 的结果}
@@ -4323,7 +4578,7 @@ cbl 列表除了 \cs{cus@type@contentsline}、\cs{cus@type@contentsline@}、
 \label{ref:toc-code-order-2}
 \vpagerefcompare{ref:toc-code-order-1}{ref:toc-code-order-2}{}
   {\makebox[\columnwidth][r]{（接上页）}}
-\stopmulticolumns 
+\stopfullpagewidth
 
 下例展示了为目录添加盒子和边距的方法：
 \begin{xample}
@@ -4492,6 +4747,10 @@ cbl 列表除了 \cs{cus@type@contentsline}、\cs{cus@type@contentsline@}、
 
 \cuslibrary{pgf} 库\emph{不会}自动加载 \pkg{pgf} 和 \pkg{tikz} 宏包，需要用户自行加载。
 
+\subsection{文字渐变}
+
+需要加载 \pkg{tikz} 宏包。
+
 \begin{function}{\shadetext,\shadetextbox,\shadecontent,\shadecontentbox}
   \begin{syntax}
     \V\shadetext    \marg{shade options} \marg{text}
@@ -4506,8 +4765,6 @@ verbatim 和分段。
 
 \tn{shadetext} 和 \tn{shadetextbox} 中，仅文字才会显示渐变效果，其它内容如方框不会显示。
 \tn{shadecontent} 和 \tn{shadecontentbox} 中，可见的内容都会显示渐变效果。
-
-这几个命令需要加载 \pkg{tikz} 宏包。
 
 它们的内容\emph{不能}断行，正如 \tn{fcolorbox} 和 \tn{tcbox} 那样。
 \end{function}
@@ -4529,9 +4786,11 @@ verbatim 和分段。
       使用\\色轮作为\\渐变}};}
 \stopxamplecode
 \xampleprint
+
+理想效果见\cref{fig:shade-text} 和\cref{fig:shade-text-white}。
 \end{xample}
 
-\begin{figure}[H]
+\begin{figure}
 \begin{floatrow}
   \ffigbox{\includegraphics{shade-text}}
     {\caption{透明背景下的理想效果}\label{fig:shade-text}}%
@@ -4539,6 +4798,38 @@ verbatim 和分段。
     {\caption{白色背景下的理想效果}\label{fig:shade-text-white}}
 \end{floatrow}
 \end{figure}
+
+\begin{keyval}[path=/tikz]{tangent,at tangent}
+  \begin{syntax}
+    tangent=\meta{name} at\meta{pos}
+    at tangent=\meta{name}
+  \end{syntax}
+\keyref[/tikz]{tangent} 用于记录一条路径在 \meta{pos} 的切点坐标及切线方向，
+切点坐标为 \opt{(tangent point}~\meta{name}\opt{)}。
+
+\keyref[/tikz]{at tangent} 用于把该路径或 \texttt{scope} 的坐标系变换至指定的位置和方向。
+
+本功能需要自行加载名为 \texttt{decorations.markings} 的 \texttt{pgf} 库。\meta{pos}
+和坐标系的方向与 \texttt{/tikz/decoration/mark} 的可用值 
+\texttt{at position \meta{pos}with\meta{code}} 一致。
+\end{keyval}
+
+\subsection{在背景和前景中使用 {\TikZ} 绘制}
+
+需要加载 \pkg{tikz} 宏包。
+
+本库为 \cs{background} 和 \cs{foreground} 命令的 \meta{位置} 参数增加了一个可用值 
+\texttt{tikz}。可以在 \meta{code} 中使用 \TikZ 绘图代码，坐标原点为纸张\emph{左下角}。
+并预先定义了两个 node：\texttt{page} 和 \texttt{layout}。
+
+\begin{xample}
+\background(tikz){
+  \draw[thick,help lines] (layout.south west) grid (layout.north east);
+  \draw[thick,blue] (layout.center) circle (2cm);}
+\stopxamplecode
+\xampleprint
+如本页所示。
+\end{xample}
 
 
 \section{\cuslibrary{tcb}库}
@@ -4557,6 +4848,83 @@ verbatim 和分段。
 %     tcbox-frame = <{tcolorbox keyval}>
 %   \end{syntax}
 % \end{keyval}
+
+
+\section{\cuslibrary{logo}库}
+
+本库使用 \pkg{hologo} 宏包定义了一些 logo 命令。
+
+\begin{pagecenterbox}
+\def\plogo#1{\texttt{\string#1}&#1}
+\ExplSyntaxOn
+\cs_set:Npn \plogos #1
+  {
+    \tl_clear:N \l_tmpa_tl
+    \int_zero:N \l_tmpa_int
+    \tl_map_inline:nn {#1}
+      {
+        \int_incr:N \l_tmpa_int
+        \int_compare:nNnTF { \int_mod:nn { \l_tmpa_int } { 4 } } = { 0 }
+          { \tl_put_right:Nn \l_tmpa_tl { \plogo {##1} \\ } }
+          { \tl_put_right:Nn \l_tmpa_tl { \plogo {##1} & } }
+      }
+    \int_case:nn { \int_mod:nn { \l_tmpa_int } { 4 } }
+      {
+        { 0 } { }
+        { 1 } { \tl_put_right:Nn \l_tmpa_tl { \plogo{~}&\plogo{~}&\plogo{~} \\ } }
+        { 2 } { \tl_put_right:Nn \l_tmpa_tl { \plogo{~}&\plogo{~} \\ } }
+        { 3 } { \tl_put_right:Nn \l_tmpa_tl { \plogo{~} \\ } }
+      }
+    \tl_use:N \l_tmpa_tl
+  }
+\ExplSyntaxOff
+\noindent
+\begin{tabular}{llllllll}
+\toprule
+\plogos{
+\ApLaTeX
+\ApTeX
+\BibTeX
+\ConTeXt
+\CusLaTeX
+\CUSLATEX
+\CusTeX
+\CUSTEX
+\dvipdfmx
+\eTeX
+\iniTeX
+\LaTeX
+\LATEX
+\LaTeXe
+\LATEXe
+\LaTeXiii
+\LaTeXTeX
+\LuaHBTeX
+\LuaLaTeX
+\LuaMetaTeX
+\LuaTeX
+\LyX
+\METAFONT
+\MetaFun
+\METAPOST
+\MiKTeX
+\pdfLaTeX
+\PDFLaTeX
+\pdfTeX
+\plainTeX
+\pTeX
+\TeX
+\TEX
+\TeXLive
+\TikZ
+\upLaTeX
+\upTeX
+\XeLaTeX
+\XeTeX
+}\bottomrule
+\end{tabular}
+\end{pagecenterbox}
+它们可以直接作为章节命令的参数，以及 \cs{MakeUppercase}、\cs{MakeLowercase}、\cs{MakeTitlecase} 的参数。
 
 
 \section{\cuslibrary{doc}库}
@@ -4584,7 +4952,7 @@ verbatim 和分段。
 这些命令中可以修改链接显示的颜色和字体。
 \end{function}
 
-\begin{keyval}[path=doc/cmd]{index,module,no-index,space,keyval,hyper,target}
+\begin{keyval}[path=doc/cmd]{index,module,no-index,space,keyval,hyper,target,type}
 \begin{syntax}
   index    = <{index entry}> &#
   module   = <{module name}> &#
@@ -4593,10 +4961,13 @@ verbatim 和分段。
   space    = <&\TTF> & false 
   keyval   = <&\TTF> &#
   hyper    = <&\TTF|raw> & true 
+  no-hyper = &&
   target   = <{target}> &#
   target*  = <{target}>
+  type     = <{label type}>
 \end{syntax}
 \csreflist{cs,cmd,tn} 可用的键值选项。
+\end{keyval}
 
 \opt{no-index} 控制是否写入索引文件。\opt{do-index} 与 \opt{no-index} 相反。
 
@@ -4610,6 +4981,29 @@ verbatim 和分段。
 \opt{target} 设置链接的位置。默认情况下，还会对 \meta{target} 进行一定的处理，
 如果已经可以确定无需再对 \meta{target} 进行处理，可以设置 \verb|hyper=raw|。
 \opt{target*=} 是 \verb|hyper=raw, target=| 的简写。
+
+\opt{module} 设置的是在索引中归属的类别，对于 \LaTeXiii 的命令，可以自动检测其 
+\veta{module}，若要把某些命令归类到特定的 \veta{module} 中，则需要设置此键。
+
+\opt{type} 用于设置自动添加的 \veta{label} 的类别，命令默认为 \texttt{function}，
+键名默认为 \texttt{keyval}，环境为 \texttt{environment} ，如若修改了此值，
+在引用时也必须修改。
+
+\veta{module} 有几个特殊的值 \verb*|hook point|、\verb*|color name|，
+分别用于标记此命令为钩子、颜色名称。使用这几个值时最好也将 \opt{type} 也改为相同的值。
+
+\begin{keyval}[path=doc/cmd]{hyphen-opacity}
+  \begin{syntax}
+    hyphen-opacity = <{0--1之间的数}>
+  \end{syntax}
+设置断行字符的透明度。
+\end{keyval}
+
+\begin{keyval}[path=doc/cmd]{break-at-any}
+  \begin{syntax}
+    break-at-any = <&\TTF> & false 
+  \end{syntax}
+设置是否在任何位置都可断行。设置此选项为真时会增加编译时间，尽可能仅在必要时使用。
 \end{keyval}
 
 \begin{function}{\meta,\veta,\marg,\Arg,\oarg,\parg,\pkg,\env,\cls,\opt,\file,\docfile,
@@ -4774,12 +5168,12 @@ verbatim 和分段。
 \begin{function}{\csref,\csreflist,\envref,\envreflist,\keyref,\keyreflist,
   \cus@doc@csref@format,\cus@doc@envref@format,\cus@doc@keyref@format}
   \begin{syntax}
-    \verb|\csref|      \oarg{类型} \marg{cs name}
-    \verb|\csref|      \oarg{类型} \parg{cs label} \marg{cs name}
-    \verb|\csreflist|  \oarg{类型} \marg{cs name list}
-    \verb|\envref|     \oarg{类型} \marg{env name}
-    \verb|\envref|     \oarg{类型} \parg{cs label} \marg{env name}
-    \verb|\envreflist| \oarg{类型} \marg{env name list}
+    \verb|\csref|      \oarg{type} \marg{cs name}
+    \verb|\csref|      \oarg{type} \parg{cs label} \marg{cs name}
+    \verb|\csreflist|  \oarg{type} \marg{cs name list}
+    \verb|\envref|     \oarg{type} \marg{env name}
+    \verb|\envref|     \oarg{type} \parg{cs label} \marg{env name}
+    \verb|\envreflist| \oarg{type} \marg{env name list}
     \verb|\keyref|     \oarg{key path} \marg{key name}
     \verb|\keyref|     \oarg{key path} \parg{key label} \marg{key name}
     \verb|\keyreflist| \oarg{key path} \marg{key name list}
@@ -4787,6 +5181,8 @@ verbatim 和分段。
 引用命令，环境或键。对于列表的引用，可以通过 \cs{cus@doc@refrange} 修改分隔字符。
 
 \cs{cus@doc@csref@format} 等三个命令则是修改它们显示的格式，最多可带有一个参数。
+
+\meta{type} 为 \keyref[doc/cmd]{type} 设置的值。
 \end{function}
 
 \begin{function}{\cus@doc@ttfont,\cus@doc@itfont}
@@ -4839,12 +5235,16 @@ BNF 范式排版环境。
 
 \begin{function}{\BNFItem,\BNFN,\BNFI,\BNFO,\BNFT}
   \begin{syntax}
-    \verb|\BNFN| \marg{non-terminal}
-    \verb|\BNFT| \marg{terminal}
+    \verb|\BNFN|   \marg{non-terminal}
+    \verb|\BNFN| * \marg{non-terminal}
+    \verb|\BNFN| + <token> <{non-terminal}> <token>
+    \verb|\BNFT|   \marg{terminal}
+    \verb|\BNFT| * \marg{terminal}
+    \verb|\BNFT| + <token> <{terminal}> <token>
   \end{syntax}
 \cs{BNFItem} 用于标记一个句法（syntax）的开始。
 
-\cs{BNFN} 排版非终结符。\cs{BNFT} 排版终结符，它的使用方式和效果与 \tn{verb} 类似。
+\cs{BNFN} 排版非终结符。\cs{BNFT} 排版终结符。
 
 \cs{BNFI} 表示它之前的内容被定义为它之后的内容。
 
@@ -4947,11 +5347,11 @@ BNF 范式排版环境。
 
 \cusmodule{ref} 库提供交叉引用的一些额外功能。
 
-本库改进了 \cs{ifPageOdd} 和 \cs{ifAbsPageOdd}，使得它们在任何位置都有效。
+本库改进了 \cs{IfPageOdd} 和 \cs{IfAbsPageOdd}，使得它们在任何位置都有效。
 
-\begin{function}{\ifLabelOdd}
+\begin{function}{\IfLabelOdd}
   \begin{syntax}
-    \V\ifLabelOdd \marg{label} \marg{true} \marg{false}
+    \V\IfLabelOdd \marg{label} \marg{true} \marg{false}
   \end{syntax}
 判断这个 \meta{label} 是否定义在奇数页。当 \meta{label} 不存在时使用 \meta{false}。
 
@@ -5259,15 +5659,16 @@ s_0,s_1,s_2&w_0&g_0&w_1&g_1&w_2\rlap{ (in \texttt{pt})}\\\hline
 
 \section{\cuslibrary{math}库}
 
-\begin{function}{\delsizel,\delsizer,\bigsizel,\bigsizer}
+\begin{function}{\delsizel,\delsizem,\delsizer,\bigsizel,\bigsizem,\bigsizer}
   \begin{syntax}
     \V\delsizel \marg{real} \meta{left}
+    \V\delsizem \marg{real} \meta{middle}
     \V\delsizer \marg{real} \meta{right}
   \end{syntax}
-正如 \tn{bigl} 和 \tn{bigr} 那样，但如上四个命令可以设置括号的大小。
+正如 \tn{bigl}、\tn{bigm} 和 \tn{bigr} 那样，但如上几个命令可以设置括号的大小。
 
-\tn{delsizel}、\tn{delsizer} 设置的 \meta{real} 为数学模式下左括号 \texttt{(} 高度的倍数。
-\tn{bigsizel}、\tn{bigsizer} 设置的 \meta{real} 为数学模式下左括号 \texttt{(} 高度的倍数的 1.2 倍。
+\tn[no-index]{delsize..} 设置的 \meta{real} 为数学模式下左括号 \texttt{(} 高度的倍数。
+\tn[no-index]{bigsize..} 设置的 \meta{real} 为数学模式下左括号 \texttt{(} 高度的倍数的 1.2 倍。
 
 例如，\tn{bigl} 相当于 \verb|\bigsizel{1}|。
 \end{function}
@@ -5326,8 +5727,1018 @@ s_0,s_1,s_2&w_0&g_0&w_1&g_1&w_2\rlap{ (in \texttt{pt})}\\\hline
 \end{function}
 
 
+\chapter{可单独加载的宏包}
+
+\section{\pkg{collectn}}\label{sec:collectn}
+
+\begin{function}{\collectn_varwidth:nnw,\collectn_varwidth_end:}
+  \begin{syntax}
+    \V*|\collectn_varwidth:nnw| \marg{vertical pos} \marg{maximum width} 
+    ~~~~\meta{contents} \V*|\collectn_varwidth_end:|
+  \end{syntax}
+\meta{contents} 是可变宽的，最大宽度为 \meta{maximum width}；基线的位置为 \meta{vertical pos}，可选值为 \texttt{b}、\texttt{c}、\texttt{t}，分别表示对齐底部基线、居中对齐、对齐顶部基线。
+
+该命令是对 \env{varwidth} 环境的封装。
+\end{function}
+
+\begin{function}{\collectn_set_varwidth:Nnnw,\collectn_set_varwidth_end:,
+  \collectn_gset_varwidth:Nnnw,\collectn_gset_varwidth_end:
+}
+  \begin{syntax}
+    \V*|\collectn_set_varwidth:Nnnw| \meta{box} \marg{vertical pos} \marg{maximum width}
+    ~~~~\meta{contents} \V*|\collectn_set_varwidth_end:|
+  \end{syntax}
+设置 \meta{box} 为一个包含 \meta{contents} 的最大宽度为 \meta{maximum width} 的水平盒子。
+\end{function}
+
+\begin{function}{\collectn_set_vbox_width:Nnw,\collectn_set_vbox_width_end:,
+  \collectn_set_vbox_varwidth:Nnw,\collectn_set_vbox_varwidth_end:,
+  \collectn_gset_vbox_width:Nnw,\collectn_gset_vbox_width_end:,
+  \collectn_gset_vbox_varwidth:Nnw,\collectn_gset_vbox_varwidth_end:
+}
+  \begin{syntax}
+    \V*|\collectn_set_vbox_width:Nnw| \meta{box} \marg{width} 
+    ~~~~\meta{content} \V*|\collectn_set_vbox_width_end:|
+  \end{syntax}
+
+\cs{collectn_set_vbox_width:Nnw} 与 \cs{vbox_set:Nw} 类似，把 \meta{content} 保存到 vbox \meta{box} 中，该 \meta{box} 的宽度为 \meta{width}。它和 \env{minipage} 环境相似。
+
+\cs{collectn_set_vbox_varwidth:Nnw} 则是设置 \meta{content} 的最大宽度为 \meta{width}。
+它和 \env{varwidth} 环境相似。
+
+这 \meta{box} 可以使用 \tn{vsplit} 或 \cs{vbox_set_split_to_ht:NNn} 来分割。
+\end{function}
+
+% peek or pick or collect?
+\begin{function}{\collectn_box:Nnw}
+  \begin{syntax}
+    \V*|\collectn_box:NNnw| \meta{box} \meta{primitive box cs} \marg{code} \meta{material}
+  \end{syntax}
+先将 \meta{material} 保存到 \meta{box} 中，此盒子为 \meta{primitive box cs}，
+可为 \tn{hbox}、\tn{vbox}、\tn{vtop} 之一。之后再使用 \meta{code} 处理。
+
+\meta{material} 可以是 \texttt\{\BNFN{horizontal/vertical mode material}\texttt\}，也可以有 \BNFN{box specification}。左右括号可以是隐式的。
+
+这种方式与 \cs{peek_charcode_remove:NTF} 类似。另见 \pkg{collectbox} 宏包。
+
+\meta{code} 与 \cs{collectn_box:Nnw} 在同一个组中执行。
+
+注意：\cs{hbox:n}、\cs{vbox:n}、\cs{vbox_top:n} 并不分别等于 \tn{hbox}、\tn{vbox}、\tn{vtop}。
+\end{function}
+
+\begin{xample}
+\ExplSyntaxOn
+\cs_set:Npn \myfbox 
+  {
+    \collectn_box:NNnw \l_tmpa_box \tex_hbox:D 
+      { \fbox { \box_use_drop:N \l_tmpa_box } }
+  }
+\ExplSyntaxOff
+\myfbox{\verb|\myfbox| 与 \verb|\fbox|}
+\myfbox{\parbox{3cm}{可分段的\par fbox}}
+\stopxamplecode 
+\xampleprint 
+\end{xample}
+另见\cref{eg:myfbox-cmd}。
+
+\begin{function}{\collectn_value:Nnw}
+  \begin{syntax}
+    \V*|\collectn_value:Nnw| \meta{register} \marg{code} \meta{value}
+  \end{syntax}
+将 \meta{value} 保存到 \meta{register} 中，再使用 \meta{code} 处理。
+\meta{value} 必须确实可以保存到 \meta{register} 中。
+
+\meta{code} 与此命令在同一个组中执行。
+\end{function}
+
+\begin{xample}
+\ExplSyntaxOn
+\cs_set:Npn \showintval 
+  { \collectn_value:Nnw \l_tmpa_int { 值为 $ \int_use:N \l_tmpa_int $ } }
+\ExplSyntaxOff
+\showintval 3
+\showintval -310
+\showintval "3FA
+\showintval \shellescape
+\stopxamplecode 
+\xampleprint 
+\end{xample}
+
+\begin{function}{\collectn_width:Nnnw,\collect_minipage:Nnnw,\collect_varwidth:Nnnw}
+  \begin{syntax}
+    \V*|\collectn_width:Nnnw| \meta{box} \marg{code} \marg{width} \meta{material}
+  \end{syntax}
+先使用类似于 \env{minipage}（\env{varwidth}）的处理方式处理 \meta{material}，
+然后将它保存到 vbox \meta{box} 中，再使用 \meta{code} 处理。
+这 \meta{box} 的宽度（或最大宽度）为 \meta{width}。
+
+\meta{material} 可以是 \texttt\{\BNFN{vertical mode material}\texttt\}，正如 \tn{vbox}
+\texttt\{\BNFN{vertical mode material}\texttt\} 那样。左右括号可以是隐式的。
+
+\meta{code} 与这些命令在同一个组中执行。
+
+\cs{collectn_minipage:Nnnnw} 是 \cs{collectn_width:Nnnnw} 的另一个名字。
+
+保存的垂直盒子可以用 \tn{vsplit} 或 \cs{vbox_set_split_to_ht:NNn} 来分割。
+\end{function}
+
+\begin{function}{\collectn_width:Nnnnw,\collectn_minipage:Nnnnw,
+  \collectn_varwidth:Nnnnw}
+  \begin{syntax}
+    \V*|\collectn_width:Nnnnw| \meta{box} \marg{code} \marg{vpos} \marg{width} \meta{material}
+  \end{syntax}
+先使用类似于 \env{minipage}（\env{varwidth}）的处理方式处理 \meta{material}，然后将它保存到 hbox \meta{box} 中，再使用 \meta{code} 处理。这 \meta{box} 的宽度为 \meta{width}，基线的位置为 \meta{vpos}，可选值为 \texttt{b}、\texttt{c}、\texttt{t}，分别表示底部基线、居中、顶部基线，默认为底部基线。
+
+\meta{material} 可以是 \texttt\{\BNFN{vertical mode material}\texttt\}，正如 \tn{vbox}
+\texttt\{\BNFN{vertical mode material}\texttt\} 那样。左右括号可以是隐式的。
+
+\meta{code} 与这些命令在同一个组中执行。
+
+\cs{collectn_minipage:Nnnnw} 是 \cs{collectn_width:Nnnnw} 的另一个名字。
+\end{function}
+
+\begin{xample}
+\ExplSyntaxOn
+\cs_set:Npn \myparfbox #1#2
+  { 
+    \collectn_width:Nnnnw \l_tmpa_box 
+      { \fbox { \box_use_drop:N \l_tmpa_box } } {#1} {#2}
+  }
+\cs_set:Npn \myvarfbox #1#2
+  {
+    \collectn_varwidth:Nnnnw \l_tmpa_box
+      { \fbox { \box_use_drop:N \l_tmpa_box } } {#1} {#2}
+  }
+\ExplSyntaxOff
+\myparfbox{t}{5cm}{一个可以包含 \verb|\verb| 的\par 
+  定宽 \verb|\fbox|}
+\myvarfbox{b}{5cm}{一个可以包含 \verb|\verb| 的\par 
+  变宽 \verb|\fbox|}
+\stopxamplecode 
+\xampleprint 
+\end{xample}
+
+\begin{function}{\collectn_width:Nnnnnnw,\collectn_minipage:Nnnnnnw,
+  \collectn_varwidth:Nnnnnnw}
+  \begin{syntax}
+    \V*|\collectn_width:Nnnnnnw| \meta{box} \marg{code} 
+    ~~~~\marg{vpos} \marg{height} \marg{inner pos} \marg{width} \meta{material}
+  \end{syntax}
+前述命令的完整形式。
+
+\begin{itemize}
+\item \meta{vpos} 表示垂直位置，可选值为 \texttt{b}、\texttt{c}、\texttt{t}，分别表示对齐底部基线、居中对齐、对齐顶部基线，默认为对齐底部基线；
+\item \meta{height} 表示盒子的高度，如果不设置，则为盒子的自然高度，
+\item \meta{inner pos} 表示如果设置的 \meta{height} 过大时，盒子的内容在盒子内的垂直位置，可选值为 \texttt{b}、\texttt{c}、\texttt{t}、\texttt{s}，分别表示置于盒子底部、居中、置于顶部、垂直分散对齐，默认为垂直分散对齐。
+\end{itemize}
+
+\meta{material} 可以是 \texttt\{\BNFN{vertical mode material}\texttt\}，正如 \tn{vbox}
+\texttt\{\BNFN{vertical mode material}\texttt\} 那样。左右括号可以是隐式的。
+
+\meta{code} 与这些命令在同一个组中执行。
+\end{function}
+
+\begin{function}{\collectn_hbox_auto:Nnnw,\collectn_width_auto:Nnnw,
+  \collectn_minipage_auto:Nnnw,\collectn_varwidth_auto:Nnnw}
+  \begin{syntax}
+    \V*|\collectn_hbox_auto:Nnnw| \meta{box} \marg{code} \marg{spec} \marg{content}
+  \end{syntax}
+根据 \meta{spec} 自动使用合适的命令。
+
+\cs{collectn_hbox_auto:Nnnw} 的 \meta{spec} 为 \tn{makebox} 的前两个参数：
+\oarg{width}\oarg{pos}。
+
+其它三个命令的 \meta{spec} 为 \tn{parbox} 的前四个参数：
+\oarg{vpos}\oarg{height}\oarg{inner pos}\marg{width}。
+仅当只有 \meta{width} 给出时，所保存的盒子为垂直盒子，且可以使用 \tn{vsplit}
+或 \cs{vbox_set_split_to_ht:NNn} 来分割该盒子。
+\end{function}
+
+\begin{function}{\collectn_lohi:Nnw,\collectn_lohis:Nnw}
+  \begin{syntax}
+    \V*|\collectn_lohi:Nnw| \meta{tl} \marg{code} \meta{content}
+  \end{syntax}
+判断接下来的一些字符是否是数学上下标。
+\cs{collectn_lohi:Nnw} 获取一组数学上下标（即数学下标和上标每个最多获取一个）；
+\cs{collectn_lohis:Nnw} 可获取任意多个上下标。把这些上下标存储到 \meta{tl} 里，
+然后执行 \meta{code}。
+
+\meta{tl} 由形如 
+\verb|{_|\marg{text}\verb|}| 或 \verb|{^|\marg{text}\verb|}| 的项组成。
+
+它们会自动展开后面的内容，并且自动移除空格和 \tn{relax}。
+\end{function}
+
+\begin{xample}
+\ExplSyntaxOn
+\collectn_lohi:Nnw \l_tmpa_tl { \tl_to_str:N \l_tmpa_tl }
+  \c_math_subscript_token \scan_stop: { a } ^ { b }
+\par 
+\collectn_lohis:Nnw \l_tmpa_tl { \tl_to_str:N \l_tmpa_tl }
+  \scan_stop: \c_math_superscript_token \scan_stop: { a }
+  \scan_stop: \sb { b } \sp { c } ^{ d }
+\ExplSyntaxOff
+\stopxamplecode
+\xampleprint
+\end{xample}
+
+\begin{function}[TF]{\collectn_scan_keyword:n,\collectn_scan_keywordcs:n}
+  \begin{syntax}
+    \V*|\collectn_scan_keyword:nTF| \marg{keyword} \marg{true} \marg{false}
+  \end{syntax}
+判断接下来的一些字符是否匹配 \meta{keyword}，若匹配则移除它们。
+为了检测后面的文字是否匹配 \meta{keyword}，它会自动\emph{展开}后面的命令。
+
+\meta{keyword} 被转为类别码为 12 的记号列（包括空格），两端的空格\emph{不会}被移除。
+\cs{collectn_scan_keyword:n} 忽略大小写，\cs{collectn_scan_keywordcs:n} 不忽略大小写。
+\end{function}
+
+\begin{function}{\collectn_set_keyword:Nn,
+  \collectn_set_keyword:No,\collectn_set_keyword:NV,
+  \collectn_set_keyword:Nv,\collectn_set_keyword:Ne,
+  \collectn_set_keyword:cn,
+  \collectn_set_keyword:co,\collectn_set_keyword:cV,
+  \collectn_set_keyword:cv,\collectn_set_keyword:ce
+}
+  \begin{syntax}
+    \V*|\collectn_set_keyword:Nn| \meta{str} \marg{keyword}
+  \end{syntax}
+把 \meta{keyword} 处理成可供使用的记号列，然后将其保存至 \meta{str}。
+
+先对 \meta{keyword} 执行 \cs{tl_to_str:n}，然后把所有空格替换为类别码为 12 的空格。
+\end{function}
+
+\begin{function}[TF]{\collectn_scan_keyword:N, \collectn_scan_keyword:c,
+  \collectn_scan_keywordcs:N, \collectn_scan_keywordcs:c}
+  \begin{syntax}
+    \V*|\collectn_scan_keyword:NTF| \meta{keyword str} \marg{true} \marg{false}
+  \end{syntax}
+判断接下来的一些字符是否匹配 \meta{keyword}，若匹配则移除它们。
+为了检测后面的文字是否匹配 \meta{keyword}，它会自动\emph{展开}后面的命令。
+
+\meta{keyword str} 需用 \cs{collectn_set_keyword:Nn} 设置。
+\end{function}
+
+\begin{function}[TF]{\collectn_scan_keywords:n,\collectn_scan_keywordscs:n}
+  \begin{syntax}
+    \V*|\collectn_scan_keywords:nTF| \marg{keyword clist} \marg{true} \marg{false}
+  \end{syntax}
+判断接下来的一些字符是否匹配 \meta{keywords clist} 中的某一项，若匹配则移除它们。忽略大小写。
+为了检测后面的文字是否匹配 \meta{keywords clist} 中的项，它会自动\emph{展开}后面的命令。
+
+对 \meta{keyword list} 中的每一项，先移除两端的空格和空项，
+然后转为类别码为 12 的记号列（包括空格）。
+
+它不会移除 \meta{keywords clist} 中重复的项，若有重复的项，则以最后出现的那个为准。
+
+在 \meta{true} 和 \meta{false} 中可使用 \cs{l_collectn_keywords_int} 来获取匹配的
+\meta{keyword} 的位置，\cs{l_collectn_keywords_str} 获取匹配的 \meta{keyword}。
+\end{function}
+
+\begin{function}{\collectn_set_keywords:Nn,
+  \collectn_set_keywords:No,\collectn_set_keywords:NV,
+  \collectn_set_keywords:Nv,\collectn_set_keywords:Ne,
+  \collectn_set_keywords:cn,
+  \collectn_set_keywords:co,\collectn_set_keywords:cV,
+  \collectn_set_keywords:cv,\collectn_set_keywords:ce
+}
+  \begin{syntax}
+    \V*|\collectn_set_keywords:NTF| \meta{tl} \marg{keyword clist}
+  \end{syntax}
+对 \meta{keyword clist} 中的每一项先移除两端的空格，再应用 \cs{collectn_set_keyword:Nn}，
+然后将这些项保存至 \meta{tl}。
+
+它不会移除 \meta{keywords clist} 中重复的项，若有重复的项，则以最后出现的那个为准。
+\end{function}
+
+\begin{function}{\collectn_set_keywords_from_seq:NN,
+  \collectn_set_keywords_from_seq:Nc,\collectn_set_keywords_from_seq:cN,
+  \collectn_set_keywords_from_seq:cc
+}
+  \begin{syntax}
+    \V*|\collectn_set_keywords_from_seq:NN| \meta{tl} \meta{seq}
+  \end{syntax}
+对 \meta{seq} 中的每一项应用 \cs{collectn_set_keyword:Nn}，然后将这些项保存至 \meta{tl}。
+
+它不会移除重复的项，若有重复的项，则以最后出现的那个为准。
+\end{function}
+
+\begin{function}[TF]{\collectn_scan_keywords:N,\collectn_scan_keywords:c,
+  \collectn_scan_keywordscs:N,\collectn_scan_keywordscs:c}
+  \begin{syntax}
+    \V*|\collectn_scan_keywords:NTF| \meta{keywords tl} \marg{true} \marg{false}
+  \end{syntax}
+判断接下来的一些字符是否匹配 \meta{keywords tl} 中的某一项，若匹配则移除它们。
+为了检测后面的文字是否匹配 \meta{keywords tl} 中的项，它会自动\emph{展开}后面的命令。
+
+\meta{keywords tl} 需用 \cs{collectn_set_keywords:Nn} 或 
+\cs{collectn_set_keywords_from_seq:NN} 设置。
+\end{function}
+
+\begin{function}{\l_collectn_keywords_int,\l_collectn_keywords_str}
+\meta{keywords clist/tl} 中匹配的 \meta{keyword} 的位置和值。
+若不匹配则位置为 0，值为空。
+\end{function}
 
 
+\section{\pkg{lt3ekeys}}\label{sec:lt3ekeys}
+
+本宏包扩展了 \pkg{l3keys} 的部分功能。
+
+\subsection{定义键}
+
+\subsection{设置键}
+
+\subsection{定义命令——\pkg{lt3ekeyscmd}}\label{sec:lt3ekeyscmd}
+
+本宏包实现了一个与 \cs{DeclareDocumentCommand} 类似的命令，提供了更多常用的功能。
+
+以下称使用 \cs{DeclareDocumentCommand} 定义的命令为 \veta{document-cmd}，
+称使用 \cs{ekeysdeclarecmd} 定义的命令为 \veta{ekeys-cmd}。
+
+\begin{function}{\DeclareEKeysCommand,\ekeysdeclarecmd,
+  \ekeys_declare_cmd:Nnn,\ekeys_declare_cmd_x:Nnn,
+  \l_ekeys_cmd_defaults_bool}
+  \begin{syntax}
+    \V\ekeysdeclarecmd   <cmd> <{arg spec}> <{code}>
+    \V\ekeysdeclarecmd * <cmd> <{arg spec}> <{code}>
+    \V*|\ekeys_declare_cmd:Nnn|   <cmd> <{arg spec}> <{code}>
+    \V*|\ekeys_declare_cmd_x:Nnn| <cmd> <{arg spec}> <{code}>
+  \end{syntax}
+类似于 \cs{DeclareDocumentCommand}，部分 \meta{arg spec} 未实现，增加了一些 \meta{arg spec}。
+
+\cs{ekeysdeclarecmd} 等于 \cs{ekeys_declare_cmd:Nnn}。
+\cs{ekeys_declare_cmd_x:Nnn} 完全展开 \meta{code}。
+
+\cs{DeclareEKeysCommand} 是 \cs{ekeysdeclarecmd} 的另一个名字。
+
+\meta{arg spec} 可以是数字，此时相当于 \cs{cs_generate_from_arg_count:NNnn} \meta{cmd}
+\cs{cs_set_protected:Npn} \marg{arg spec} \marg{code}。
+
+\meta{arg spec} 不为数字（或空）时定义的命令称为 \veta{ekeys-cmd}。
+
+最大的参数数量为 9。
+
+此命令定义的命令均为使用长参数。即它们定义的命令总是 \tn{protected}\tn{long}。
+\end{function}
+
+目前，在向后寻找可选参数时，会忽略空格，但未来可能会修改为不忽略空格，因此不宜在可选参数前加入空格（但必需参数 \texttt{m}、\texttt{r}、\texttt{R} 总忽略空格）。如 \verb*|\foo {a} [o]| 应写为 \verb|\foo {a}[o]|，假定 \veta{arg spec} 为 \texttt{mo}。
+
+在定义 \veta{ekeys-cmd} 时，若设置 \cs{l_ekeys_cmd_defaults_bool} 为真，
+则可选参数的默认值可以引用其它实参（称为“执行可选参数默认值引用替换”），
+否则 \meta{arg spec} 中的参数不能引用其它实参，
+如 \verb|r[] D(){#1}| 中的 \verb|#1| 只是普通文本。
+\cs{ekeysdeclarecmd} 不带星号的版本设置 \cs{l_ekeys_cmd_defaults_bool} 为假，
+\cs{ekeysdeclarecmd} 带星号的版本设置 \cs{l_ekeys_cmd_defaults_bool} 为真。
+\cs{l_ekeys_cmd_defaults_bool} 只有在使用上述三个命令时才会生效。
+注意：若默认参数之间互相循环引用，则在执行时会出错，但 \veta{document-cmd} 则不会出错。
+如命令的 spec 为 \verb|D(){#2} D<>{#1}|，则命令为 \veta{ekeys-cmd} 会出错，而为
+\veta{document-cmd} 不会出错。
+
+\veta{ekeys-cmd} 可以用于 \cs{ShowCommand}、\cs{NewCommandCopy} 中，也支持 \texttt{cmd} 钩子，限制条件和 \veta{document-cmd} 一致。
+
+\begin{function}{\DeclareEKeysCollector,\ekeysdeclarecollector}
+  \begin{syntax}
+    \V\DeclareEKeysCollector   <collector> <{arg spec}>
+    \V\DeclareEKeysCollector * <collector> <{arg spec}> <tl> <{do code}>
+  \end{syntax}
+定义和 \veta{ekeys-cmd} 类似的命令，\meta{arg spec} 的参数数量可以超过 9 个。
+这种命令称之为 \veta{ekeys-collector}。
+\end{function}
+
+\begin{function}[rEXP]{\ekeyscollectorarg}
+  \begin{syntax}
+    \V\ekeyscollectorarg \marg{arg number}
+  \end{syntax}
+完全展开为第 \meta{arg number} 个参数。
+如果没有该值，则为 \cs{q_no_value}，可以使用 \cs{IfQuarkNoValueTF} 检测。非正整数都无效。
+它只能用于 \veta{ekeys-collector} 的 \meta{do code} 中。
+
+注意：不能使用 \texttt f 展开，因为值可能为 \cs{q_no_value}，它会造成无限递归。
+\end{function}
+
+\begin{xample}
+\DeclareEKeysCollector \faa { m m @w{ () [] } m m m m m m m }
+\faa\tmp{\meaning\tmp.} 12 [[a]](b(b)) 56789ABCD.
+
+\faa\tmp{\edef\tmp{\ekeyscollectorarg{10}}\meaning\tmp.} 
+  12 [[a]](b(b)) 56789ABCD.
+
+\DeclareEKeysCollector*\fbb { m m @w{ () [] } m m m m m m m } \tmp {\meaning\tmp.}
+\fbb 12 [[a]](b(b)) 56789ABCD.
+\stopxamplecode
+\xampleprint
+\end{xample}
+
+\begin{function}{\ekeysgenerategrabber}
+  \begin{syntax}
+    \V\ekeysgenerategrabber <grabber tl> <{arg spec}>
+  \end{syntax}
+从 \meta{arg spec} 生成 grabber。生成的 grabber 可以用于 \cs{ekeyscollectargs} 命令中。
+
+预先生成 grabber 可以避免重复生成以节省时间。
+
+默认最大可用的参数个数为 \tn{e@alloc@top}，它远远超过 9。在 \pdfLaTeX 和 \XeLaTeX 中为 
+$2^{15}-1=32767$，在 \LuaLaTeX 和 (u)p\LaTeX 中为 $2^{16}-1=65535$。
+可以通过 \cs{l_ekeys_cmd_max_args_int} 修改。
+\end{function}
+
+\begin{function}{\ekeys_grabber_args_do:NNn}
+  \begin{syntax}
+    \V*|\ekeys_grabber_args_do:NNn| \meta{tl} \meta{grabber tl} \marg{do code}
+  \end{syntax}
+首先收集 \meta{grabber tl} 所需的参数，每个参数都用 \verb|{}| 括起来，将其保存到 \meta{tl}
+中，然后执行 \meta{do code}。
+
+此命令不会执行可选参数默认值引用替换。
+\end{function}
+
+\begin{function}{\ekeys_collect_args_do:NNn,\ekeyscollectargs}
+  \begin{syntax}
+    \V*|\ekeys_collect_args_do:NNn| \meta{tl} <ekeys-cmd OR grabber tl> \marg{do code}
+  \end{syntax}
+首先收集 \meta{ekeys-cmd} 所需的参数或 \meta{grabber tl} 所需的参数，每个参数都用 
+\verb|{}| 括起来，将其保存到 \meta{tl} 中，然后执行 \meta{do code}。
+
+只有当第二个参数为 \veta{ekeys-cmd} 时，才会此执行可选参数默认值引用替换。
+\end{function}
+
+\begin{function}{\ekeys_collect_args_do:Nnn,\ekeyscollectargs*}
+  \begin{syntax}
+    \V*|\ekeys_collect_args_do:Nnn| \meta{tl} \marg{arg spec} \marg{do code}
+  \end{syntax}
+首先根据 \meta{arg spec} 收集所需的参数，每个参数都用 \verb|{}| 括起来，
+将其保存到 \meta{tl} 中，然后执行 \meta{do code}。
+
+最大可用的参数个数为 \tn{e@alloc@top}，它远远超过 9。在 \pdfLaTeX 和 \XeLaTeX 中为 
+$2^{15}-1=32767$，在 \LuaLaTeX 和 (u)p\LaTeX 中为 $2^{16}-1=65535$。
+可以通过 \cs{l_ekeys_cmd_max_args_int} 修改。
+
+此命令相当于先用 \cs{ekeysgenerategrabber} 生成 grabber，然后再使用
+\linebreak \cs{ekeyscollectargs}。
+
+此命令不会执行可选参数默认值引用替换。
+\end{function}
+
+\begin{function}{l_ekeys_cmd_max_args_int}
+最大的可收集的参数数目。
+\end{function}
+
+\begin{function}{\ekeys_cmd_undefine:N}
+  \begin{syntax}
+    \V*|\ekeys_cmd_undefine:N| \meta{ekeys-cmd}
+  \end{syntax}
+将 \meta{ekeys-cmd} （局部地）设置为未定义。如果不是 \veta{ekeys-cmd} 则\emph{保持不变}。
+对 \veta{ekeys-cmd} 和 \veta{ekeys-collector} 都有效。
+\end{function}
+
+\begin{function}{\ekeysmakeglobal,\ekeys_cmd_global:N}
+  \begin{syntax}
+    \V\ekeysmakeglobal \meta{ekeys-cmd}
+  \end{syntax}
+把局部定义的 \meta{ekeys-cmd} 改为全局定义的。\cs{ekeysdeclarecmd} 总是局部地定义命令。
+如果不是 \veta{ekeys-cmd} 则\emph{保持不变}。
+\end{function}
+
+\begin{function}[EXP]{\__ekeys_if_cmd:NTF}
+  \begin{syntax}
+    \V*|\__ekeys_if_cmd:NTF| \meta{cs} \marg{true code} \marg{false code}
+  \end{syntax}
+简单判断一个控制序列是否为 \veta{ekeys-cmd}。
+\end{function}
+
+\smallskip
+{\def\CCD#1{\textcolor{black!60}{\texttt{#1}}}
+\def\CCS#1{\textcolor{black}{\texttt{#1}}}
+\def\CCE#1{\textcolor{red!90!black}{\texttt{#1}}}
+可用的参数类型为：
+\begin{itemize}
+  \item[\CCS m] 标准的必须的参数；
+  \item[\CCD r] \texttt r\meta{token_1}\meta{token_2}；
+  \item[\CCD R] \texttt R\meta{token_1}\meta{token_2}\marg{default}；
+  \item[\CCD o] 可选参数；
+  \item[\CCD O] \texttt O\marg{default}；
+  \item[\CCD d] \texttt d\meta{token_1}\meta{token_2}；
+  \item[\CCD D] \texttt D\meta{token_1}\meta{token_2}\marg{default}；
+  \item[\CCS s] 可选的星号，如果给出则为 \cs{BooleanTrue}，否则为 \cs{BooleanFalse}；
+  \item[\CCS t] \texttt t\meta{token}，如果 \meta{token} 给出，则为 \cs{BooleanTrue}，否则为 \cs{BooleanFalse}；
+  \item[\CCE k] \texttt k\marg{keyword}，如果 \meta{keyword} 给出，则为 \cs{BooleanTrue}，否则为 \cs{BooleanFalse}；定义命令时，忽略 \meta{keyword} 的类别码，执行时，仅比较字符，忽略类别码（活动字符除外，它将导致失配）和大小写的区别；另见 \cs{collectn_scan_keyword:nTF}；
+  \item[\CCE t] \texttt t\marg{token pairs}，它占用两个参数，用于确定多个定界符对是否有一个给出了，第一个为定界符对所在的位置（如果未出现则为 $0$），第二个为它的值；
+  \item[\CCE T] \texttt T\marg{token pairs}\marg{default}，它占用两个参数，用于确定多个定界符对是否有一个给出了，第一个为定界符对所在的位置（如果未出现则为 $0$），第二个为它的值（如果未出现则为 \meta{default}）；
+  \item[\CCE p] \texttt p\marg{tokens}，如果出现在 \meta{tokens} 中，则给出所在的位置，否则给出 0；
+  \item[\CCE P] \texttt P\marg{tokens}\marg{defaults}，\meta{defaults} 的长度必须为 \meta{tokens} 的长度加一，用出现在 \meta{tokens} 中的位置索引 \meta{defaults}（\meta{defaults} 的索引从 $0$ 开始），\verb|p{*-+}| 相当于 \verb|P{*-+}{0123}|；
+  \item[\CCE e] \texttt e\marg{tokens}，使用 \texttt w 参数实现，每个符号可以重复使用；
+  \item[\CCE E] \texttt E\marg{tokens}\marg{defaults}，使用 \texttt W 参数实现，每个符号可以重复使用；
+  \item[\CCE w] \texttt w\marg{token pairs}，智能匹配多个 \texttt d 类型的参数，从而可以以任意顺序给出参数的值；
+  \item[\CCE W] \texttt W\marg{token pairs}\marg{defaults}，智能匹配多个 \texttt D 类型的参数，从而可以以任意顺序给出参数的值；
+  \item[\CCS g] 可选的以 \verb|{| 开始的参数，\verb|{| 可以是显式或隐式的；若后面跟着的不是 \verb|{| 而是 \verb|\relax|，则移除这个 \verb|\relax|；
+  \item[\CCS G] \texttt G\marg{default}，可选的以 \verb|{| 开始的参数，\verb|{| 可以是显式或隐式的；若后面跟着的不是 \verb|{| 而是 \verb|\relax|，则移除这个 \verb|\relax|；
+  \item[\CCS l] \verb|{| 前的内容，如没有 \verb|{| 则出错；
+  \item[\CCS u] \texttt u\marg{tokens}，\meta{tokens} 前的内容，\meta{tokens} 会被移除，如没有 \meta{tokens} 则出错；
+  \item[\CCE U] \texttt U\marg{tokens_1}\marg{tokens_2}，\meta{tokens_1} 前的内容，移除 \meta{tokens_1} 并留下 \meta{tokens_2}，如没有 \meta{tokens_1} 则出错；
+\end{itemize}
+}
+
+未实现的参数类型为 \IterateList{vb+!>=}{\texttt{#1}，} 使用它们仅给出警告，不会报错。
+
+除非另有说明否则上述参数类型的参数中均不能出现显式或隐式的空格（\texttt\textvisiblespace）、宏变量字符（\texttt\#）、左右括号（\texttt{\{ \}}），即 \verb|d<#|、\verb|t\bgroup| 等均为错误用法。
+
+\texttt u 和 \texttt U 的参数可以有空格，如可以 \verb|u{ }|，必须有括号。
+
+带有左右定界符的参数在使用时不能嵌套，如 \meta{arg spec} 为 \verb|d<>|，则 \verb|\foo<a<b>>|
+的参数为 \verb|a<b|，要得到 \verb|a<b>|，必须写 \verb|\foo<{a<b>}>|。
+
+\pkg{lt3ekeysext} 宏包对其进行了进一步扩展，例如支持定义可嵌套的定界符以及更高的执行效率。见\cref{sec:lt3ekeysext}。
+
+\begin{function}[EXP]{\ekeys_cmd_name:}
+完全展开为 \veta{ekeys-cmd} 的名称。仅能用在 \veta{ekeys-cmd} 执行的 \meta{code} 中。
+\end{function}
+
+\begin{function}[EXP]{\IfQuarkNoValueTF,\IfQuarkNoValueT,\IfQuarkNoValueF}
+  \begin{syntax}
+    \V\IfQuarkNoValueTF \marg{arg} \marg{true code} \marg{false code}
+  \end{syntax}
+判断 \meta{arg} 是否为 \cs{q_no_value}。
+\end{function}
+
+\begin{function}[EXP]{\NumberCase,\@numbercase}
+  \begin{syntax}
+    \V\NumberCase \marg{integer} \{ \marg{case_0} \marg{case_1} ... \marg{case_n} \} \marg{else}
+    \V\@numbercase <integer> ; \marg{case_0} \marg{case_1} ... \marg{case_n} ; \marg{else}
+  \end{syntax}
+根据 \meta{integer} 的值选择对应的 \meta{case_i}，如果 
+$\veta{integer}>\veta{n}$ 或 $\veta{integer}<0$ 则使用 \meta{else}。
+
+\cs{BooleanFalse} 相当于 0，\cs{BooleanTrue} 相当于 1。
+
+展开两次即可得到结果。
+\end{function}
+
+\begin{xample}
+\ExplSyntaxOn
+\ekeys_declare_cmd:Nnn \foo { p{!@*-+} } { 位置为：#1. }
+\ekeys_declare_cmd:Nnn \fee { p{!@*-+} } 
+  { \NumberCase {#1} { {错误！} } { 给出 \tl_item:nn {!@*-+} {#1}. } }
+\ekeys_declare_cmd:Nnn \fii { P{!@*-+}{ {错误}{!}{@}{*}{-}{+} } } { 给出：#1. }
+\ExplSyntaxOff
+
+\foo @ \par 
+\foo ? \par 
+\fee @ \par 
+\fee ? \par
+\fii @ \par 
+\fii ?
+\stopxamplecode
+\xampleprint
+\end{xample}
+
+\begin{xample}
+\ekeysdeclarecmd \foo { t{ () [] <> } } {位置为：#1，值为：#2。}
+\foo <c> \foo (p) \foo\relax
+\stopxamplecode 
+\xampleprint
+\end{xample}
+
+\texttt w 和 \texttt W 中（包括 \texttt e 和 \texttt E）的定界符对可以重复使用，
+但在第一个相同的情况下第二个也必须相同。
+如支持 \verb|w{ [] () [] }|、\verb|w{ (] [] <] }|，但不支持 \verb|w{ [) [] }|。
+
+\begin{xample}
+\ekeysdeclarecmd \foo { w{ [] () <> } } {\{#1;#2;#3\}}
+\ekeysdeclarecmd \fee { w{ [] [] () } } {\{#1;#2;#3\}}
+
+\foo <a> (b) [c] , \foo (a) [b] <c> ,
+\fee [a] (b) [c] , \fee [a] [b] (c) , \fee (a) [b] [c] ,
+\stopxamplecode
+\xampleprint 
+\end{xample}
+
+\texttt t、\texttt T、\texttt w、\texttt W 的每对的第二个还能为空或空格。
+例如 \verb|w{ _{} ^{} }| 相当于 \verb|e{_^}|，例如支持 \verb|w{ [] () _{} ^{} :{ } }|。
+但第一个不能为空或空格，如不支持 \verb|w{ {}_ }|。
+
+\texttt t 和 \texttt T 用于仅需要一个参数的情况，这些定界符对只会检测一次，
+而 \texttt w 和 \texttt W 则支持多个，可以以任意顺序给出。
+
+\begin{function}[EXP]{\ekeys_exp_not_braced:n,
+  \ekeys_exp_not_braced:o,\ekeys_exp_not_braced:V,\ekeys_exp_not_braced:v,
+  \ekeys_exp_not_braced:f,\ekeys_exp_not_braced:e,
+}
+  \begin{syntax}
+    \V*|\ekeys_exp_not_braced:n| \marg{text}
+  \end{syntax}
+展开为 \texttt\{\cs{exp_not:n}\marg{text}\texttt\}。
+\end{function}
+
+\subsection{定义命令扩展——\pkg{lt3ekeysext}}\label{sec:lt3ekeysext}
+
+\pkg{lt3ekeysext} 进一步扩展了 \pkg{lt3ekeyscmd} 的功能。
+
+为 \cs{ekeysdeclarecmd} 增加了几个前缀：
+\begin{itemize}
+  \item[\texttt\#] 将其后的那个参数类型标记为需要特殊处理（如果可以的话），使用此前缀能（大大）提高 \veta{ekeys-cmd} 的执行速度，但有轻微的副作用（一般很难发生，详见后文）；支持
+    \texttt T、\texttt p、\texttt P、\texttt u、\texttt U、
+    \texttt e、\texttt E、\texttt w、\texttt W；
+  \item[\texttt @] 将其后的那个参数类型标记为需要嵌套（如果可以的话）；
+  \item[\texttt\&] 将其后的那个参数类型标记为保留等价的原始输入；支持 
+    \texttt r、\texttt R、\texttt o、\texttt O、\texttt d、\texttt D，
+    \texttt s、\texttt t，\texttt p，
+    \texttt k，\texttt t、\texttt T，\texttt g、\texttt G，
+    \texttt e、\texttt E、\texttt w、\texttt W；
+\end{itemize}
+
+在使用 \texttt\# 前缀时，参数在其定界符为控制序列的时候，定义和使用 \veta{ekeys-cmd} 时 
+\tn{escapechar} 的值必须为相同的正数。如，当定义 \cs[no-index]{foo} 时 \tn{escapechar}
+为 \texttt\textbackslash，则使用 \cs[no-index]{foo} 时也必须为 \texttt\textbackslash。
+受影响的参数类型为 {\ttfamily\UseList{tTpPeEwW}{\textrm，}}。
+
+使用 \texttt t、\texttt T、\texttt e、\texttt E、\texttt w、\texttt W 时，
+设置 \texttt\& 将自动设置 \texttt\#。
+
+对于 \texttt s、\texttt t 和 \texttt k 参数，使用 \texttt\& 前缀，
+在检测到存在此 \meta{token}（或 \meta{keyword}）时，
+会把这个参数设置为该 \meta{token}（或 \meta{keyword}），否则这个参数为空。
+使用其它几个支持 \texttt\& 前缀的参数时，若检测到有此定界符，则该参数会包含此定界符，
+否则该参数为 \meta{default}。
+
+\begin{xample}
+\newcommand{\abdel}[5]{#1#3#4#2#5}
+\ekeysdeclarecmd\ab{ p{\big\Big\bigg\Bigg*} &t{ \{\} [] () || } }
+  {\IfNoValueTF{#3}{NAN}% 如果没有所列的括号，输出 NAN
+    {\NumberCase{#1} {
+        {\abdel\left\right}
+        {\abdel\bigl\bigr} {\abdel\Bigl\Bigr}
+        {\abdel\biggl\biggr} {\abdel\Biggl\Biggr} {\abdel{}{}}
+      }{}
+     #3}
+  }
+
+$ \ab[\dfrac12] $, $ \ab\Big(\dfrac12) $, $ \ab*|\dfrac12| $, $ \ab? $
+\stopxamplecode
+\xampleprint
+\end{xample}
+
+\begin{xample}
+\ekeysdeclarecmd\foo{ &s &t{ () [] } &w{ !{} +{ } } &k{p_t} }
+  { 1.\{#1\}, 2.\{#2|#3\}, 4.\{#4\}\{#5\} 6.\{#6\} }
+\ttfamily
+{\catcode`\_=13 \foo *[b]+plus !{mu} p_t} , % 此时 _ 为活动字符
+{\catcode`\_=8  \foo *[b]+plus !{mu} p_t} , % 此时 _ 为下标
+\foo (b)!mu ,
+\stopxamplecode
+\xampleprint
+\end{xample}
+
+执行效率从慢到块大致如下：
+无 \texttt\# 且为 \texttt{tTwW} 的 \veta{ekeys-cmd} $<$
+无 \texttt\# 且有 \texttt @ 的 \veta{ekeys-cmd} $<$
+\veta{document command} $<$
+带 \texttt\# 和 \texttt @ 的 \veta{ekeys-cmd} $<$ 
+带 \texttt\# 的 \veta{ekeys-cmd} $<$
+\cs{ekeys_grabber_args_do:NNn} $<$ \cs{__ekeys_grabber_args_do:Nnn}。
+
+为 \cs{ekeysdeclarecmd} 增加了几个参数类型：
+\begin{itemize}
+  \item[\texttt c] \texttt c\marg{collect spec}。特殊的保存方式；必须的参数；
+  \item[\texttt C] \texttt C\marg{allocated collect spec}。特殊的保存方式；必须的参数；
+  \item[\texttt K] \texttt K\marg{scanner-and-args}。自定义的参数扫描器。
+\end{itemize}
+
+\texttt{c} 和 \texttt{C} 用 \TeX 寄存器来保存各种值，设置这些值的方式和 \TeX 相似。
+前者会自动分配一个新的寄存器，而 \texttt{C} 使用已经分配好的寄存器，这是它们的唯一区别。
+这两个参数类型的实参为所分配的寄存器，一般情况下不应直接修改这个寄存器。
+
+如
+\begin{xample}
+\ekeysdeclarecmd\foo{ c{i} m }{[\the#1,\detokenize{#2}]}
+\ttfamily
+\foo -12 {a}; \quad \foo -12 \relax; \quad \foo -12\relax;
+\foo \inteval{12+8*(-2)}\relax; \foo \numexpr 12+8*(-2)\relax;
+\stopxamplecode
+\xampleprint
+\end{xample}
+定义了一个命令 \verb|\foo|，第一个参数存储一个整数，第二个参数为通常的参数。注意到
+给出第一个参数时与通常的使用方式很不相同，这是 \TeX 中为寄存器赋值的语法，每个类型都
+遵循各自的语法规则，详细用法见 \textit{The \TeX book}。
+
+\startfullpagewidth<\bodylmargin>
+\meta{collect spec} 可用的值如下：
+\begin{itemize}
+  \item[\texttt i] 为 \texttt{int}（\texttt{count}）寄存器赋值；
+  \item[\texttt d] 为 \texttt{dim}（\texttt{dimen}）寄存器赋值；
+  \item[\texttt s] 为 \texttt{skip} 寄存器赋值；
+  \item[\texttt m] 为 \texttt{muskip} 寄存器赋值；
+  \item[\texttt t] 为 \texttt{toks} 寄存器赋值；
+  \item[\texttt b]\meta{extra spec}，为一个水平盒子赋值；\marg{extra spec} 可以为“\texttt{*}”表示可自由设置盒子宽度；也可为 \oarg{width}\oarg{pos}，正如 \tn{makebox} 的前两个参数；
+  \item[\texttt w]\meta{extra spec}，为一个固定宽度的盒子赋值；类似于把参数放在一个\env{minipage} 里；\meta{extra spec} 可以为 \oarg{vpos}\oarg{height}\oarg{inner pos}\marg{width}，正如 \tn{parbox} 的前四个参数一样。若只给出 \meta{width} 则为垂直盒子，且可以对其使用 \tn{vsplit}，否则为水平盒子；
+  \item[\texttt v]\meta{extra spec}，为一个有最大宽度的盒子赋值；类似于把参数放在一个 \env{varwidth} 里；\meta{extra spec} 可以为 \oarg{vpos}\oarg{height}\oarg{inner pos}\marg{width}，正如 \tn{parbox} 的前四个参数一样。若只给出 \meta{width} 则为垂直盒子，且可以对其使用 \tn{vsplit}，否则为水平盒子。
+\end{itemize}
+注意 \meta{extra spec} 的外侧不能有花括号，除非是只有 \meta{width} 这个必须参数。
+并且可选参数之间不能有额外的空格。
+如 \verb|b{*}|、\verb|b[3cm]|、\verb|w{3cm}|、\verb|w[c]{3cm}| 可以，
+\verb|b{[3cm]}|、\verb|b{[3cm][l]}|、\verb|w{[c]{3cm}}| 不可以。
+
+前 5 个类型，即 \texttt i、\texttt d、\texttt s、\texttt m、\texttt t，的实参
+可以作为 \LaTeXiii 函数的 \texttt{V} 变体的参数。
+
+\meta{allocated collect spec} 是一个已经分配的寄存器加上 \meta{collect spec}，若 
+\meta{collect spec} 的类型没有必须参数，则可以省略不写，只写寄存器，但寄存器必须和类型一致。
+
+\meta{collect spec} 和 \meta{allocated collect spec} 中不能引用其它实参，因为它们并非默认值。
+\stopfullpagewidth
+
+\begin{xample}
+\newdimen\tmpadim 
+\ekeysdeclarecmd\foo { C{\tmpadim} c{i} c{b[2cm][c]} } 
+  { [\the#1, \the#2, \fbox{\box#3}] }
+\foo 12pt -1 {a a}
+\foo \dimexpr 5cm+12pt\relax \numexpr 3+4*(1-2)\relax {a a}
+\stopxamplecode
+\xampleprint
+\end{xample}
+
+\begin{xample}
+\ekeysdeclarecmd \myfbox { c{b} } {\fbox{\box#1}}
+\myfbox{\verb|\myfbox| 与 \verb|\fbox|}
+\myfbox{\parbox{3cm}{可分段的\par fbox}}
+\stopxamplecode
+\label{eg:myfbox-cmd}
+\xampleprint
+\end{xample}
+
+\begin{function}{\ekeys_cmd_new_scanner:nnnpn,\ekeys_cmd_new_scanner:nnpn,
+  \ekeys_cmd_new_scanner:nnnpx,\ekeys_cmd_new_scanner:nnpx}
+  \begin{syntax}
+    \V*|\ekeys_cmd_new_scanner:nnnpn| \marg{scanner} \marg{argument numbers}
+    ~~~~\marg{initial action} \meta{parameter list} \marg{scanner action}
+    \V*|\ekeys_cmd_new_scanner:nnpn| \marg{scanner} \marg{argument numbers}
+    ~~~~\meta{parameter list} \marg{scanner action}
+  \end{syntax}
+为参数类型 \texttt{K} （局部地）定义新的扫描器 \meta{scanner}。
+该扫描器为 \veta{ekeys-cmd} 增加 \meta{argument numbers} 个参数。
+
+\meta{initial action} 为定义 \veta{ekeys-cmd} 时要执行的操作。
+可以使用参数，分别为 \veta{ekeys-cmd} 的名称，给该扫描器的额外的参数，
+此 \veta{ekeys-cmd} 已有的参数个数，是否为 raw 参数（使用了 \verb|&|），
+以及是否为 nested 参数（使用了 \verb|@|）。
+\end{function}
+
+给扫描器的额外的参数指的是：
+移除 \meta{scanner-and-args} 的首尾空格后，若它以一对 \verb|{ }| 开始，则这个花括号里的内容
+就是 scanner，之后的内容移除掉两端的空格后就是额外的参数；
+否则，就是 scanner 就是第一个花括号之前的内容（移除掉两端的空格），
+额外的参数就是第一个花括号及其之后的记号。
+如若 \meta{scanner-and-args} 为 \verb*| {a b } [v] j |，则 scanner 为 \verb*|a b |，
+参数为 \verb*|[v] j|；
+若 \meta{scanner-and-args} 为 \verb*| fo o {da} [b ] |，则 scanner 为 
+\verb*|fo o|，参数为 \verb*|{da} [b ]|。
+
+\meta{scanner action} 为 \veta{ekeys-cmd} 执行到该扫描器时需要执行的操作。
+\meta{parameter list} 为需要的形参列表。
+\meta{scanner action} 中，使用 \cs{ekeys_cmd_add_args:n} 为 \veta{ekeys-cmd} 添加实参。
+\meta{scanner action} 完成时，\emph{必须}执行 \cs{ekeys_cmd_scanner_end:}。
+
+注意 \cs{ekeys_cmd_name:} 不能在 \meta{initial action} 中使用（可以用 \verb|#1| 替代），
+但可以在 \meta{scanner action} 中使用。另见 \cs{ekeys_cmd_args:}。
+
+\cs{ekeys_cmd_name:} 与 \meta{initial action} 的第一个可用的参数相同，
+\cs{ekeys_cmd_args:} 与 \meta{scanner action} 的第三个可用参数相同。
+
+\begin{function}{\ekeysnewscanneralias,
+  \ekeys_cmd_new_scanner_alias:nn,\ekeys_cmd_new_scanner_alias:nnn}
+  \begin{syntax}
+    \V\ekeysnewscanneralias \marg{alias} \marg{scanner definition}
+    \V\ekeysnewscanneralias \marg{alias} \oarg{spec name} \marg{part spec}
+    \V*|\ekeys_new_scanner_alias:nn|  \marg{alias} \marg{scanner definition}
+    \V*|\ekeys_new_scanner_alias:nnn| \marg{alias} \marg{spec name} \marg{part spec}
+  \end{syntax}
+（局部地）定义扫描器的别名。
+
+\meta{scanner definition} 是用在 \texttt K 的 \meta{scanner-and-args} 里的内容。
+\meta{spec name} 是标识参数类型的字母，\meta{part spec} 是此类型具体的一个。
+见\cref{eg:K-alias}。
+
+当使用 \verb|K{|u\meta{args}\verb|}| 时，只使用 \meta{args} 的第一项，
+多余的部分会放到 \meta{scanner definition} 或 \meta{part spec} 后面。
+\end{function}
+
+有几个预定义的扫描器：
+\startfullpagewidth<\bodylmargin>
+\begin{description}
+  \item \texttt ?\meta{preprocessor spec}，参数预处理器。\meta{preprocessor spec} 用法为：
+  \begin{itemize}
+    \item \marg{ekeys-cmd arg spec}，使用 \meta{ekeys-cmd arg spec} 获取后面的参数，转化为带花括号的标准参数；
+    \item \marg{ekeys-cmd arg spec}\marg{scanner code}，使用 \meta{ekeys-cmd arg spec} 获取后面的参数，并用 \meta{scanner code} 替换这些参数。\meta{scanner code} 必须包含 \cs{ekeys_cmd_scanner_end:}，且在它后面的内容会被 \veta{ekeys-cmd} 重新读取；
+    \item \marg{ekeys-cmd arg spec}\marg{scanner code}\meta{text}，同上，\meta{text} 会放在要读取的参数之前。
+  \end{itemize}
+  \item[\texttt u] \texttt u\marg{alias}，使用由 \cs{ekeysnewscanneralias} 设置的别名。
+  \item[\texttt{define}] 可以用它来在定义 \veta{ekeys-cmd} 时，进一步的自定义参数获取方式。
+  用法为 \verb|K{define|\meta{define spec}\verb|}|。\meta{define spec} 可以为：
+  \begin{itemize}
+    \item \marg{definition}，它不占用任何参数。主要用作向后检查，或展开，也可以向输入中添加额外的内容。需要在 \meta{definition} 的合适位置添加 \cs{ekeys_cmd_add_args:n} 和 \cs{ekeys_cmd_scanner_end:}；
+    \item \marg{numbers}\marg{parameters}，它占用 \meta{numbers} 个参数。根据 \meta{parameters} 向后获取参数。\meta{parameters} 的参数数量不能少于 \meta{numbers}。这是 \tn{def} 的 \veta{ekeys-cmd} 接口；
+    \item \marg{numbers}\marg{parameters}\marg{definition}，同上。注意：当 $\veta{numbers}\geq 0$ 时，会在 \meta{definition} 后面自动加上 \cs{ekeys_cmd_add_args:n} 和 \cs{ekeys_cmd_scanner_end:}；
+    \item \texttt{\{*\meta{numbers}\}}\marg{parameters}\marg{definition}，\meta{numbers} 与 \meta{parameters} 没有关系。但需要在 \meta{definition} 的合适位置添加 \cs{ekeys_cmd_add_args:n} 和 \cs{ekeys_cmd_scanner_end:}，且添加的参数必须和 \meta{numbers} 一致。
+  \end{itemize}
+  \item[\texttt{lohi}] 它获取一组数学上下标，占用 2 个参数，第一个为下标，第二个为上标。
+  如果不存在，则为使用默认值。设置默认值是通过给扫描器的额外的参数来设置：
+  \verb|K{lohi|\meta{defaults}\verb|}|，其中 \meta{defaults} 为：
+  \begin{itemize}
+    \item \marg{default_{lo}}\marg{default_{hi}}，设置下标和上标的默认值；
+    \item \marg{default}，设置上下标的默认值；
+    \item 空，表示上下标使用特殊的标记：\UseName{c_novalue_tl}。
+  \end{itemize}
+  它支持 raw 修饰符，即可以自动添加 \verb|_| 和 \verb|^|，但默认值不会自动添加这两个符号。
+\end{description}
+\stopfullpagewidth
+
+\begin{xample}
+\ekeysdeclarecmd\faa{ K{lohi} }{[#1.#2]}
+\ekeysdeclarecmd\fbb{ K{lohi{}} }{[#1.#2]}
+\ekeysdeclarecmd\fcc{ &K{ lohi {_x}{^y} } } {[$\int #1#2$]}
+
+\faa ^b_a; \faa \relax _a ^\relax b; \faa ^b; \faa ?; \par 
+\fbb ^b; \fbb _a^b; \fbb ?; \par 
+\fcc _a^b; \fcc _a; \fcc ?;
+\stopxamplecode
+{\catcode`\_=8 \xampleprint}
+\end{xample}
+
+\begin{xample}
+\ekeysnewscanneralias{math-style}[p]
+  {p{\displaystyle\textstyle\scriptstyle\scriptscriptstyle}}
+\ekeysnewscanneralias{scan-bra-ket}{define{2}{<#1|#2>}}
+
+\DeclareEKeysCommand \foo { &K{u{math-style}} K{u{scan-bra-ket}} }
+  {{#1\left<#2\middle|#3\right>}}
+$ \foo<a|b> $\quad $ \foo\displaystyle<\sum|\prod> $.
+\stopxamplecode
+\label{eg:K-alias}\xampleprint
+\end{xample}
+
+除了 \texttt ? 参数扫描器外，还有一个预处理指示符 \texttt ?，用法为 
+\texttt ?\marg{preprocessor action}。预处理器指示符可以看成是 \texttt ? 参数扫描器
+的预先构建的版本。
+
+\begin{function}{\l_ekeys_cmd_scanner_args_int}
+实际上，scanner 的参数数量不仅可以通过 \meta{argument numbers} 设置，还可以
+在 \meta{initial action} 中直接修改 \cs{l_ekeys_cmd_scanner_args_int} 来设置参数数量。
+\end{function}
+
+\begin{function}{\ekeys_cmd_scanner_end:,\EKeysEndPreprocessor}
+参数扫描器完成时，必须执行该命令。放在此命令之后的内容会添加到输入中，可供后面的参数解析。
+
+如果不是用在扫描器或预处理器内，\cs{ekeys_cmd_scanner_end:} 会出错，
+而 \cs{EKeysEndPreprocessor} 则什么也不做。预处理器和自定义的参数扫描器必须包含它们之一。
+\end{function}
+
+\begin{xample}
+\ExplSyntaxOn
+\ekeys_cmd_new_scanner_alias:nn { replace-keyword-to-num }
+  {
+    define 
+      {
+        \collectn_scan_keywords:nTF { true, false, on, off, yes, no }
+          {
+            \int_if_odd:nTF \l_collectn_keywords_int
+              { \ekeys_cmd_scanner_end: 1 }
+              { \ekeys_cmd_scanner_end: 0 }
+          }
+          { \ekeys_cmd_scanner_end: }
+      }
+  }
+\ExplSyntaxOff
+\DeclareEKeysCommand \foo { K{u{replace-keyword-to-num}} m } {[#1]}
+\foo TRUE; \foo on; \foo false; \foo ;
+\stopxamplecode
+\xampleprint
+\end{xample}
+
+\begin{function}{\ekeys_cmd_add_arg:n,\ekeys_cmd_add_arg:o,
+  \ekeys_cmd_add_arg:V,\ekeys_cmd_add_arg:v,
+  \ekeys_cmd_add_arg:f,\ekeys_cmd_add_arg:e}
+  \begin{syntax}
+    \V*|\ekeys_cmd_add_arg:n| \marg{argument}
+  \end{syntax}
+为 \veta{ekeys-cmd} 添加 $1$ 个实参。
+\meta{scanner action} 中添加的实参总数量必须和定义扫描器时设置的数目一致。
+\end{function}
+
+\begin{function}{\ekeys_cmd_add_args:n,\ekeys_cmd_add_args:o,
+  \ekeys_cmd_add_args:V,\ekeys_cmd_add_args:v,
+  \ekeys_cmd_add_args:f,\ekeys_cmd_add_args:e}
+  \begin{syntax}
+    \V*|\ekeys_cmd_add_args:n| \{ \marg{argument_1} ... \marg{argument_n} \}
+  \end{syntax}
+为 \veta{ekeys-cmd} 添加 $n$ 个实参。
+\meta{scanner action} 中添加的实参总数量必须和定义扫描器时设置的数目一致。
+\end{function}
+
+\begin{function}{\ekeys_cmd_register_cs:N,\ekeys_cmd_register_cs:c}
+  \begin{syntax}
+    \V*|\ekeys_cmd_register_cs:N| \meta{auxiliary function}
+  \end{syntax}
+仅当 \meta{auxiliary function} 不能在不同命令之间共享时才需注册，否则可以直接在外层定义，
+不必置于 \meta{initial action} 之内。
+
+注册命令的主要作用是使用 \cs{ekeys_cmd_undefine:N} 时，把这些注册的命令也设置为未定义。
+\end{function}
+
+\begin{function}{\ekeys_cmd_scanner_undefine:n,\ekeys_cmd_scanner_alias_undefine:n}
+  \begin{syntax}
+    \V*|\ekeys_cmd_scanner_undefine:n| \marg{scanner}
+    \V*|\ekeys_cmd_scanner_alias_undefine:n| \marg{scanner alias}
+  \end{syntax}
+将 \meta{scanner} 或 \meta{scanner alias} \emph{局部地}设置为未定义。
+\end{function}
+
+\begin{function}[EXP]{\ekeys_cmd_args:}
+完全展开为到目前为止此 \veta{ekeys-cmd} 已经使用了的参数数目。
+仅能用于 \meta{scanner action}。可与 \cs{ekeys_cmd_name:} 配合使用。
+\end{function}
+
+请看下面两个例子了解它们的用法。
+
+\begin{xample}
+\ExplSyntaxOn
+\ekeys_cmd_new_scanner:nnnpn { my/if-pt } { 1 }
+  {
+    \ekeys_cmd_register_cs:c { #1-#3-my/if-pt/is-raw }
+    \bool_new:c { #1-#3-my/if-pt/is-raw }
+    \bool_set:cn { #1-#3-my/if-pt/is-raw } {#4}
+  }
+  {
+    \bool_set_eq:Nc \l_tmpa_bool 
+      { \ekeys_cmd_name: - \ekeys_cmd_args: - my/if-pt/is-raw }
+    \collectn_scan_keyword:nTF { pt }
+      {
+        \bool_if:NTF \l_tmpa_bool
+          { \ekeys_cmd_add_args:e { { \tl_to_str:n { pt } } } }
+          { \ekeys_cmd_add_args:n { { \BooleanTrue } } }
+        \ekeys_cmd_scanner_end:
+      }
+      {
+        \bool_if:NTF \l_tmpa_bool
+          { \ekeys_cmd_add_args:n { {} } }
+          { \ekeys_cmd_add_args:n { { \BooleanFalse } } }
+        \ekeys_cmd_scanner_end:
+      }
+  }
+\ExplSyntaxOff
+\ttfamily
+\ekeysdeclarecmd \foo { &K{my/if-pt} m } {[#1](#2)}
+\DeclareCommandCopy{\foocopied}{\foo} 
+\AddToHookWithArguments{cmd/foocopied/before}{\{#1|#2\}}
+\foocopied pt; \foocopied PT; \foocopied p @; \quad 
+\foo pt; \foo PT; \foo p @;
+\stopxamplecode
+\xampleprint
+\end{xample}
+
+\begin{xample}
+\ExplSyntaxOn
+\dim_new:N \l__my_scan_whd_dim % 临时保存长度
+\seq_new:N \l__my_scan_whd_seq % 保存三个值，width,height,depth
+\cs_generate_variant:Nn \seq_set_item:Nnn { NnV }
+\collectn_set_keywords:Nn \c__my_scan_whd_tl { width, height, depth }
+% 3 个参数，为 width, height, depth
+\ekeys_cmd_new_scanner:nnpn { my/scan-whd } { 3 }
+  {
+    % initial seq
+    \seq_clear:N \l__my_seq_whd_seq
+    \seq_put_right:NV \l__my_seq_whd_seq \c_novalue_tl
+    \seq_put_right:NV \l__my_seq_whd_seq \c_novalue_tl
+    \seq_put_right:NV \l__my_seq_whd_seq \c_novalue_tl
+    \__my_scan_whd_next: 
+  }
+\cs_new:Npn \__my_scan_whd_next: 
+  {
+    \collectn_scan_keywords:NTF \c__my_scan_whd_tl 
+      {
+        \collectn_value:Nnw \l__my_scan_whd_dim 
+          {
+            \seq_set_item:NnV \l__my_seq_whd_seq 
+              { \l_collectn_keywords_int } \l__my_scan_whd_dim 
+            \__my_scan_whd_next: 
+          } =
+      }
+      { 
+        \ekeys_cmd_add_args:e
+          { \seq_map_function:NN \l__my_seq_whd_seq \ekeys_exp_not_braced:n }
+        \ekeys_cmd_scanner_end: 
+      }
+  }
+\ExplSyntaxOff
+
+\ekeysdeclarecmd \foo { K{my/scan-whd} } 
+  {[ W: \IfValueTF{#1}{#1}{--}; H: \IfValueTF{#2}{#2}{--}; D: #3 ]}
+\foo height 3pt depth \dimeval{3pt+2pt-10pt} height \dimexpr 3pt-2pt wide
+\stopxamplecode
+\xampleprint
+\end{xample}
+
+
+\setuplayout{preset=balance}
 \setuptitle[chapter,section]{numbering=false}
 
 \chapter{TODO}
@@ -5337,7 +6748,9 @@ s_0,s_1,s_2&w_0&g_0&w_1&g_1&w_2\rlap{ (in \texttt{pt})}\\\hline
 \newcommand\NDN{\faSquare[regular]} % has not done
 \newcommand\SDN{\faPlusSquare[regular]} % need to be specified
 
-\begin{itemize}[label=\protect\raisebox{-.3ex}{\NDN}]
+\goodbreak
+\begin{itemize}[midpenalty=-1000,
+  label=\protect\raisebox{-.3ex}{\NDN}]
   \item 实现宏包加载机制；
   \item 完善 \pkg{buffer} 及其文档；
   \item 更好的文档；
@@ -5351,7 +6764,7 @@ s_0,s_1,s_2&w_0&g_0&w_1&g_1&w_2\rlap{ (in \texttt{pt})}\\\hline
   \item \cusmodule{struct} 模块支持 \hologo{KOMAScript} 的目录设置方式；
   \item 优化现有的局部目录实现方式；
   \item \cusmodule{struct} 模块简单支持 \pkg{titletoc} 的目录设置方式；
-  \item 适配未来 \LaTeX 2023 的更新（latex-lab new or、footnotes）；
+  \item 适配 latex-lab；
   \item 文档部件（frontmatter，mainmatter，appendix 等）；
   \item 注记支持（脚注、边注、尾注等）；
   \item \cuslibrary{colorful} 库，彩色；
@@ -5377,9 +6790,6 @@ s_0,s_1,s_2&w_0&g_0&w_1&g_1&w_2\rlap{ (in \texttt{pt})}\\\hline
 \vbadness=10000 \hbadness=10000 \vfuzz=\maxdimen \hfuzz=\maxdimen
 \backmatter
 \long\def\sectionmark#1{}
-\long\def\chaptermark#1{\mark{{\noexpand\hyperlink{\UseName{@currentHref}}{索引}}{}}}
-\setpagestyle*{fancy}{\sethead[or,el]{\UseName{head@fc}\firstmark}}
-\setuplayout{preset=balance}
 \chapter{索引}
 \vskip-14pt 
 % \printindex 
@@ -5389,7 +6799,6 @@ s_0,s_1,s_2&w_0&g_0&w_1&g_1&w_2\rlap{ (in \texttt{pt})}\\\hline
 
 %% list of hackings
 \begingroup 
-\long\def\chaptermark#1{\mark{{\noexpand\hyperlink{\UseName{@currentHref}}{List of Hackings}}{}}}
 \setuponetitle{section}{beforeskip=15pt,afterskip=12pt,fixskip}
 
 \ExplSyntaxOn
@@ -5397,14 +6806,18 @@ s_0,s_1,s_2&w_0&g_0&w_1&g_1&w_2\rlap{ (in \texttt{pt})}\\\hline
   { \etl_if_in:nnTF { \s_stop #1 } { \s_stop l3 } }
 \cs_new:Npn \__this_if_le:n #1
   {
-    \str_if_eq:nnTF { latex } { \text_lowercase:n {#1} }
+    \str_if_eq:eeTF { latex } { \str_lowercase:n {#1} }
       { \LaTeXe 内核 }
       {
-        \etl_if_in:nnTF { \s_stop #1 } { \s_stop lt3 }
-          { \textsf {#1} }
+        \str_if_eq:eeTF { latex3 } { \str_lowercase:n {#1} }
+          { \LaTeXiii 内核 }
           {
-            \etl_if_in:nnTF { \s_stop #1 } { \s_stop lt }
-              { \LaTeXe 内核 } { \textsf {#1} }
+            \etl_if_in:nnTF { \s_stop #1 } { \s_stop lt3 }
+              { \textsf {#1} }
+              {
+                \etl_if_in:nnTF { \s_stop #1 } { \s_stop lt }
+                  { \LaTeXe 内核 } { \textsf {#1} }
+              }
           }
       }
   }
@@ -5448,12 +6861,17 @@ s_0,s_1,s_2&w_0&g_0&w_1&g_1&w_2\rlap{ (in \texttt{pt})}\\\hline
 \obeylines
 
 \CHToA{l3text}{\cs{text_mdfive_hash:n}};
-\CHToA{l3token}{\cs{token_if_cs_word:NTF},\cs{token_if_control_word:NTF}};
+\CHToA{l3token}{\cs{token_if_cs_word:NTF}, \cs{token_if_control_word:NTF}};
+
+\section{\CHFrom{module.ltx}}
+
+\CHToI{latex}{\tn{@dischyph}};
+\CHToI{graphics}{\tn{Ginclude@graphics}};
+\CHToA{graphics}{\tn{IfGraphicsExists}, \tn{InputIfGraphicsExists}};
 
 \section{\CHFrom{module.util}}
-\CHToI{l3seq}{\cs{__seq_item:n}};
+\CHToI{l3seq}{\cs{__seq_push_item_def:n}, \cs{__seq_pop_item_def:}, \cs{s__seq}, \cs{__seq_item:n}};
 \CHToI{latex}{\tn{c@page}};
-\CHToI{ltcmd}{\cs{__cmd_arg_to_keyvalue:nn}};
 \CHToI{latex}{\tn{@onlypreamble}, \tn{@notprerr}};
 \CHToI{latex}{\tn{@twoclasseserror}};
 \CHToA{l3keys}{\cmd[module=keys]{.switch_set:N}, %
@@ -5475,11 +6893,10 @@ s_0,s_1,s_2&w_0&g_0&w_1&g_1&w_2\rlap{ (in \texttt{pt})}\\\hline
 \CHToP{hyperref}{\tn{HyPL@EveryPage}};
 \CHToM{hyperref}{\tn{HyPL@page}, \tn{HyPL@thisLabel}};
 \CHToI{hyperref}{\tn{Hy@SaveSpaceFactor}, \tn{Hy@RestoreSpaceFactor}};
-\CHToI{l3kernel}{\cs{__kernel_backend_literal_pdf:x}};
 
 
 \section{\CHFrom{module.algo}}
-\CHToI{l3tl}{\cs{__tl_map_function:Nnnnnnnnn}, \cs{\__tl_map_tokens:nnnnnnnnn} \tn{s__tl_stop}};
+\CHToI{l3tl}{\cs{__tl_map_function:Nnnnnnnnn}, \cs{\__tl_map_tokens:nnnnnnnnn} \cs{s__tl_stop}};
 
 
 \section{\CHFrom{module.layout}}
@@ -5532,7 +6949,8 @@ s_0,s_1,s_2&w_0&g_0&w_1&g_1&w_2\rlap{ (in \texttt{pt})}\\\hline
 
 \section{\CHFrom{module.struct}}
 \CHToI{latex}{\tn{@input}, \tn{@writefile}, \tn{@auxout}};
-\CHToI{latex}{\tn{tf@toc}};
+\CHToI{latex}{\tn{@auxout},\tn{tf@toc}};
+\CHToI{latex}{\tn{@kernel@after@enddocument@afterlastpage}};
 \CHToI{hyperref}{\tn{Hy@tocdestname}, \tn{Hy@linktoc}, \tn{hyper@link}};
 \CHToP{float}{\tn{newfloat}, \tn{floatplacement}};
 \CHToP{newfloat}{\tn{@DeclareFloatingEnvironment}, \tn{newfloat@setoptions}};
@@ -5592,8 +7010,34 @@ s_0,s_1,s_2&w_0&g_0&w_1&g_1&w_2\rlap{ (in \texttt{pt})}\\\hline
 \CHToI{tcolorbox}{\tn{kvtcb@top@rule@stand}, \tn{kvtcb@bottom@rule@stand}, \tn{kvtcb@top}, \tn{kvtcb@bottom}};
 \CHToI{tcolorbox}{\tn{kvtcb@left@rule@stand}, \tn{kvtcb@right@rule@stand}, \tn{kvtcb@leftupper}, \tn{kvtcb@rightupper}};
 
+\section{\pkg{lt3ekeys}、\pkg{lt3ekeyscmd} 和 \pkg{lt3ekeysext}}
+\CHToI{ltcmd}{\cs{__cmd_peek_nonspace:NTF}, \cs{__cmd_peek_nonspace_remove:NTF}};
+\CHToI{ltcmd}{\cs{__cmd_token_if_cs:NTF}};
+\CHToI{l3keys}{\cs{c__keys_type_root_str}, \cs{c__keys_code_root_str}, \cs{c__keys_props_root_str}, \cs{c__keys_inherit_root_str}};
+\CHToI{latex}{\tn{e@alloc@top}};
+\CHToI{l3keys}{\cs{l__keys_module_str}, \cs{l_keys_path_tl}, \cs{l__keys_inherit_str}};
+\CHToM{latex}{\cs{@showcommandlisthook}, \cs{@declarecommandcopylisthook}, \cs{g_hook_patch_action_list_tl}};
+\CHToI{lthooks}{\cs{__hook_patch_expand_redefine:NNnn}};
 
+\section{\pkg{lt3ekeys-elkernel}}
+\CHToI{latex}{\cs{__kernel_cmd_if_xparse:NTF}};
+\CHToI{latex3}{\cs{__kernel_str_to_other_fase:n}};
+\CHToI{latex3}{\cs{__kernel_chk_if_free_cs:N}};
+\CHToI{latex3}{\cs{__kernel_quark_new_test:N}, \cs{__kernel_quark_new_conditional:Nn}};
+\CHToI{latex3}{\cs{__kernel_backend_literal_pdf:e}};
+\CHToI{latex3}{\cs{__kernel_file_name_sanitize:n}};
 
+\section{\pkg{lt3ekeys-collectn}}
+\CHToI{latex}{\tn{e@alloc@chardef}};
+
+\section{\pkg{updatemarks}}
+\CHToI{ltmarks}{\cs{g__mark_classes_seq}};
+\CHToI{ltmarks}{\cs{__mark_update_structure_alias:nn}};
+\CHToI{ltmarks}{\cs{g__mark_.._.._.._tl}, \cs{c__mark_class_.._mark}};
+\CHToP{ltboxes}{\cs{endminipage}};
+\CHToP{tcolorbox}{\tn{tcbox@inner@box}, \tn{endtcb@lrbox}, \tn{endtcb@savebox}, \tn{tcb@drawing@env@end}, \tn{tcb@vsplit@upper}, \tn{tcb@vsplit@lower}, \tn{tcb@split@start}, \tn{tcb@split@USL}, \tn{tcb@split@SL@displayed}, \tn{tcb@split@L}};
+\CHToP{multicol}{\tn{set@keptmarks}, \tn{endmulticols}, \tn{multi@column@out}, \tn{balance@columns@out}, \tn{balance@columns}, \tn{prep@keptmarks}};
+\CHToP{adjmulticol}{\tn{adjmc@process@ne@column}};
 
 \endgroup
 

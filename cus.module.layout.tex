@@ -6,6 +6,19 @@
 
 \sys_if_engine_uptex:T { \KOMAoption {pagesize} {dvipdfmx} }
 
+\cs_new_eq:NN \layoutwidth \Gm@layoutwidth
+\cs_new_eq:NN \layoutheight \Gm@layoutheight
+\cs_new_eq:NN \layouttoffset \Gm@layoutvoffset 
+\cs_new_protected_nopar:Npn \layoutboffset 
+  { \dimexpr\paperheight-\Gm@layoutvoffset-\Gm@layoutheight\relax }
+\cs_new_eq:NN \layoutloffset \Gm@layouthoffset
+\cs_new_protected_nopar:Npn \layoutroffset
+  { \dimexpr\paperwidth-\Gm@layouthoffset-\Gm@layoutwidth\relax }
+\cs_new_protected_nopar:Npn \bodylmargin { \dimexpr\Gm@lmargin\relax }
+\cs_new_protected_nopar:Npn \bodyrmargin { \dimexpr\Gm@rmargin\relax }
+\cs_new_protected_nopar:Npn \bodytmargin { \dimexpr\Gm@tmargin\relax }
+\cs_new_protected_nopar:Npn \bodybmargin { \dimexpr\Gm@bmargin\relax }
+
 \NewDocumentCommand \setuplayout { s >{\TrimSpaces} O{} m }
   { 
     \tl_if_empty:nTF {#2} { \cus_set_layout:n {#3} } 
@@ -474,7 +487,7 @@
     {\global\@specialpagetrue\xdef\@specialstyle{#1}}}
 \ctex_patch_cmd:Nnn \@outputpage { \if@specialpage } 
   { \if@specialpage \let\@currpagestyle\@specialstyle }
-\NewDocumentCommand \setpagestyle { l m O{f@nch@fancyproto} +m }
+\ekeysdeclarecmd \setpagestyle { l m O{f@nch@fancyproto} m }
   {
     \bool_lazy_or:nnTF 
       { \str_if_eq_p:ee { \c_tilde_str } { \exp_not:n {#3} } }

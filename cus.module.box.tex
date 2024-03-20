@@ -1,6 +1,15 @@
 \CUSDependency{ module={util}, package={framedmulticol, varwidth, rotating, lscape, (ROTpdf)pdflscape} }
 \CUSProvideExplModule{box}{\cus@d@te}{\cus@versi@n}{box, breakable box}
 
+\ekeysdeclarecmd\startextrawidth{ @O{} mm }
+  {\startmulticolumns[adj,cols=1,outer-sep=0pt,heading=,framed=none,
+    adj-inner={-\dimexpr#2+0pt},adj-outer={-\dimexpr#3+0pt},rule-width=0pt,#1]}
+\ekeysdeclarecmd\stopextrawidth{}{\stopmulticolumns}
+\ekeysdeclarecmd\startfullpagewidth{ @W{ [] <> }{{}{}} }
+  {\startmulticolumns[adj,cols=1,outer-sep=0pt,heading=,framed=none,
+    _adj=+{#2}{-\Gm@lmargin}{-\Gm@rmargin},rule-width=0pt,#1]}
+\ekeysdeclarecmd\stopfullpagewidth{}{\stopmulticolumns}
+
 % modify framed.sty 
 \skip_new:N \l__cus_box_outer_skip 
 \skip_set:Nn \l__cus_box_outer_skip \c_max_dim
@@ -8,178 +17,6 @@
 \dim_set_eq:NN \l__cus_box_width_dim \c_max_dim
 \fp_new:N \l__cus_box_ratio_fp % width to total frame ratio, text:frame 
 \fp_set:Nn \l__cus_box_ratio_fp { 1 }
-
-\cs_new_protected_nopar:Npn \cus_varwidth:nnw #1#2 % pos, max width
-  { \group_begin: \varwidth [#1] { \dim_eval:n {#2} } }
-\cs_new_protected_nopar:Npn \cus_varwidth_end: { \endvarwidth \group_end: }
-\cs_new_protected_nopar:Npn \cus_set_varwidth:Nnnw #1#2#3
-  { \hbox_set:Nw #1 \varwidth [#2] { \dim_eval:n {#3} } }
-\cs_new_protected_nopar:Npn \cus_set_varwidth_end: { \endvarwidth \hbox_set_end: }
-
-\cs_new_protected:Npn \cus_set_vbox_width:Nnw #1#2 % box num, width
-  {
-    \tex_setbox:D #1 \tex_vbox:D \c_group_begin_token
-    \dim_set:Nn \tex_hsize:D {#2}
-    \color_group_begin:
-    \textwidth\tex_hsize:D \columnwidth\tex_hsize:D
-    \legacy_if:nTF { @in@minipage@env }
-      {
-        \box_if_empty:NF \@mpfootins 
-          { \@latex@warning { Nested~minipage:~footnotes~may~be~misplaced } }
-      }
-      { \legacy_if_set_true:n { @in@minipage@env } }
-    \@parboxrestore 
-    \tl_set:Nn \@mpfn { mpfootnote }
-    \tl_set:Nn \thempfn { \thempfootnote }
-    \int_zero:N \c@mpfootnote 
-    \cs_set_eq:NN \@footnotetext \@mpfootnotetext 
-    \cs_set_eq:NN \@listdepth \@mplistdepth 
-    \int_zero:N \@mplistdepth
-    \@minipagerestore \@setminipage
-  }
-% \cs_new_protected:Npn \cus_gset_vbox_width:Nnw 
-%   { \tex_global:D \cus_set_vbox_width:Nnw }
-\cs_new_protected:Npn \cus_set_vbox_width_end:
-  {
-    \par \tex_unskip:D 
-    \box_if_empty:NF \@mpfootins 
-      {
-        \tex_vskip:D \tex_skip:D \@mpfootins 
-        \normalcolor \footnoterule 
-        \vbox_unpack_drop:N \@mpfootins 
-      }
-    \legacy_if_set_false:n { @minipage }
-    \par \color_group_end: \c_group_end_token
-  }
-% \cs_new_eq:NN \cus_gset_vbox_width_end: \cus_set_vbox_width_end:
-\cs_new_protected:Npn \cus_set_vbox_varwidth:Nnw
-  {
-    \cs_set_eq:NN \@minipagerestore \@vwid@setup
-    \cus_set_vbox_width:Nnw 
-  }
-% \cs_new_protected:Npn \cus_gset_vbox_varwidth:Nnw
-%   {
-%     \cs_set_eq:NN \@minipagerestore \@vwid@setup
-%     \cus_gset_vbox_width:Nnw 
-%   }
-\cs_set_eq:NN \__cus_tmp: \endvarwidth 
-\ctex_patch_cmd_once:NnnnTF \__cus_tmp: 
-  { \makeatletter }
-  { \endminipage } 
-  { 
-    \cus_set_vbox_width_end: 
-    \cs_set_eq:NN \@minipagerestore \@@vwid@minipagerestore
-  } 
-  { } { \cus_patch_failure:N \endvarwidth }
-\cs_new_protected:Npx \cus_set_vbox_varwidth_end: { \exp_not:o \__cus_tmp: }
-% \cs_new_eq:NN \cus_gset_vbox_varwidth_end: \cus_set_vbox_varwidth_end:
-
-
-% \cs_new_protected:Npn \cus_peek_minipage:Nnnnw #1#2#3#4 % box num, vpos, width, code, 
-%   {
-%     \tl_set:Nn \__cus_peek_minipage: { \minipage [#2] {#3} }
-%     \tl_set:Nn \__cus_peek_minipage_auxii: 
-%       { \endminipage \c_group_end_token #4 }
-%     \tex_afterassignment:D \__cus_peek_minipage_auxi:
-%     \tex_setbox:D #1 \tex_hbox:D 
-%   }
-% \cs_new:Npn \__cus_peek_minipage_auxi:
-%   {
-%     \__cus_peek_minipage: \c_group_begin_token
-%     \group_insert_after:N \__cus_peek_minipage_auxii:
-%   }
-\cs_new_protected:Npn \__cus_box_vb:N #1
-  { \vbox:n { \vbox_unpack_drop:N #1 } }
-\cs_new_eq:NN \__cus_box_v:N \__cus_box_vb:N 
-\cs_new_protected:Npn \__cus_box_vt:N #1
-  { \vbox_top:n { \vbox_unpack_drop:N #1 } }
-\cs_new_protected:Npn \__cus_box_vc:N #1
-  { \m@th $ \tex_vcenter:D { \vbox_unpack_drop:N #1 } $ }
-\cs_new_protected:Npn \cus_peek_minipage:Nnnnw #1#2#3#4 % box num, code, vpos, width, 
-  {
-    \cs_set:Npx \__cus_peek_minipage: 
-      { \cus_set_vbox_width:Nnw \l__cus_tmpa_box \exp_not:n { {#4} } }
-    \cs_set:Npx \__cus_peek_minipage_auxii: 
-      { 
-        \cus_set_vbox_width_end: 
-        \use:c { __cus_box_v#3:N } \l__cus_tmpa_box 
-        \c_group_end_token 
-        \exp_not:n {#2} 
-      }
-    \tex_afterassignment:D \__cus_peek_minipage_auxi:
-    \tex_setbox:D #1 \tex_hbox:D 
-  }
-\cs_new:Npn \__cus_peek_minipage_auxi:
-  {
-    \__cus_peek_minipage: \c_group_begin_token
-    \group_insert_after:N \__cus_peek_minipage_auxii:
-  }
-\cs_new:Npn \cus_peek_width:Nnnnw { \cus_peek_minipage:Nnnnw }
-% full version: box num, code, vpos, height, inner pos, width, 
-\cs_new_protected:Npn \cus_peek_minipage:Nnnnnnw #1#2#3#4#5#6
-  {
-    \cs_set:Npx \__cus_peek_minipage:
-      { \cus_set_vbox_width:Nnw \l__cus_tmpa_box \exp_not:n { {#6} } }
-    \cs_set:Npx \__cus_peek_minipage_auxii:
-      {
-        \cus_set_vbox_width_end: 
-        \exp_not:N \@iiiparbox 
-          {#3} {#4} [#5] { \dim_eval:n {#6} } { \vbox_unpack_drop:N \l__cus_tmpa_box }
-        \c_group_end_token
-        \exp_not:n {#2}
-      }
-    \tex_afterassignment:D \__cus_peek_minipage_auxi: 
-    \tex_setbox:D #1 \tex_hbox:D 
-  }
-\cs_new:Npn \cus_peek_width:Nnnnnnw { \cus_peek_minipage:Nnnnnnw }
-% \cs_new_protected:Npn \cus_peek_varwidth:Nnnnw #1#2#3#4 % box num, vpos, width, code, 
-%   {
-%     \tl_set:Nn \__cus_peek_varwidth: { \varwidth [#2] {#3} }
-%     \tl_set:Nn \__cus_peek_varwidth_auxii: 
-%       { \endvarwidth \c_group_end_token #4 }
-%     \tex_afterassignment:D \__cus_peek_varwidth_auxi:
-%     \tex_setbox:D #1 \tex_hbox:D 
-%   }
-% \cs_new:Npn \__cus_peek_varwidth_auxi:
-%   {
-%     \__cus_peek_varwidth: \c_group_begin_token
-%     \group_insert_after:N \__cus_peek_varwidth_auxii:
-%   }
-\cs_new_protected:Npn \cus_peek_varwidth:Nnnnw #1#2#3#4 % box num, code, vpos, width, 
-  {
-    \cs_set:Npx \__cus_peek_varwidth: 
-      { \cus_set_vbox_varwidth:Nnw \l__cus_tmpa_box \exp_not:n { {#4} } }
-    \cs_set:Npx \__cus_peek_varwidth_auxii: 
-      { 
-        \cus_set_vbox_varwidth_end: 
-        \use:c { __cus_box_v#3:N } \l__cus_tmpa_box 
-        \c_group_end_token 
-        \exp_not:n {#2} 
-      }
-    \tex_afterassignment:D \__cus_peek_varwidth_auxi:
-    \tex_setbox:D #1 \tex_hbox:D 
-  }
-\cs_new:Npn \__cus_peek_varwidth_auxi:
-  {
-    \__cus_peek_varwidth: \c_group_begin_token
-    \group_insert_after:N \__cus_peek_varwidth_auxii:
-  }
-% full version: box num, code, vpos, height, inner pos, width, 
-\cs_new_protected:Npn \cus_peek_varwidth:Nnnnnnw #1#2#3#4#5#6
-  {
-    \cs_set:Npx \__cus_peek_varwidth:
-      { \cus_set_vbox_varwidth:Nnw \l__cus_tmpa_box \exp_not:n { {#6} } }
-    \cs_set:Npx \__cus_peek_varwidth_auxii:
-      {
-        \cus_set_vbox_varwidth_end: 
-        \exp_not:N \@iiiparbox 
-          {#3} {#4} [#5] { \dim_eval:n {#6} } { \vbox_unpack_drop:N \l__cus_tmpa_box }
-        \c_group_end_token
-        \exp_not:n {#2}
-      }
-    \tex_afterassignment:D \__cus_peek_varwidth_auxi: 
-    \tex_setbox:D #1 \tex_hbox:D 
-  }
 
 %% `shbox'
 \box_new:N \l__cus_shbox_box 
@@ -195,6 +32,8 @@
   { \color_group_end: \c_group_end_token }
 % \cs_new_protected:Npn \cus_gset_shbox:Nw { \tex_global:D \cus_set_shbox:Nw }
 % \cs_new_eq:NN \cus_gset_shbox_end: \cus_set_shbox_end:
+\cs_new_protected:Npn \cus_set_shbox:Nn #1 #2
+  { \cus_set_shbox:Nw #1 #2 \cus_set_shbox_end: }
 \cs_new_protected:Npn \cus_use_shbox:N #1
   {
     { 
@@ -223,28 +62,28 @@
 
 \cs_new_protected_nopar:Npn \cus_ref_label_width:nnnn #1 % label, vpos, width, 
   {
-    \cus_peek_minipage:Nnnnw \l__cus_tmpc_box
+    \collectn_width:Nnnnw \l__cus_tmpc_box
       { 
         \cus_ref_label:nn {#1} { \XeTeXLinkBox { \box_use_drop:N \l__cus_tmpc_box } }
       }
   }
 \cs_new_protected_nopar:Npn \cus_ref_label_varwidth:nnnn #1
   {
-    \cus_peek_varwidth:Nnnnw \l__cus_tmpc_box
+    \collectn_varwidth:Nnnnw \l__cus_tmpc_box
       { 
         \cus_ref_label:nn {#1} { \XeTeXLinkBox { \box_use_drop:N \l__cus_tmpc_box } }
       }
   }
 \cs_new_protected_nopar:Npn \cus_ref_target_width:nnnn #1 % target, vpos, width, 
   {
-    \cus_peek_minipage:Nnnnw \l__cus_tmpc_box
+    \collectn_minipage:Nnnnw \l__cus_tmpc_box
       { 
         \cus_ref_target:nn {#1} { \XeTeXLinkBox { \box_use_drop:N \l__cus_tmpc_box } }
       }
   }
 \cs_new_protected_nopar:Npn \cus_ref_target_varwidth:nnnn #1
   {
-    \cus_peek_varwidth:Nnnnw \l__cus_tmpc_box
+    \collectn_varwidth:Nnnnw \l__cus_tmpc_box
       { 
         \cus_ref_target:nn {#1} { \XeTeXLinkBox { \box_use_drop:N \l__cus_tmpc_box } }
       }
@@ -386,6 +225,7 @@
     \scan_stop:
     \if_dim:w \tex_pagegoal:D = \c_max_dim \tex_pagegoal:D \tex_vsize:D \fi: 
     \if_mode_inner:
+      \ExtractMarks #1
       \__cus_box_put_aux:NN #1#2%
       \__cus_box_after: 
     \else:
@@ -404,6 +244,7 @@
         \if_dim:w \dimen@ > \box_ht:N #1 % whole box does fit
           % ToDo: Change this to use vsplit anyway to capture the marks
           % MERGE THIS WITH THE else CLAUSE!!!
+          \ExtractMarks #1
           \__cus_box_put_aux:NN #1#2%
           \__cus_box_after: 
         \else % box must be split
@@ -456,6 +297,7 @@
             \__cus_box_adjust_height: 
             \__cus_box_put:NNN #1#2#3 % INSERTED ???
           \else: % Got material split off at the head
+            \ExtractSplitMarks
             \vbox_set_end:
             \__cus_box_restore:
             \if_box_empty:N #1 % it all fit after all 
@@ -519,6 +361,7 @@
           #2 { \box_use_drop:N #1 }
         }
     \fi:
+    \UpdateMarks
   }
 
 \cs_new_nopar:Npn \__cus_box_after: 
@@ -771,16 +614,19 @@
     not-content .meta:n = { clear-content , clear-box } ,
     not-content .value_forbidden:n = true ,
 
-    space .tl_set:N = \l__cus_filler_space_tl ,
-    space .default:n = \tex_hfill:D ,
-    hspace .code:n = \tl_set:Nx \l__cus_filler_space_tl 
-      { \exp_not:N \hspace { \skip_eval:n {#1} } } ,
-    hspace* .code:n = \tl_set:Nn \l__cus_filler_space_tl 
-      { \exp_not:N \hspace* { \skip_eval:n {#1} } } ,
-    vspace .code:n = \tl_set:Nx \l__cus_filler_space_tl 
-      { \exp_not:N \vspace { \skip_eval:n {#1} } } ,
-    vspace* .code:n = \tl_set:Nn \l__cus_filler_space_tl 
-      { \exp_not:N \vspace* { \skip_eval:n {#1} } } ,
+    space .code = 
+      \__cus_filler_space_set:nnn {#1}
+        { \mode_if_vertical:TF \skip_vertical:N \skip_horizontal:N }
+        { \exp_not:n {#1} \use_none:n } ,
+    space .default:n = * ,
+    hspace  .code:n = \__cus_filler_space_set:nnn {#1} { \hspace  } { \exp_not:N \hspace  } ,
+    hspace  .default:n = * ,
+    hspace* .code:n = \__cus_filler_space_set:nnn {#1} { \breakablehspace } { \exp_not:N \hspace* } ,
+    hspace* .default:n = * ,
+    vspace  .code:n = \__cus_filler_space_set:nnn {#1} { \vspace  } { \exp_not:N \vspace  } ,
+    vspace  .default:n = * ,
+    vspace* .code:n = \__cus_filler_space_set:nnn {#1} { \breakablevspace } { \exp_not:N \vspace* } ,
+    vspace* .default:n = * ,
     not-space .code:n = \tl_clear:N \l__cus_filler_space_tl ,
     not-space .value_forbidden:n = true ,
     
@@ -823,6 +669,12 @@
       } 
       { \l__cus_filler_space_tl }
     \group_end:
+  }
+\cs_new_protected:Npn \__cus_filler_space_set:nnn #1#2#3
+  {
+    \str_if_eq:nnTF {#1} { * }
+      { \tl_set:Nn \l__cus_filler_space_tl { #2 \l__cus_filler_skip } }
+      { \tl_set:Nx \l__cus_filler_space_tl { #3 { \skip_eval:n {#1} } } }
   }
 \cs_new:Npn \__cus_filler:
   {
@@ -905,7 +757,7 @@
     \tex_penalty:D -100~ 
     \hbox:n { } \cus_filler:n {#1} 
   }
-\NewDocumentCommand \breakablefiller { O{} }
+\NewDocumentCommand \breakablefiller { O{hspace} }
   {
     \tex_unskip:D
     \cus_filler:n { #1, size*=1fill }

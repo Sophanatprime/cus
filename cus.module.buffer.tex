@@ -18,7 +18,7 @@
 \keys_define:nn { cus } { buffer .meta:nn = { cus/buffer } {#1} }
 \keys_define:nn { cus/buffer }
   {
-    store .str_set_x:N  = \l__cus_buffer_name_str ,
+    store .str_set_e:N  = \l__cus_buffer_name_str ,
     store .initial:n    = buffer ,
     macro .code:n       = \tl_set:Nn \l__cus_buffer_macro_tl { \exp_not:N #1 } ,
     macro .initial:n    = \savedbuffertl ,
@@ -48,7 +48,7 @@
     tab-length .int_set:N = \l__cus_buffer_tab_length_int ,
     tab-length .initial:n = 2 ,
     tab .tl_set:N    = \l__cus_buffer_tab_tl ,
-    tab* .tl_set_x:N = \l__cus_buffer_tab_tl ,
+    tab* .tl_set_e:N = \l__cus_buffer_tab_tl ,
     tab* .initial:n  = \prg_replicate:nn \l__cus_buffer_tab_length_int 
       { \char_generate:nn { 32 } { 12 } } ,
 
@@ -321,7 +321,7 @@
   {
     \__cus_trim_active_endline:nn
       { \__cus_trim_mark: #1 }
-      { \__kernel_exp_not:w \exp_after:wN }
+      { \elkernel_exp_not:w \exp_after:wN }
   }
 \cs_generate_variant:Nn \cus_trim_active_endline:n { o }
 \cs_set_protected:Npn \__cus_tmp:w #1

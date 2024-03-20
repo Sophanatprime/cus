@@ -6,8 +6,21 @@
 \options{/longbox,
   math/.new~style*={insert-before=$\displaystyle,insert-after=$},
   highlight~math/.new~style*={}}
+\options{/fbox,
+  top/.new~style={padding-top={#1}},bottom/.new~style={padding-bottom={#1}},
+  left/.new~style={padding-left={#1}},right/.new~style={padding-right={#1}},
+  vertical/.new~style={padding-top={#1},padding-bottom={#1}},
+  horizontal/.new~style={padding-left={#1},padding-right={#1}}}
 \newcommand\lfboxmath[1][]{\lfbox[math,#1]}
 \newcommand\lfboxhighmath[1][]{\lfbox[highlight~math,math,#1]}
+\ekeysdeclarecmd \lfmathbox { &s #@W { <> [] } { {equation} { } } }
+  {\abovedisplayskip\z@skip \belowdisplayskip\z@skip 
+    \edef\@lfmathbox{\def\noexpand\@currenvir{\@currenvir} \exp_not:c {#2#1} }
+    \edef\end@lfmathbox{ \exp_not:c {end#2#1} }
+    \longfbox[{#3}]\linespread{1}\selectfont
+    {\fontsize{\f@size}{\f@size}\selectfont\makebox[.6\linewidth]{}\strut\par}
+    \nointerlineskip\vskip-\baselineskip\@lfmathbox}
+\protected\def\endlfmathbox{\end@lfmathbox\par\nointerlineskip\endlongfbox}
 
 \keys_define:nn { cus/frame }
   {
@@ -35,7 +48,7 @@
     \exp_args:No \fboxset \l__cus_fparbox_geometry_clist 
     \use:e 
       {
-        \cus_peek_minipage:Nnnnnnw \l__cus_tmpc_box 
+        \collectn_minipage:Nnnnnnw \l__cus_tmpc_box 
           { 
             \exp_not:N \lfbox [ \exp_not:o \l__cus_fparbox_options_clist ] 
               { \box_use_drop:N \l__cus_tmpc_box } 
@@ -58,7 +71,7 @@
     \exp_args:No \fboxset \l__cus_fvarbox_geometry_clist 
     \use:e 
       {
-        \cus_peek_varwidth:Nnnnnnw \l__cus_tmpc_box 
+        \collectn_varwidth:Nnnnnnw \l__cus_tmpc_box 
           { 
             \exp_not:N \lfbox [ \exp_not:o \l__cus_fvarbox_options_clist ] 
               { \box_use_drop:N \l__cus_tmpc_box } 
@@ -214,7 +227,7 @@
                 [\l__cus_paracol_heading_tl]
           }
       }
-    \nointerlineskip
+    % \nointerlineskip
   }
 \cs_new_protected_nopar:Npn \stopparacol 
   { \cus@stopparacol \l__cus_paracol_after_tl \group_end: }

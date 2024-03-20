@@ -43,4 +43,18 @@
     \cs_set_nopar:Npn \cus@colorlink { \cus_color_select:n { hyp/color/link } }
     \cs_set_nopar:Npn \cus@colorcite { \cus_color_select:n { hyp/color/cite } }
     \cs_set_nopar:Npn \cus@colorurl { \cus_color_select:n { hyp/color/url } }
+    \cs_set_nopar:Npn \cus@colorrun { \cus_color_select:n { hyp/color/run } }
+    \cs_set_nopar:Npn \cus@colormenu { \cus_color_select:n { hyp/color/menu } }
+  }
+
+\keys_define:nn { cus/typo }
+  {
+    dischyph-opacity .code:n  = {
+      \tl_set:Nx \l__cus_tmpa_tl { \fp_min:nn { 1 } { \fp_max:nn {#1} { 0 } } }
+      \reverse_if:N \if_dim:w \l__cus_tmpa_tl \p@ = \p@ 
+        \tl_set:Nx \l__cus_hyphen_color_tl 
+          { \transparent { \l__cus_tmpa_tl } }
+      \fi:
+    } ,
+    dischyph-opacity .initial:n = 0.4 ,
   }

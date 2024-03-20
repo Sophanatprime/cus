@@ -1,5 +1,5 @@
 %% cus.sty 
-%% Copyright 2023 Wenjian Chern.
+%% Copyright 2023, 2024 Wenjian Chern.
 %
 % This work may be distributed and/or modified under the
 % conditions of the LaTeX Project Public License, either version 1.3
@@ -7,7 +7,7 @@
 % The latest version of this license is in
 %   http://www.latex-project.org/lppl.txt
 % and version 1.3 or later is part of all distributions of LaTeX
-% version 2023/12/01 or later.
+% version 2005/12/01 or later.
 %
 % This work has the LPPL maintenance status `maintained'.
 % 
@@ -19,10 +19,10 @@
 % cus.module.index.tex, cus.module.layout.tex, cus.module.notes.tex,
 % cus.module.pdfmana.tex, cus.module.space.tex, cus.module.struct.tex,
 % cus.module.util.tex and cusclass.cls .
-\NeedsTeXFormat{LaTeX2e}[2021/06/01]
+\NeedsTeXFormat{LaTeX2e}[2023/06/01]
 \RequirePackage{l3keys2e,xtemplate}
-\def\cus@d@te{2022/07/10}
-\def\cus@versi@n{0.0.3}
+\def\cus@d@te{2024/03/20}
+\def\cus@versi@n{0.0.4}
 \ProvidesExplPackage{cus}{\cus@d@te}{\cus@versi@n}{Chinese User Scheme (CUS) basic file}
 
 \def\CusTeX{C\kern-.12em \raise.0466ex\hbox{u}\kern-.1em\lower .4ex\hbox{S}\kern-.15em\TeX}
@@ -40,26 +40,28 @@
 
 \cs_new:Npn \__cus_e:w { \__cus_expanded:w }
 \cs_new:Npn \__cus_o:w { \exp:w \exp_after:wN \exp_end: }
+\cs_new:Npn \__cus_d:w { \exp:w \exp_after:wN \exp_after:wN \exp_after:wN \exp_end: }
 \cs_new:Npn \__cus_f:w { \exp:w \exp_end_continue_f:w }
+\cs_new_protected:Npn \__cus_int_let:cw { \exp_args:Nc \__cus_int_let:Nw }
 
-\cs_set_eq:NN \c__cus_mone_int \m@ne
-\__cus_int_let:Nw \c__cus_zero_int 0~
-\__cus_int_let:Nw \c__cus_one_int 1~
-\__cus_int_let:Nw \c__cus_two_int 2~
-\__cus_int_let:Nw \c__cus_three_int 3~
-\__cus_int_let:Nw \c__cus_four_int 4~
-\__cus_int_let:Nw \c__cus_five_int 5~
-\__cus_int_let:Nw \c__cus_six_int 6~
-\__cus_int_let:Nw \c__cus_seven_int 7~
-\__cus_int_let:Nw \c__cus_eight_int 8~
-\__cus_int_let:Nw \c__cus_nine_int 9~
-\__cus_int_let:Nw \c__cus_ten_int 10~
-\__cus_int_let:Nw \c__cus_eleven_int 11~
-\__cus_int_let:Nw \c__cus_twelve_int 12~
-\__cus_int_let:Nw \c__cus_thirteen_int 13~
-\__cus_int_let:Nw \c__cus_fourteen_int 14~
-\__cus_int_let:Nw \c__cus_fifteen_int 15~
-\__cus_int_let:Nw \c__cus_sixteen_int 16~
+\int_const:Nn \c__cus_mone_int { \m@ne }
+\int_const:Nn \c__cus_zero_int { 0 }
+\int_const:Nn \c__cus_one_int { 1 }
+\int_const:Nn \c__cus_two_int { 2 }
+\int_const:Nn \c__cus_three_int { 3 }
+\int_const:Nn \c__cus_four_int { 4 }
+\int_const:Nn \c__cus_five_int { 5 }
+\int_const:Nn \c__cus_six_int { 6 }
+\int_const:Nn \c__cus_seven_int { 7 }
+\int_const:Nn \c__cus_eight_int { 8 }
+\int_const:Nn \c__cus_nine_int { 9 }
+\int_const:Nn \c__cus_ten_int { 10 }
+\int_const:Nn \c__cus_eleven_int { 11 }
+\int_const:Nn \c__cus_twelve_int { 12 }
+\int_const:Nn \c__cus_thirteen_int { 13 }
+\int_const:Nn \c__cus_fourteen_int { 14 }
+\int_const:Nn \c__cus_fifteen_int { 15 }
+\int_const:Nn \c__cus_sixteen_int { 16 }
 
 \cs_if_free:NT \token_if_cs_word:NTF 
   {
@@ -93,9 +95,12 @@
   }
 %%
 
-\RequirePackage{xparse} % we need to use `l'
+\RequirePackage{xparse}
 \RequirePackage{ctexhook,ctexpatch}
 \RequirePackage{etl}
+% \RequirePackage{parserange}
+\RequirePackage{lt3ekeysext}
+\RequirePackage{updatemarks}
 
 \sys_if_engine_xetex:TF 
   { \tex_chardef:D \cus@TATE = \c_zero_int }
@@ -154,6 +159,7 @@
 \cs_new_protected:Npn \cus_add_pdf_disable:n 
   { \tl_gput_right:Nn \g__cus_pdfstring_disable_tl }
 
+\cs_new:Npn \cus@filename { \elkernel_file_name_sanitize:n }
 \cs_new_eq:NN \cus_file_input:n \ctex_file_input:n 
 \cs_new_eq:NN \CUSInputFile \cus_file_input:n 
 
@@ -234,8 +240,9 @@
     \str_gset:cx { cus/library~#1 } {#2}
   }
 \cs_new:Npn \cus@iflibraryloaded #1 { \cs_if_exist:cTF { cus/library~#1 } }
+\prop_new:N \c__cus_library_delayed_prop
 \prop_set_from_keyval:Nn \c__cus_library_delayed_prop 
-  { pgf=pgf , tcb=tcolorbox }
+  { pgf=tikz , tcb=tcolorbox }
 \cs_new:Npn \__cus_load_library_real:nn #1#2
   {
     \cus@iflibraryloaded {#1} { \use:n }
@@ -426,6 +433,16 @@
 \CUSLoadModule { struct }
 \CUSLoadModule { pdfmana }
 
+
+\cus_pkg_code:nnn { array } { }
+  {
+    \newcolumntype{v}[1]{}
+    \def\NC@rewrite@v#1#{\cus@NC@rewrite@v{#1}}
+    \def\cus@NC@rewrite@v #1#2
+      { \NC@find >{ \varwidth #1 {#2} \arraybackslash } c <{ \endvarwidth } }
+  }
+
+
 \keys_define:nn { cus/option }
   {
     library .code:n = \__cus_load_library:n {#1} ,
@@ -439,7 +456,7 @@
     \def\HoLogoBkm@CusTeX#1{Cus\hologo{TeX}}
     \def\CusLaTeX{\hologo{CusLaTeX}}
     \def\HoLogo@CusLaTeX#1{C\kern-.12em \raise.0466ex\hbox{u}\kern-.1em\lower .4ex\hbox{S}\kern-.1em\LaTeX}
-    \def\HoLogoBkm@CusLaTeX#1{Cus\hologo{\LaTeX}}
+    \def\HoLogoBkm@CusLaTeX#1{Cus\hologo{LaTeX}}
     \cus_pkg_code:nnn { unicode-math } { }
       {
         \ctex_patch_cmd:Nnn \HoLogo@LaTeXe

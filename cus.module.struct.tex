@@ -10,11 +10,11 @@
 \keys_define:nn { cus } { cbl-setup .meta:nn = { cus/cbl-setup } {#1} }
 \keys_define:nn { cus/cbl-setup } 
   {
-    from .tl_gset_x:N = \g__cus_cbl_file_tl ,
+    from .tl_gset_e:N = \g__cus_cbl_file_tl ,
     from .initial:n = \c_sys_jobname_str ,
     write .bool_gset:N = \g__cus_cbl_write_bool ,
     write .initial:n = true ,
-    to  .tl_gset_x:N = \g__cus_cbl_to_tl ,
+    to  .tl_gset_e:N = \g__cus_cbl_to_tl ,
     to    .initial:n = \exp_not:N \q_no_value ,
   }
 \NewDocumentCommand \enablecombinedlist { !O{} }
@@ -64,8 +64,8 @@
   }
 \cs_new:Npn \__cus_gput_contents:nnn #1#2#3
   { \token_if_eq_meaning:NNTF #2 \protect { #2#3{#1} } { #2{#1}{#3} } }
-% 保存数据，并不执行，cbl结构为：\.{type}{type count}{tags}{level}{entry}{page}{anchor}\@
-% 保存数据，并不执行，type结构为：\.{type}{cbl count}{tags}{level}{entry}{page}{anchor}\@
+% 只保存数据，cbl结构为：\.{type}{type count}{info}{level}{entry}{page}{anchor}\@
+% 只保存数据，type结构为：\.{type}{cbl count}{info}{level}{entry}{page}{anchor}\@
 % type, level, data, page, anchor 
 \cs_new_protected:Npn \cus_contents_line:nnnnn #1#2#3#4#5 
   {
@@ -136,7 +136,7 @@
     \exp_last_unbraced:Ne 
       \cus_exp_not_use_iii:nnnnnnnnn { \cus_contents_entry:n {#1} } 
   }
-\cs_new_nopar:Npn \cus_contents_entry_of_tags:n #1
+\cs_new_nopar:Npn \cus_contents_entry_of_info:n #1
   { 
     \exp_last_unbraced:Ne 
       \cus_exp_not_use_iv:nnnnnnnnn { \cus_contents_entry:n {#1} } 
@@ -183,7 +183,7 @@
     \exp_last_unbraced:Ne 
       \cus_exp_not_use_iii:nnnnnnnnn { \cus_contents_type_entry:nn {#1} {#2} } 
   }
-\cs_new_nopar:Npn \cus_contents_type_entry_of_tags:nn #1#2
+\cs_new_nopar:Npn \cus_contents_type_entry_of_info:nn #1#2
   { 
     \exp_last_unbraced:Ne 
       \cus_exp_not_use_iv:nnnnnnnnn { \cus_contents_type_entry:nn {#1} {#2} } 
@@ -208,23 +208,39 @@
     \exp_last_unbraced:Ne 
       \cus_exp_not_use_viii:nnnnnnnnn { \cus_contents_type_entry:nn {#1} {#2} } 
   }
-\cs_new_protected:Npn \cus_iterate_contents:n #1
+\cs_new_protected:Npn \__cus_contentsline_push_def:nn #1#2
   {
-    \group_begin:
-    \cs_set_eq:NN \cus@cbl@contentsline@ \prg_do_nothing:
+    \int_gincr:N \g__cus_map_int
+    \cs_gset_eq:cN 
+      { __cus_iterate_contents_ \int_use:N \g__cus_map_int :w }
+    \cs_gset_eq:cN 
+      { __cus_iterate_contents@_ \int_use:N \g__cus_map_int :w }
+      \cus@cbl@contentsline@
+      \cus@cbl@contentsline
     \cs_set:Npn \cus@cbl@contentsline ##1##2##3##4##5##6##7 {#1}
+    \cs_set:Npn \cus@cbl@contentsline@ {#2}
+  }
+\cs_new_protected:Npn \__cus_contentsline_pop_def:
+  {
+    \cs_set_eq:Nc \cus@cbl@contentsline
+      { __cus_iterate_contents_ \int_use:N \g__cus_map_int :w }
+    \cs_set_eq:Nc \cus@cbl@contentsline@
+      { __cus_iterate_contents@_ \int_use:N \g__cus_map_int :w }
+    \int_gdecr:N \g__cus_map_int
+  }
+\cs_new_protected:Npn \cus_map_contents_inline:n #1
+  {
+    \__cus_contentsline_push_def:nn {#1} { }
     \int_step_inline:nn { \g__cus_cbl_count_int }
       { \cs:w cus/cbl~/cbl~ /entry [##1] _tl \cs_end: }
-    \group_end:
+    \__cus_contentsline_pop_def:
   }
-\cs_new_protected:Npn \cus_iterate_contents_type:nn #1#2 % type, code 
+\cs_new_protected:Npn \cus_map_contents_type_inline:nn #1#2 % type, code 
   {
-    \group_begin:
-    \cs_set_eq:NN \cus@type@contentsline@ \prg_do_nothing:
-    \cs_set:Npn \cus@type@contentsline ##1##2##3##4##5##6##7 {#2}
+    \__cus_contentsline_push_def:nn {#2} { }
     \int_step_inline:nn { \int_use:c { g__cus_cbl_type~#1_count_int } }
       { \cs:w cus/cbl~/type~#1 /entry [##1] _tl \cs_end: }
-    \group_end:
+    \__cus_contentsline_pop_def:
   }
 \cs_new_protected:Npn \__cus_contents_line:nnnnnnn #1#2#3#4#5#6#7
   {
@@ -297,7 +313,7 @@
     \use:e 
       {
         \cus_gset_heading_level:nnn {#1} 
-        \cus_exp_args:Nd \tex_unexpanded:D { \exp_after:wN \cus_unbracket:nw \tex_expanded:D { \cus_split_bracket_tail:n {#2} } }
+        \cus_exp_args:Nd \elkernel_exp_not:w { \exp_after:wN \cus_unbracket:nw \elkernel_exp:w { \cus_split_bracket_tail:n {#2} } }
       }
   }
 \cs_new_eq:NN \addcombinedlisttype \cus_cbl_add:nn 
@@ -333,8 +349,8 @@
 \cs_new_protected_nopar:Npn \iteratecontents #1#2
   {
     \tl_if_blank:nTF {#1}
-      { \cus_iterate_contents:n }
-      { \cus_iterate_contents_type:nn { \tl_trim_spaces:n {#1} } }
+      { \cus_map_contents_inline:n }
+      { \cus_map_contents_type_inline:nn { \tl_trim_spaces:n {#1} } }
   }
 
 \prop_new:N \g__cus_heading_level_prop
@@ -570,7 +586,7 @@
         \tl_gset:Nn \tocthetype {##1}
         \tl_gset:Nn \tocthecount {##2}
         \tl_gset:Nn \toctheindex {##9}
-        \__cus_specified_cbl_tags:w ##3, \s__cus_mark 
+        \__cus_specified_cbl_info:w ##3, \s__cus_mark 
         \tl_gset:Nn \tocthelevel {##4}
         \__cus_specified_cbl_set_prev_entry:
         \tl_gset_eq:NN \tocthepreventry \tocthepreventry 
@@ -720,7 +736,7 @@
         \tl_gset:Nn \tocthetype {##1}
         \tl_gset:Nn \tocthecount {##2}
         \tl_gset:Nn \toctheindex {##9}
-        \__cus_specified_cbl_tags:w ##3, \s__cus_mark 
+        \__cus_specified_cbl_info:w ##3, \s__cus_mark 
         \tl_gset:Nn \tocthelevel {##4}
         \__cus_specified_cbl_set_prev_entry:
         \tl_gset_eq:NN \tocthepreventry \tocthepreventry 
@@ -777,6 +793,7 @@
     \cs_set_eq:NN \tociftailentry \use_ii:nn
     \cs_set_protected:Npn \toclink { \cus_ref_target:nn \toctheanchor }
     \cs_set_protected:Npn \toclinkbox { \cus_ref_target_box:nn \toctheanchor }
+    \cs_set:Npn \tocretinfo { \prop_item:Nn \toctheprop }
     \cs_set:Npn \cus@cbl@contentsline  { \cus@toc@contentsline }
     \cs_set:Npn \cus@type@contentsline { \cus@toc@contentsline }
     \int_step_inline:nnn \l__cus_cbl_search_min_int \l__cus_cbl_search_max_int
@@ -791,10 +808,11 @@
       { \cs_gset_eq:NN \tocifnumbered \use_i:nn }
     \tl_gset:Nn \tocthename {#3}
   }
-\cs_new:Npn \__cus_specified_cbl_tags:w #1 , #2 \s__cus_mark 
+\cs_new:Npn \__cus_specified_cbl_info:w #1 , #2 \s__cus_mark 
   {
     \tl_gset:Nn \toctheclass {#1}
-    \clist_gset:Nn \tocthetags {#2}
+    \prop_gclear_new:N \toctheinfo 
+    \clist_map_inline:nn {#2} { \prop_gput:Nnn \toctheinfo ##1 }
   }
 \cs_new:Npn \__cus_specified_cbl_set_special_cs:n #1
   {
@@ -1104,7 +1122,8 @@
     \tl_map_function:nN
       {
         \tocthetype \tocthecount \tocthelevel \tocthepage \toctheanchor 
-        \tocthenumber \tocthename \toctheclass \tocthetags \toctheindex 
+        \tocthenumber \tocthename \toctheclass 
+        \toctheinfo \tocretinfo \toctheindex 
         \tocthepreventry \toctheprevlevel \tocthenextentry \tocthenextlevel 
         \toclink \toclinkbox \tocifcomplement 
         \tociffirst \tocifnumbered \tocifpageisnumber \tocifheadentry \tociftailentry 
@@ -1169,9 +1188,8 @@
     \cs_set_eq:cN { __cus/saved/+ } \+
     \cs_set_eq:NN \+ \__cus_saveto_specified_cbl_style:n
     \bool_set_true:N \l__cus_specified_cbl_save_bool 
-    \tl_build_clear:N \g__cus_specified_style_tl 
+    \tl_build_begin:N \g__cus_specified_style_tl 
     #2 
-    % \tl_build_get:NN \g__cus_specified_style_tl #1
     \tl_build_end:N \g__cus_specified_style_tl
     \tl_set_eq:NN #1 \g__cus_specified_style_tl
     \bool_set_false:N \l__cus_specified_cbl_save_bool 
@@ -1248,6 +1266,13 @@
 \@namedef{l@toc/cbl/level 3}#1#2#3#4#5#6#7{\@dottedtocline{3}{7.0em}{4.1em}{#5}{#6}}
 \@namedef{l@toc/cbl/level 4}#1#2#3#4#5#6#7{\@dottedtocline{4}{10em}{5em}{#5}{#6}}
 \@namedef{l@toc/cbl/level 5}#1#2#3#4#5#6#7{\@dottedtocline{5}{12em}{6em}{#5}{#6}}
+\def\l@part#1#2{\@nameuse{l@toc/cbl/level -1}{}{}{}{}{#1}{#2}{}}
+\def\l@chapter#1#2{\@nameuse{l@toc/cbl/level 0}{}{}{}{}{#1}{#2}{}}
+\def\l@section#1#2{\@nameuse{l@toc/cbl/level 1}{}{}{}{}{#1}{#2}{}}
+\def\l@subsection#1#2{\@nameuse{l@toc/cbl/level 2}{}{}{}{}{#1}{#2}{}}
+\def\l@subsubsection#1#2{\@nameuse{l@toc/cbl/level 3}{}{}{}{}{#1}{#2}{}}
+\def\l@paragraph#1#2{\@nameuse{l@toc/cbl/level 4}{}{}{}{}{#1}{#2}{}}
+\def\l@subparagraph#1#2{\@nameuse{l@toc/cbl/level 5}{}{}{}{}{#1}{#2}{}}
 
 
 \protected\def\localplaincombinedlist#1#2#3{%
@@ -1349,13 +1374,47 @@
 \cus_obey_psrrule:nn { toc-level~4 } { standard }
 \cus_obey_psrrule:nn { toc-level~5 } { standard }
 
+\cs_new_protected:Npn \SetPlainTocLevelCode #1 #2
+  {
+    \cus_set_psrrule:nnn { toc-level~ \cus_heading_level:n { toc-#1 } } 
+      { standard }
+      {#2}
+    \cus_obey_psrrule:nn { toc-level~ \cus_heading_level:n { toc-#1 } } { standard }
+  }
+
 
 \msg_new:nnn { cus } { title-class-unknown } { The~title~class~`#1'~unknown. }
+\prop_new_linked:N \g__cus_title_href_prop 
+\cs_new:Npn \custitleanchor 
+  { \cus_exp_args:NNe \prop_item:Nn \g__cus_title_href_prop }
+\int_new:N \g_cus_title_int
 \seq_new:N \g__cus_title_seq
-\prop_new:N \g__cus_title_prop 
 \cs_new_eq:NN \ifintitle \use_ii:nn
 \cs_new_eq:NN \ifincblentry \use_ii:nn
-\cs_new_protected:Npn \__cus_title_update_level_prop:nn { \prop_gput:Nxx \g__cus_title_prop }
+\prop_new:N \g__cus_title_info_prop
+\prop_new:N \g__cus_title_info_stay_prop
+\ekeysdeclarecmd \titleaddinfo { s m }
+  { 
+    \protected@edef \@tempa {#2}
+    \bool_if:nTF {#1} 
+      { \prop_gput:Non \g__cus_title_info_stay_prop }
+      { \prop_gput:Non \g__cus_title_info_prop }
+        \@tempa 
+  }
+\ekeysdeclarecmd \titleremoveinfo { s m }
+  {
+    \protected@edef \@tempa {#2}
+    \bool_if:nTF {#1}
+      { \prop_gremove:NV \g__cus_title_info_stay_prop }
+      { \prop_gremove:NV \g__cus_title_info_prop }
+        \@tempa 
+  }
+\ekeysdeclarecmd \titleremoveallinfo { s }
+  {
+    \bool_if:nTF {#1}
+      { \prop_gclear:N \g__cus_title_info_stay_prop }
+      { \prop_gclear:N \g__cus_title_info_prop }
+  }
 \cs_new_protected:Npn \IterateTitleList { \seq_map_inline:Nn \g__cus_title_seq }
 \NewDocumentCommand \definetitle { m >{ \TrimSpaces } O{normal} +m } 
   { 
@@ -1371,38 +1430,39 @@
     \use:c { title@classhook@#2afterdef }
     \use:e 
       {
-        \DeclareDocumentCommand \exp_not:N #1 { s +O{} O{} m }
+        \__cus_title_declare_cmd:NnN 
+          \exp_not:N #1 { \cs_to_str:N #1 } { \exp_not:c { title@class@ #2 } }
+      }
+  }
+% title cmd, title name, class cmd 
+\cs_new_protected:Npn \__cus_title_declare_cmd:NnN #1#2#3
+  {
+    \DeclareDocumentCommand #1 { s t- +O{} O{} m }
+      {
+        \__cus_title_initial:n {#2}
+        \bool_if:NT ##2
           {
-            \exp_not:N \__cus_title_initial:n { \cs_to_str:N #1 }
-            \exp_not:N \tl_if_blank:nTF {##3}
-              { 
-                \cus_if_keyval_variable:nNnn {##2}
-                  \exp_not:N \l__cus_title_curr_keys_tl 
-                  { 
-                    \__cus_title_full:onnnnn 
-                      \exp_not:N \l__cus_title_curr_keys_tl
-                      { \cs_to_str:N #1 } { \exp_not:c { title@class@ #2 } }
-                      { \exp_not:N \IfBooleanTF {##1} * \scan_stop: }
-                      {##4} {##4}
-                  }
-                  {
-                    \__cus_title_normal:nnnnn 
-                      { \cs_to_str:N #1 } { \exp_not:c { title@class@ #2 } }
-                      { \exp_not:N \IfBooleanTF {##1} * \scan_stop: }
-                      {##2} {##4}
-                  }
+            \cus_setup_title:nn {#2} { mode=nonumber }
+            \__cus_store_title_setting_key:nnn {#2} { mode } { }
+          }
+        \tl_if_blank:nTF {##4}
+          {
+            \cus_if_keyval_variable:nNnn {##3}
+              \l__cus_title_curr_keys_tl
+              {
+                \__cus_title_full:onnnnn \l__cus_title_curr_keys_tl
+                  {#2} {#3} {##1} {##5} {##5}
               }
               {
-                \__cus_title_full:nnnnnn 
-                  {##2} { \cs_to_str:N #1 } 
-                  { \exp_not:c { title@class@ #2 } }
-                  { \exp_not:N \IfBooleanTF {##1} * \scan_stop: }
-                  {##3} {##4}
+                \tl_if_empty:NTF \l__cus_title_curr_keys_tl
+                  { \__cus_title_normal:nnnnn {#2} {#3} {##1} {##5} {##5} }
+                  { \__cus_title_normal:nnnnn {#2} {#3} {##1} {##3} {##5} }
               }
-            \__cus_restore_title_setting:n { \cs_to_str:N #1 }
-            \exp_not:n { \cs_set_eq:NN \ifintitle \use_ii:nn }
-            \ignorespaces
           }
+          { \__cus_title_full:nnnnnn {##3} {#2} {#3} {##1} {##4} {##5} }
+        \__cus_restore_title_setting:n {#2}
+        \__cus_title_ending:
+        \ignorespaces
       }
   }
 % key, title str, class, star or else, entry, title 
@@ -1416,14 +1476,14 @@
   { \exp_args:No \__cus_title_full:nnnnnn }
 % title str, class, star or else, entry, title 
 \cs_new_protected:Npn \__cus_title_normal:nnnnn #1#2#3#4#5
-  { 
+  {
     \use:e 
       { 
         \exp_not:n {#2} 
         {#1} {#3} 
         { \tl_if_blank:nTF {#4} { \exp_not:n {#5} } { \exp_not:n {#4} } } 
       } 
-        {#5} 
+        {#5}
   }
 \NewDocumentCommand \setuptitle { O{*} +m }
   {
@@ -1454,10 +1514,7 @@
       { 
         \cs_if_exist:cTF {#1}
           { \cus_setup_title:nn {#1} {#2} }
-          { 
-            \msg_warning:nnx { cus } { unknown-title } 
-              { \exp_after:wN \token_to_str:N \cs:w #1 \cs_end: }
-          }
+          { \msg_warning:nnx { cus } { unknown-title } { \c_backslash_str #1 } }
       }
   }
 \msg_new:nnn { cus } { unknown-title } { Unknown~title~command:~#1. }
@@ -1478,6 +1535,7 @@
     % 需要定义 toclevel@#1 , 用于 bookmark
     \tl_set:cx { toclevel@ #1 } { \exp_not:c { title~parameter@ #1 @level } }
     \exp_args:Ne \__cus_define_title_keys:n { #1 }
+    \clist_new:c { title~parameter@#1@info }
     \tl_new:c { title~parameter@pre #1 }
     \tl_new:c { title~parameter@post #1 }
     \tl_const:cx { titlethe #1 }
@@ -1512,10 +1570,10 @@
   {
     \cus_setup_title_store_restore:nnN {#1}
       { 
-        style, name, name-preto, name-appto, number, 
+        style, name, name-preto, name-appto, number, numbering, 
         number-from, number-within, number-without, 
         number-format, label-format,
-        tags+, bookmark, bookmark* 
+        bookmark, bookmark* 
       }
       @ 
     \keys_define:nn { cus/title } { #1 .meta:nn = { cus/title/#1 } {##1} }
@@ -1548,8 +1606,16 @@
         leftskip     .tl_set:c = title~parameter@#1@leftskip ,
         rightskip    .tl_set:c = title~parameter@#1@rightskip ,
         indent       .tl_set:c = title~parameter@#1@indent ,
-        numbering .switch_set:c = title~parameter@#1@numbering ,
-        numbering    .initial:n = true ,
+        numbering     .choice: ,
+        numbering / true .code:n = \__cus_title_set_mode:nn {#1} { normal } ,
+        numbering / yes  .code:n = \__cus_title_set_mode:nn {#1} { normal } ,
+        numbering / one  .code:n = \__cus_title_set_mode:nn {#1} { normal } ,
+        numbering / false.code:n = \__cus_title_set_mode:nn {#1} { nonumber } ,
+        numbering / no   .code:n = \__cus_title_set_mode:nn {#1} { nonumber } ,
+        numbering / off  .code:n = \__cus_title_set_mode:nn {#1} { nonumber } ,
+        numbering     .default:n = true ,
+        mode            .code:n = \__cus_title_set_mode:nn {#1} {##1} ,
+        mode         .initial:n = normal ,
         beforeskip   .initial:n = \c_zero_skip ,
         afterskip    .initial:n = \c_zero_skip ,
         leftskip     .initial:n = \c_zero_skip ,
@@ -1562,20 +1628,25 @@
         hang           .initial:n = true ,
         runin       .switch_set:c = title~parameter@#1@runin ,
         float-barrier .switch_set:c = title~parameter@#1@floatbarrier ,
-        pagestyle   .tl_set_x:c = title~parameter@#1@pagestyle ,
+        pagestyle   .tl_set_e:c = title~parameter@#1@pagestyle ,
         pagestyle    .initial:n = plain ,
         mark          .tl_set:c = title~parameter@#1@mark ,
         mark         .initial:n = \use_none:n ,
         level           .code:n = 
           \__cus_title_keys_preamble_set:nn { title~level }
             { \cus_assign_heading_level:nn {#1} {##1} } ,
-        tags       .clist_set:c = title~parameter@#1@tags ,
-        tags+           .code:n = 
-          { \clist_put_right:cn { title~parameter@#1@tags } {#1} } ,
+        beforerecord  .tl_set:c = { title~parameter@#1@beforerecord } ,
+        beforerecord>   .code:n = \tl_put_left:cn 
+          { title~parameter@#1@beforerecord } {##1} ,
+        beforerecord<   .code:n = \tl_put_right:cn 
+          { title~parameter@#1@beforerecord } {##1} ,
         tocline      .cs_set:cp = { title~parameter@#1@tocline } ##1##2 ,
         tocline      .initial:n = \titlenumberline{##1}##2 ,
-        bookmark        .code:n = \cus_gset_next_bookmark_text:n {##1} ,
-        bookmark*       .code:n = 
+        properties .clist_set:c = { title~parameter@#1@properties } ,
+        properties+ .code:n = \clist_put_right:cn 
+          { title~parameter@#1@properties } {##1} ,
+        bookmark*       .code:n = \cus_gset_next_bookmark_text:n {##1} ,
+        bookmark        .code:n = 
           \cus_gset_next_bookmark_text:n 
             { \legacy_if:nT { BKM@numbered } { \tl_use:c { titlethe #1 } ~ } ##1 } ,
         break         .tl_set:c = title~parameter@#1@break ,
@@ -1603,14 +1674,22 @@
 \seq_new:N \l__cus_title_restore_key_seq
 \cs_new_protected:Npn \__cus_title_initial:n #1
   { 
+    \int_gincr:N \g_cus_title_int
     \seq_clear:N \l__cus_title_restore_key_seq 
     \tl_gset:Nx \CurrentTitleLevel { \tl_use:c { title~parameter@ #1 @level } }
+    \tl_gset:Nn \CurrentTitleName  {#1}
     \cs_set_eq:NN \ifintitle \use_i:nn
   }
+\tl_const:Nn \thetitlecount { \int_use:N \g_cus_title_int }
+\def\@titlecount@last{-\maxdimen} \def\PreviousTitleCount{0}
+\cus_hook_gput_ae:n 
+  { \ifnum\@titlecount@last>\z@ \xdef\PreviousTitleCount{\@titlecount@last}\fi }
+\tl_gput_left:Nn \@kernel@after@enddocument@afterlastpage
+  { \iow_now:Ne \@auxout { \gdef\string\@titlecount@last{\thetitlecount} } }
 \tl_gset:Nx \CurrentTitleLevel { -10001 }
+\str_new:N \CurrentTitleName
 \cs_new_protected:Npn \__cus_store_title_setting:nn #1#2
   {
-    \seq_clear:N \l__cus_title_restore_key_seq
     \keyval_parse:nnn
       { \cus_twiddle_N:nnn { \__cus_store_title_setting_key:nnn {#1} } { } }
       { \__cus_store_title_setting_key:nnn {#1} }
@@ -1643,6 +1722,12 @@
         \cs:w title~restore@#1@##1@command \cs_end: % 可以通过它来改变 restore 方法
         \__cus_restore_title_setting_key:nn {#1} {##1}
       }
+  }
+\cs_new_protected:Npn \__cus_title_ending:
+  {
+    \prop_gclear:N \g__cus_title_info_prop
+    \clist_gclear:c { title~parameter@ \CurrentTitleName @info }
+    \cs_set_eq:NN \ifintitle \use_ii:nn
   }
 \cs_new_protected:Npn \__cus_restore_title_setting_key:nn #1#2
   { \cs_set_eq:cc { title~parameter@#1@#2 } { title~tmpstore@#1@#2 } }
@@ -1704,7 +1789,6 @@
     number-without ,
     number-format ,
     label-format ,
-    tags+ ,
     bookmark ,
     bookmark* ,
 
@@ -1736,6 +1820,12 @@
         \cs_set_eq:cc { title~tmpstore@the #1 } { title~parameter@the #1 }
       }
       { \cs_set_eq:cc { title~parameter@the #1 } { title~tmpstore@the #1 } }
+    , numbering=
+      {
+        \seq_put_right:Nn \l__cus_title_restore_key_seq { mode }
+        \cs_set_eq:cc { title~tmpstore@#1@mode } { title~parameter@#1@mode }
+      }
+      { \cs_set_eq:cc { title~parameter@#1@mode } { title~tmpstore@#1@mode } }
   }
 
 \cs_new_protected:Npn \__cus_title_keys_preamble_set:nn #1 % warning words, set code 
@@ -1743,6 +1833,44 @@
     \cus_if_document_test:TF 
       { \msg_warning:nnn { cus } { document-reset-value } { #1 }  }
   }
+\cs_new_protected:Npn \__cus_title_info_gput:nn #1#2
+  { \clist_gput_right:cn { title~parameter@ \CurrentTitleName @info } { {#1}{#2} } }
+% unstarred mode is odd 
+\int_const:cn { title~constant@normal~mode } \c__cus_one_int
+\int_const:cn { title~constant@unstarred~mode } \c__cus_one_int
+\int_const:cn { title~constant@nonumber~mode } \c__cus_three_int
+% starred mode is even 
+\int_const:cn { title~constant@starred~mode } \c__cus_two_int
+\cs_new_protected:Npn \__cus_title_set_mode:nn #1#2
+  {
+    \cs_if_exist:cTF { title~constant@#2~mode }
+      { \cs_set_eq:cc { title~parameter@#1@mode } { title~constant@#2~mode } }
+      { \msg_error:nnxx { cus } { title-unknown-mode } { \c_backslash_str #1 } {#2} }
+  }
+\msg_new:nnn { cus } { title-unknown-mode } 
+  { Unknown~title~mode~`#2'~when~setting~#1. }
+\cs_new:Npn \__cus_title_if_mode:nnTF #1#2 
+  {
+    \exp_after:wN \if_meaning:w \cs:w title~parameter@#1@mode \exp_after:wN \cs_end:
+      \cs:w title~constant@#2~mode \cs_end:
+      \exp_after:wN \use_i:nn
+    \else: \exp_after:wN \use_ii:nn
+    \fi:
+  }
+% see \str_case:nnTF, ect.
+\cs_new:Npn \__cus_title_mode_case:nnTF #1#2#3#4
+  {
+    \exp:w \__cus_title_mode_case:nw {#1} #2 {#1} { }
+      \s__cus_mark {#3} \s__cus_mark {#4} \s__cus_stop
+  }
+\cs_new:Npn \__cus_title_mode_case:nw #1#2#3
+  {
+    \__cus_title_if_mode:nnTF {#1} {#2}
+      { \__cus_title_mode_case_end:nw {#3} }
+      { \__cus_title_mode_case:nw {#1} }
+  }
+\cs_new:Npn \__cus_title_mode_case_end:nw #1#2#3 \s__str_mark #4#5 \s__str_stop
+  { \exp_end: #1 #4 }
 \NewDocumentCommand \cus_assign_heading_name:nn
   { m > { \SplitArgument { 1 } { , } } +m }
   { \__cus_assign_heading_name:nnn {#1} #2 }
@@ -1830,20 +1958,22 @@
   }
 \group_end:
 \skip_new:N \title@headingskip
-\cs_new:Npn \title@mark #1#2 { \cs:w title~parameter@ #1 @mark \cs_end: {#2} }
+\cs_new:Npn \title@mark #1 
+  { \cs:w title~parameter@ \CurrentTitleName @mark \cs_end: {#1} }
 \cs_new:Npn \title@floatbarrier #1 { }
-\cs_new:Npn \title@break #1 { \cs:w title~parameter@ #1 @break \cs_end: }
-\cs_new:Npn \title@pagestyle #1 
+\cs_new:Npn \title@break
+  { \cs:w title~parameter@ \CurrentTitleName @break \cs_end: }
+\cs_new:Npn \title@pagestyle
   { 
-    \tl_if_empty:cF { title~parameter@ #1 @pagestyle } 
-      { \exp_args:Nv \usethispagestyle { title~parameter@ #1 @pagestyle } }
+    \tl_if_empty:cF { title~parameter@ \CurrentTitleName @pagestyle } 
+      { \exp_args:Nv \usethispagestyle { title~parameter@ \CurrentTitleName @pagestyle } }
   }
-\cs_new:Npn \title@setheadingskip #1#2
-  { \skip_set:Nn \title@headingskip { \tl_use:c { title~parameter@#1@#2skip } } }
-\cs_new:Npn \title@iffixskip #1
-  { \bool_if:cTF { title~parameter@ #1 @fixskip } }
-\cs_new:Npn \title@ifensureskip #1
-  { \bool_if:cTF { title~parameter@ #1 @ensureskip } }
+\cs_new:Npn \title@setheadingskip #1
+  { \skip_set:Nn \title@headingskip { \tl_use:c { title~parameter@ \CurrentTitleName @#1skip } } }
+\cs_new:Npn \title@iffixskip
+  { \bool_if:cTF { title~parameter@ \CurrentTitleName @fixskip } }
+\cs_new:Npn \title@ifensureskip
+  { \bool_if:cTF { title~parameter@ \CurrentTitleName @ensureskip } }
 \cs_new:Npn \title@fixheadingskip
   {
     \par 
@@ -1856,33 +1986,43 @@
     \dim_compare:nNnF \tex_pagegoal:D < \c_max_dim
       { \skip_sub:Nn \title@headingskip { \tex_topskip:D } }
   }
-\cs_new:Npn \title@ifnumbering #1
-  { \bool_if:cTF { title~parameter@ #1 @numbering } }
+\cs_new:Npn \title@ifnumbering #1#2
+  { \title@ifmode { \CurrentTitleName } { nonumber } {#2} {#1} }
+\cs_new:Npn \title@ifmode { \__cus_title_if_mode:nnTF }
+\cs_new:Npn \title@modecase { \__cus_title_mode_case:nnTF }
 \cs_new_protected:Npn \title@makeanchor { \cus_make_unique_target:n }
-% \cs_new:Npn \title@makeanchor #1 { }
-% \cus_pkg_code:nnn { hyperref } { }
-%   { 
-%     \cs_gset_protected:Npn \title@makeanchor #1
-%       {
-%         \Hy@MakeCurrentHrefAuto {#1*}
-%         \Hy@raisedlink
-%           {
-%             \hyper@anchorstart { \@currentHref }
-%             \hyper@anchorend 
-%           }
-%       }
-%   }
 \cs_new:Npn \title@gettitle #1 { }
 \cus_pkg_code:nnn { nameref } { }
   { \cs_gset_protected:Npn \title@gettitle { \NR@gettitle } }
+\cs_new:Npn \title@beforerecord
+  { 
+    \use:c { title~parameter@ \CurrentTitleName @beforerecord } 
+    \prop_gput:Nxx \g__cus_title_href_prop 
+      { \int_use:N \g_cus_title_int } { \@currentHref }
+  }
+\cs_new:Npn \title@recordproperties
+  {
+    \property_record:ee 
+      { cus.title. \int_use:N \g_cus_title_int }
+      { \exp_not:v { title~parameter@ \CurrentTitleName @properties } }
+  }
 \cs_new:Npn \__cus_if_incsname:TF 
   { \tex_ifincsname:D \exp_after:wN \use_i:nn \else: \exp_after:wN \use_ii:nn \fi: }
-\cs_new:Npn \title@addtocline #1#2
-  { 
+\cs_new:Npn \title@addtocline #1
+  {
+    \prop_gconcat:NNN \g__cus_title_info_prop
+      \g__cus_title_info_stay_prop \g__cus_title_info_prop
+    \prop_map_function:NN \g__cus_title_info_prop \__cus_title_info_gput:nn
     \addcontentsline {toc} 
       % bookmark needs #1 to determine level
-      { #1 \__cus_if_incsname:TF { } { , \use:c { title~parameter@#1@tags } } } 
-      { \use:c { title~parameter@#1@tocline } {#1} {#2} } 
+      { 
+        \CurrentTitleName \__cus_if_incsname:TF { } 
+          { , \use:c { title~parameter@ \CurrentTitleName @info } } 
+      } 
+      { 
+        \cs:w title~parameter@ \CurrentTitleName @tocline \exp_after:wN \cs_end: 
+          \exp_after:wN { \CurrentTitleName } {#1} 
+      } 
   }
 \cs_new:Npn \title@heading@format@initial 
   {
@@ -1896,18 +2036,18 @@
 \cs_new:Npn \titleifmeasuring #1#2 {#2}
 \cs_new:Npn \title@ifmeasuringtrue { \cs_set_eq:NN \titleifmeasuring \use_i:nn }
 \cs_new:Npn \title@ifmeasuringfalse { \cs_set_eq:NN \titleifmeasuring \use_ii:nn }
-\cs_new:Npn \title@format #1 { \cs:w title~parameter@ #1 @format \cs_end: }
-\cs_new:Npn \title@headinghang #1#2
+\cs_new:Npn \title@format { \cs:w title~parameter@ \CurrentTitleName @format \cs_end: }
+\cs_new:Npn \title@headinghang #1
   {
-    \dim_set:Nn \tex_parindent:D { \title@getindent {#1} }
-    \bool_if:cTF { title~parameter@ #1 @hang }
+    \dim_set:Nn \tex_parindent:D { \title@getindent }
+    \bool_if:cTF { title~parameter@ \CurrentTitleName @hang }
       {
         \tex_noindent:D 
         \hbox_set:Nn \l__cus_tmpa_box
           {
             \dim_compare:nNnF \tex_parindent:D = \c_zero_dim
               { \tex_indent:D }
-            #2
+            #1
           }
         \tex_hangindent:D = \box_wd:N \l__cus_tmpa_box
         \box_use_drop:N \l__cus_tmpa_box
@@ -1915,26 +2055,31 @@
       {
         \dim_compare:nNnF \tex_parindent:D = \c_zero_dim
           { \tex_indent:D }
-        #2
+        #1
       }
   }
-\cs_new:Npn \title@titleformat #1 { \cs:w title~parameter@ #1 @titleformat \cs_end: }
-\cs_new:Npn \title@aftertitle #1 { \cs:w title~parameter@ #1 @aftertitle \cs_end: }
-\cs_new:Npn \title@ifafterindent #1
-  { \bool_if:cTF { title~parameter@ #1 @afterindent } }
-\cs_new:Npn \title@name #1 { \cs:w title~parameter@ #1 name \cs_end: }
-\cs_new:Npn \title@aftername #1 { \cs:w title~parameter@ #1 @aftername \cs_end: }
-\cs_new:Npn \title@getlevel #1 { \cs:w title~parameter@ #1 @level \cs_end: }
-\cs_new:Npn \title@ifrunin #1
-  { \bool_if:cTF { title~parameter@ #1 @runin } }
-\cs_new:Npn \title@iffloatbarrier #1
-  { \bool_if:cTF { title~parameter@ #1 @floatbarrier } }
+\cs_new:Npn \title@titleformat 
+  { \cs:w title~parameter@ \CurrentTitleName @titleformat \cs_end: }
+\cs_new:Npn \title@aftertitle 
+  { \cs:w title~parameter@ \CurrentTitleName @aftertitle \cs_end: }
+\cs_new:Npn \title@ifafterindent
+  { \bool_if:cTF { title~parameter@ \CurrentTitleName @afterindent } }
+\cs_new:Npn \title@name { \cs:w title~parameter@ \CurrentTitleName name \cs_end: }
+\cs_new:Npn \title@aftername 
+  { \cs:w title~parameter@ \CurrentTitleName @aftername \cs_end: }
+\cs_new:Npn \title@getlevel
+  { \cs:w title~parameter@ \CurrentTitleName @level \cs_end: }
+\cs_new:Npn \title@ifrunin 
+  { \bool_if:cTF { title~parameter@ \CurrentTitleName @runin } }
+\cs_new:Npn \title@iffloatbarrier
+  { \bool_if:cTF { title~parameter@ \CurrentTitleName @floatbarrier } }
 \cs_new:Npn \title@indentbox #1
   {
     \dim_set:Nn \tex_parindent:D {#1}
     \dim_compare:nNnF \tex_parindent:D = \c_zero_dim { \tex_indent:D }
   }
-\cs_new:Npn \title@getindent #1 { \cs:w title~parameter@#1@indent \cs_end: }
+\cs_new:Npn \title@getindent 
+  { \cs:w title~parameter@ \CurrentTitleName @indent \cs_end: }
 
 \cus_add_pdf_disable:n
   {
@@ -1942,13 +2087,17 @@
     \cs_set_eq:NN \\ \c_space_tl
   }
 \cs_new_protected:Npn \title@setvarwidth #1#2#3
-  { \cus_set_vbox_varwidth:Nnw #1 {#2} #3 \cus_set_vbox_varwidth_end: }
+  { \collectn_set_vbox_varwidth:Nnw #1 {#2} #3 \collectn_set_vbox_varwidth_end: }
 \ExplSyntaxOff
 
 \let\hyper@nopatch@sectioning\@empty 
 \let\NR@nopatch@sectioning\@empty
 
-\def\title@ifstar#1{\ifx*#1\@empty \expandafter\@firstoftwo \else \expandafter\@secondoftwo\fi}
+\def\title@ifstar#1{\ifnum
+  \ifx\BooleanTrue#1\@empty 1\else 0\fi
+  \title@ifmode\CurrentTitleName{starred}10=0
+  \expandafter\@secondoftwo\else\expandafter\@firstoftwo\fi}
+
 \newbox\title@box 
 \newdimen\titlewidth 
 
@@ -1959,55 +2108,59 @@
 \def\title@classhook@pageend{}
 \def\title@classhook@pageafterdef{}
 \protected\def\title@class@page #1#2{%
-  \title@break{#1}%
+  \title@break
   \title@classhook@pagebegin
-  \title@pagestyle{#1}%
+  \title@pagestyle
   \if@twocolumn 
     \onecolumn
     \@tempswatrue
   \else 
     \@tempswafalse
   \fi 
-  \title@setheadingskip{#1}{before}%
-  \title@iffixskip{#1}{\title@fixtopskip}{}%
+  \title@setheadingskip{before}%
+  \title@iffixskip{\title@fixtopskip}{}%
   \vspace*{\title@headingskip}%
   \title@ifstar{#2}{\title@class@page@@}{\title@class@page@}{#1}}
 \protected\def\title@class@page@ #1#2#3{%
   \ifnum \c@secnumdepth >-2\relax
-    \title@ifnumbering{#1}
+    \title@ifnumbering
       {\title@ifnametrue \refstepcounter{#1}}
       {\title@ifnamefalse \title@makeanchor{#1}}%
   \else 
     \title@ifnamefalse
     \title@makeanchor{#1}%
   \fi 
+  \title@beforerecord
   \title@gettitle{#2}%
-  \title@addtocline{#1}{#2}%
-  \title@mark{#1}{#2}% 
+  \title@recordproperties
+  \title@addtocline{#2}%
+  \title@mark{#2}%
   \begingroup
     \title@heading@format@initial 
-    \title@format{#1}{%
-      \title@headinghang{#1}%
-        {\titleifname{\title@name{#1}\title@aftername{#1}}{}}%
-      \title@titleformat{#1}{#3}%
-      \title@aftertitle{#1}}\par 
+    \title@format{%
+      \title@headinghang
+        {\titleifname{\title@name\title@aftername}{}}%
+      \title@titleformat{#3}%
+      \title@aftertitle}\par 
   \endgroup
   \title@class@pageend{#1}}
 \protected\def\title@class@page@@ #1#2#3{%
   \title@ifnamefalse 
-  \title@makesanchor{#1*}%
+  \title@makeanchor{#1}%
+  \title@beforerecord
   \title@gettitle{#2}%
+  \title@recordproperties
   \begingroup
     \title@heading@format@initial 
-    \title@format{#1}{%
-      \title@headinghang{#1}{}%
-      \title@titleformat{#1}{#3}%
-      \title@aftertitle{#1}}\par 
+    \title@format{%
+      \title@headinghang{}%
+      \title@titleformat{#3}%
+      \title@aftertitle}\par 
   \endgroup
   \title@class@pageend{#1}}
 \protected\def\title@class@pageend #1{%
-  \title@setheadingskip{#1}{after}%
-  \title@iffixskip{#1}{\title@fixheadingskip}{}%
+  \title@setheadingskip{after}%
+  \title@iffixskip{\title@fixheadingskip}{}%
   \vskip\title@headingskip
   \title@classhook@pageend
   \newpage 
@@ -2022,16 +2175,16 @@
 \def\title@classhook@topend{}
 \def\title@classhook@topafterdef{}
 \protected\def\title@class@top #1#2{%
-  \title@break{#1}%
+  \title@break
   \title@classhook@topbegin
-  \title@pagestyle{#1}%
+  \title@pagestyle
   \global\@topnum\z@ 
-  \title@ifafterindent{#1}{\@afterindenttrue}{\@afterindentfalse}%
+  \title@ifafterindent{\@afterindenttrue}{\@afterindentfalse}%
   \title@ifstar{#2}{\title@class@top@@}{\title@class@top@}{#1}}
-\protected\def\title@class@top@ #1#2#3{
+\protected\def\title@class@top@ #1#2#3{%
   \ifnum \c@secnumdepth >\m@ne
     \if@mainmatter 
-      \title@ifnumbering{#1}
+      \title@ifnumbering
         {\title@ifnametrue \refstepcounter{#1}}
         {\title@ifnamefalse \title@makeanchor{#1}}%
     \else 
@@ -2042,21 +2195,23 @@
     \title@ifnamefalse 
     \title@makeanchor{#1}
   \fi 
+  \title@beforerecord
   \title@gettitle{#2}%
-  \title@addtocline{#1}{#2}%
-  \title@mark{#1}{#2}%
-  \title@classhook@topend 
+  \title@recordproperties
+  \title@addtocline{#2}%
+  \title@mark{#2}%
   \if@twocolumn 
     \@topnewpage[\@maketophead{#1}{#3}]%
   \else 
-    \@maketophead{#1}{#3}
+    \@maketophead{#1}{#3}%
     \@afterheading
   \fi}
 \protected\def\title@class@top@@ #1#2#3{%
   \title@ifnamefalse 
   \title@makeanchor{#1}%
+  \title@beforerecord
   \title@gettitle{#2}%
-  \title@classhook@topend 
+  \title@recordproperties
   \if@twocolumn 
     \@topnewpage[\@makestophead{#1}{#3}]%
   \else 
@@ -2064,36 +2219,37 @@
     \@afterheading
   \fi}
 \protected\def\@maketophead #1#2{%
-  \title@setheadingskip{#1}{before}%
-  \title@iffixskip{#1}{\title@fixtopskip}{}%
+  \title@setheadingskip{before}%
+  \title@iffixskip{\title@fixtopskip}{}%
   \vspace*{\title@headingskip}%
   \begingroup
     \title@heading@format@initial 
-    \title@format{#1}{%
-      \title@headinghang{#1}%
-        {\titleifname{\title@name{#1}\title@aftername{#1}}{}}%
-      \title@titleformat{#1}{#2}%
-      \title@aftertitle{#1}}\par 
+    \title@format{%
+      \title@headinghang{\titleifname{\title@name\title@aftername}{}}%
+      \title@titleformat{#2}%
+      \title@aftertitle}\par 
   \endgroup
   \nobreak 
-  \title@setheadingskip{#1}{after}%
-  \title@iffixskip{#1}{\title@fixheadingskip}{}%
-  \vskip\title@headingskip}
+  \title@setheadingskip{after}%
+  \title@iffixskip{\title@fixheadingskip}{}%
+  \vskip\title@headingskip
+  \title@classhook@topend}
 \protected\def\@makestophead #1#2{%
-  \title@setheadingskip{#1}{before}%
-  \title@iffixskip{#1}{\title@fixtopskip}{}%
+  \title@setheadingskip{before}%
+  \title@iffixskip{\title@fixtopskip}{}%
   \vspace*{\title@headingskip}%
   \begingroup
     \title@heading@format@initial 
-    \title@format{#1}{%
-      \title@headinghang{#1}{}%
-      \title@titleformat{#1}{#2}%
-      \title@aftertitle{#1}}\par 
+    \title@format{%
+      \title@headinghang{}%
+      \title@titleformat{#2}%
+      \title@aftertitle}\par 
   \endgroup
   \nobreak 
-  \title@setheadingskip{#1}{after}%
-  \title@iffixskip{#1}{\title@fixheadingskip}{}%
-  \vskip\title@headingskip}
+  \title@setheadingskip{after}%
+  \title@iffixskip{\title@fixheadingskip}{}%
+  \vskip\title@headingskip
+  \title@classhook@topend}
 % 例如：\section 
 \def\title@classkeys@normal{}
 \def\title@classinitial@normal{}
@@ -2102,75 +2258,79 @@
 \def\title@classhook@normalafterdef{}
 \let\title@floatbarrier@hook\@empty 
 \protected\def\title@class@normal #1#2{%
-  \title@iffloatbarrier{#1}
+  \title@iffloatbarrier
     {\FloatBarrier
       \gdef\title@floatbarrier@hook{\@fb@topbarrier 
         \gdef\title@floatbarrier@hook{}}}
     {}%
   \if@noskipsec \leavevmode \fi 
   \par 
-  \title@ifafterindent{#1}{\@afterindenttrue}{\@afterindentfalse}%
+  \title@ifafterindent{\@afterindenttrue}{\@afterindentfalse}%
   \if@nobreak \title@classhook@normalbegin \everypar{}%
   \else 
-    \title@break{#1}%
+    \title@break
     \title@classhook@normalbegin 
-    \title@setheadingskip{#1}{before}%
-    \title@iffixskip{#1}{\title@fixtopskip}{}%
-    \title@ifensureskip{#1}{\hrule\@height\z@\relax \par}{}%
+    \title@setheadingskip{before}%
+    \title@iffixskip{\title@fixtopskip}{}%
+    \title@ifensureskip{\hrule\@height\z@\relax \par}{}%
     \addvspace{\title@headingskip}%
   \fi 
   \title@ifstar{#2}{\title@class@normal@@}{\title@class@normal@}{#1}}
 \protected\def\title@class@normal@ #1#2#3{%
-  \ifnum\title@getlevel{#1}>\c@secnumdepth
+  \ifnum\title@getlevel>\c@secnumdepth
     \title@ifnamefalse
     \title@makeanchor{#1}%
     \let\@svsec\@empty 
   \else 
-    \title@ifnumbering{#1}
+    \title@ifnumbering
       {\title@ifnametrue \refstepcounter{#1}%
-        \protected@edef\@svsec{\title@name{#1}\title@aftername{#1}}\relax}
+        \protected@edef\@svsec{\title@name\title@aftername}\relax}
       {\title@ifnamefalse \title@makeanchor{#1}%
         \let\@svsec\@empty}%
   \fi 
+  \title@beforerecord
   \title@gettitle{#2}%
-  \title@ifrunin{#1}
+  \title@recordproperties
+  \title@ifrunin
     {\def\@svsechd{%
-      \normalfont\title@format{#1}{%
-        {\title@indentbox{\title@getindent{#1}}}\@svsec 
-        \title@titleformat{#1}{#3}%
-        \title@aftertitle{#1}}%
-      \title@mark{#1}{#2}%
-      \title@addtocline{#1}{#2}}}
+      \normalfont\title@format{%
+        {\title@indentbox{\title@getindent}}\@svsec 
+        \title@titleformat{#3}%
+        \title@aftertitle}%
+      \title@mark{#2}%
+      \title@addtocline{#2}}}
     {\begingroup
       \title@heading@format@initial
-      \title@format{#1}{%
-        \title@headinghang{#1}{\@svsec}%
-        \title@titleformat{#1}{#3}%
-        \title@aftertitle{#1}}\par 
+      \title@format{%
+        \title@headinghang{\@svsec}%
+        \title@titleformat{#3}%
+        \title@aftertitle}\par 
       \endgroup
-      \title@mark{#1}{#2}%
-      \title@addtocline{#1}{#2}}%
+      \title@mark{#2}%
+      \title@addtocline{#2}}%
   \title@class@endnormal{#1}}
 \protected\def\title@class@normal@@ #1#2#3{%
   \title@makeanchor{#1}%
   \title@ifnamefalse 
+  \title@beforerecord
   \title@gettitle{#2}%
-  \title@ifrunin{#1}
+  \title@recordproperties
+  \title@ifrunin
     {\def\@svsechd{%
-      \normalfont\title@format{#1}{%
-        {\title@indentbox{\title@getindent{#1}}}%
-        \title@titleformat{#1}{#3}%
-        \title@aftertitle{#1}}}}
+      \normalfont\title@format{%
+        {\title@indentbox{\title@getindent}}%
+        \title@titleformat{#3}%
+        \title@aftertitle}}}
     {\begingroup
       \title@heading@format@initial 
-      \title@format{#1}{%
-        \title@headinghang{#1}{}%
-        \title@titleformat{#1}{#3}%
-        \title@aftertitle{#1}}\par 
+      \title@format{%
+        \title@headinghang{}%
+        \title@titleformat{#3}%
+        \title@aftertitle}\par 
       \endgroup}%
   \title@class@endnormal{#1}}
 \protected\def\title@class@endnormal #1{%
-  \title@ifrunin{#1}
+  \title@ifrunin
     {\@nobreakfalse 
       \global\@noskipsectrue
       \everypar{%
@@ -2180,13 +2340,13 @@
           \clubpenalty\@M 
           \begingroup \@svsechd \endgroup
           \unskip 
-          \begingroup \title@setheadingskip{#1}{after}%
+          \begingroup \title@setheadingskip{after}%
             \unless\ifdim\title@headingskip=\z@ \hskip\title@headingskip \fi 
           \endgroup 
         \else \clubpenalty\@clubpenalty \everypar{}\fi}}
     {\par\nobreak 
-      \title@setheadingskip{#1}{after}%
-      \title@iffixskip{#1}{\title@fixheadingskip}{}%
+      \title@setheadingskip{after}%
+      \title@iffixskip{\title@fixheadingskip}{}%
       \vskip\title@headingskip 
       \@afterheading}%
   \title@classhook@normalend 
@@ -2197,59 +2357,63 @@
 \def\title@classhook@freeend{}
 \def\title@classhook@freeafterdef{}
 \protected\def\title@class@free #1#2{%
-  \title@iffloatbarrier{#1}
+  \title@iffloatbarrier
     {\FloatBarrier
       \gdef\title@floatbarrier@hook{\@fb@topbarrier 
         \gdef\title@floatbarrier@hook{}}}
     {}%
   \if@noskipsec \leavevmode \fi
   \par 
-  \title@ifafterindent{#1}{\@afterindenttrue}{\@afterindentfalse}%
+  \title@ifafterindent{\@afterindenttrue}{\@afterindentfalse}%
   \if@nobreak \title@classhook@freebegin \everypar{}%
   \else 
-    \title@break{#1}%
+    \title@break
     \title@classhook@freebegin 
-    \title@setheadingskip{#1}{before}%
-    \title@iffixskip{#1}{\title@fixtopskip}{}%
-    \title@ifensureskip{#1}{\hrule\@height\z@\relax \par}{}%
+    \title@setheadingskip{before}%
+    \title@iffixskip{\title@fixtopskip}{}%
+    \title@ifensureskip{\hrule\@height\z@\relax \par}{}%
     \addvspace{\title@headingskip}%
   \fi 
   \title@ifstar{#2}{\title@class@free@@}{\title@class@free@}{#1}}
 \protected\def\title@class@free@ #1#2#3{%
-  \ifnum\title@getlevel{#1}>\c@secnumdepth 
+  \ifnum\title@getlevel>\c@secnumdepth 
     \title@ifnamefalse 
     \title@makeanchor{#1}%
     \let\@svsec\@empty 
   \else 
-    \title@ifnumbering{#1}
+    \title@ifnumbering
       {\title@ifnametrue \refstepcounter{#1}%
-        \protected@edef\@svsec{\title@name{#1}\title@aftername{#1}}\relax}
+        \protected@edef\@svsec{\title@name\title@aftername}\relax}
       {\title@ifnamefalse \title@makeanchor{#1}%
         \let\@svsec\@empty}%
   \fi
+  \title@beforerecord
   \title@gettitle{#1}%
-  \title@mark{#1}{#2}%
-  \title@addtocline{#1}{#2}%
+  \title@recordproperties
+  \title@mark{#2}%
+  \title@addtocline{#2}%
   \title@heading@format@initial 
-  {\title@format{#1}{%
-    \@svsec%
-    \title@titleformat{#1}{#3}%
-    \title@aftertitle{#1}}}%
+  {\title@format{%
+    \@svsec
+    \title@titleformat{#3}%
+    \title@aftertitle}}%
   \title@class@endfree{#1}}
 \protected\def\title@class@free@@ #1#2#3{%
   \title@ifnamefalse 
   \title@makeanchor{#1}%
+  \title@beforerecord
   \title@gettitle{#2}%
+  \title@recordproperties
   \title@heading@format@initial 
-  {\title@format{#1}{%
-    \@svsec%
-    \title@titleformat{#1}{#3}%
-    \title@aftertitle{#1}}}%
+  {\title@format{%
+    \@svsec
+    \title@titleformat{#3}%
+    \title@aftertitle}}%
   \title@class@endfree{#1}}
 \protected\def\title@class@endfree #1{%
   \ifvmode 
-    \title@setheadingskip{#1}{after}%
-    \title@iffixskip{#1}{\title@fixheadingskip}{}%
+    \title@setheadingskip{after}%
+    \title@iffixskip{\title@fixheadingskip}{}%
     \vskip\title@headingskip 
     \@afterheading 
   \fi 
@@ -2261,40 +2425,42 @@
 \def\title@classhook@wrapend{}
 \def\title@classhook@wrapafterdef{}
 \protected\def\title@class@wrap #1#2#3#4{%
-  \title@iffloatbarrier{#1}
+  \title@iffloatbarrier
     {\FloatBarrier
       \gdef\title@floatbarrier@hook{\@fb@topbarrier 
         \gdef\title@floatbarrier@hook{}}}
     {}%
   \if@noskipsec \leavevmode \fi
   \par 
-  \title@ifafterindent{#1}{\@afterindenttrue}{\@afterindentfalse}%
+  \title@ifafterindent{\@afterindenttrue}{\@afterindentfalse}%
   {\title@ifmeasuringtrue 
     \title@setvarwidth\@tempboxa{.4\textwidth}{%
       \title@ifstar{#2}{%
         \title@ifnamefalse 
         \title@makeanchor{#1}%
         \let\@svsec\@empty}{%
-        \ifnum\title@getlevel{#1}>\c@secnumdepth 
+        \ifnum\title@getlevel>\c@secnumdepth 
           \title@ifnamefalse 
           \title@makeanchor{#1}%
           \let\@svsec\@empty
         \else 
-          \title@ifnumbering{#1}
+          \title@ifnumbering
             {\title@ifnametrue \refstepcounter{#1}%
-              \protected@edef\@svsec{\title@name{#1}\title@aftername{#1}}\relax}
+              \protected@edef\@svsec{\title@name\title@aftername}\relax}
             {\title@ifnamefalse \title@makeanchor{#1}%
               \let\@svsec\@empty}%
         \fi 
       }%
-      \title@gettitle{#1}%
+      \title@beforerecord
+      \title@gettitle{#2}%
+      \title@recordproperties%
       \title@heading@format@initial 
-      \title@format{#1}{%
+      \title@format{%
         \@svsec
-        \title@titleformat{#1}{#4}%
-        \title@aftertitle{#1}}\par\@@par
-      \title@setheadingskip{#1}{after}%
-      \title@iffixskip{#1}{\title@fixheadingskip}{}%
+        \title@titleformat{#4}%
+        \title@aftertitle}\par\@@par
+      \title@setheadingskip{after}%
+      \title@iffixskip{\title@fixheadingskip}{}%
       \vskip\title@headingskip}%
     \global\setbox\@ne\vtop{\unvbox\@tempboxa}}
   \@tempdima\ht\@ne \advance\@tempdima\dp\@ne 
@@ -2303,23 +2469,23 @@
   \advance\count@
     \ifdim\@tempdimb<\the\count@.5\baselineskip\@ne\else\tw@\fi
   \setbox\title@box\hbox{%
-    \title@setheadingskip{#1}{left}\hskip\title@headingskip
+    \title@setheadingskip{left}\hskip\title@headingskip
     \raise\fpeval{.825*\f@size}\p@ \hbox{\box\@ne}%
-    \title@setheadingskip{#1}{right}\hskip\title@headingskip}%
+    \title@setheadingskip{right}\hskip\title@headingskip}%
   \dp\title@box\z@ 
   \needspace{\@tempdimb}%
   \title@ifmeasuringfalse
   \if@nobreak \title@classhook@wrapbegin \everypar{}%
   \else 
-    \title@break{#1}%
+    \title@break
     \title@classhook@wrapbegin 
-    \title@setheadingskip{#1}{before}%
-    \title@iffixskip{#1}{\title@fixtopskip}{}%
-    \title@ifensureskip{#1}{\hrule\@height\z@\relax \par}{}%
+    \title@setheadingskip{before}%
+    \title@iffixskip{\title@fixtopskip}{}%
+    \title@ifensureskip{\hrule\@height\z@\relax \par}{}%
     \addvspace{\title@headingskip}%
   \fi 
-  \title@mark{#1}{#3}%
-  \title@addtocline{#1}{#3}%
+  \title@mark{#3}%
+  \title@addtocline{#3}%
   \hangindent\wd\title@box \hangafter-\count@ 
   \noindent\llap{\box\title@box}%
   \let\cus@tmp\ignorespaces
