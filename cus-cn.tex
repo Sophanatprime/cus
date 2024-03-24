@@ -2733,7 +2733,7 @@ Unicode 代码点。
 设置\emph{此条}标题在书签中的文字。
 
 \opt{bookmark} 会在 \pkg{bookmark} 宏包设置了 \opt{numbered} 选项后，把数字也加上。
-\opt{bookmark} 则直接设置书签为 \meta{text}。
+\linebreak\opt{bookmark*} 则直接设置书签为 \meta{text}。
 \end{keyval}
 
 \begin{function}{\titleaddinfo,\titleremoveinfo,\titleremoveallinfo}
@@ -3071,7 +3071,7 @@ Unicode 代码点。
   \end{syntax}
 自动处理 \meta{filename} 中的特殊符号（活动字符和双引号等），展开为一个文件名。
 
-目录的分隔符必须为 \texttt/，即是是在 Windows 系统上。
+目录（文件夹）的分隔符必须为 \texttt/，即是是在 Windows 系统上。
 \end{function}
 
 \begin{function}{\cus@getgraphicsname}
@@ -3346,7 +3346,7 @@ Unicode 代码点。
   \begin{syntax}
     \V*|\cus_if_keyval_variable:nNnn| \marg{arg} \meta{variable} \marg{true code} \marg{false code}
   \end{syntax}
-或把处理后的 \meta{arg} 保存到 \meta{variable} 中，\meta{code} 可以使用这个 \meta{variable}。
+把处理后的 \meta{arg} 保存到 \meta{variable} 中，\meta{code} 可以使用这个 \meta{variable}。
 \end{function}
 
 判断是否为键值对的方式和 \pkg{ltcmd} 的 \texttt{=} spec 一样，详见 \file{usrguide.pdf}。
@@ -3424,7 +3424,7 @@ Unicode 代码点。
   \parserange:nnN,\parserange:nvN,\parserange:neN}
   \begin{syntax}
     \verb|\parserange:nnnN| \marg{最小值} \marg{最大值} \marg{range list} \meta{sequence}
-    \verb|\parserange:nnnN| \marg{最大值} \marg{range list} \meta{sequence}
+    \verb|\parserange:nnN|  \marg{最大值} \marg{range list} \meta{sequence}
   \end{syntax}
 解析一个整数列表，将其保存至 \meta{sequence} 中。
 可使用 \verb|->| 标记连续的范围。若范围的开始为空，则设它为 \meta{最小值}，若终止为空，则
@@ -4747,6 +4747,16 @@ cbl 列表除了 \cs{cus@type@contentsline}、\cs{cus@type@contentsline@}、
 
 \cuslibrary{pgf} 库\emph{不会}自动加载 \pkg{pgf} 和 \pkg{tikz} 宏包，需要用户自行加载。
 
+\begin{function}{\pgfdeclareimagep,\pgfimagep}
+  \begin{syntax}
+    \V\pgfdeclareimagep \oarg{image options} \marg{image name} \marg{filename}
+    \V\pgfimagep \oarg{image options} \marg{filename}
+  \end{syntax}
+它们的功能和 \tn{pgfdeclareimage}、\tn{pgfimage} 相同。
+
+它们会自动查找 \tn{graphicspath} 设置的路径，且可以自动补全文件扩展名。
+\end{function}
+
 \subsection{文字渐变}
 
 需要加载 \pkg{tikz} 宏包。
@@ -4822,6 +4832,7 @@ verbatim 和分段。
 \texttt{tikz}。可以在 \meta{code} 中使用 \TikZ 绘图代码，坐标原点为纸张\emph{左下角}。
 并预先定义了两个 node：\texttt{page} 和 \texttt{layout}。
 
+\needspace{5\baselineskip}
 \begin{xample}
 \background(tikz){
   \draw[thick,help lines] (layout.south west) grid (layout.north east);
@@ -4961,7 +4972,7 @@ verbatim 和分段。
   space    = <&\TTF> & false 
   keyval   = <&\TTF> &#
   hyper    = <&\TTF|raw> & true 
-  no-hyper = &&
+  no-hyper &&
   target   = <{target}> &#
   target*  = <{target}>
   type     = <{label type}>
@@ -5092,7 +5103,7 @@ verbatim 和分段。
   \end{syntax}
 标记函数为是带有真假值参数的函数。
 
-\opt{TF} 将函数标记为带有真假参数的函数，如 \cs{tl_if_eq:nn}。
+\opt{TF} 将函数标记为带有真假参数的函数，如 \cs{tl_if_eq:nnTF}。
 \opt{pTF} 在 \opt{TF} 的基础上，还将函数标记为带有可用于 \cs{if_predicate:w} 的函数。
 \opt{noTF} 在 \opt{TF} 的基础上，还将函数标记为不带真假参数的函数，如 \cs{prop_get:NnN}。
 \end{keyval}
@@ -5678,7 +5689,7 @@ s_0,s_1,s_2&w_0&g_0&w_1&g_1&w_2\rlap{ (in \texttt{pt})}\\\hline
 
 本库定义了与计数器相关的一些命令。
 
-\begin{function}{\ensuretwodigits,\ensurethreedigits,\ensurefourdigits}
+\begin{function}[rEXP]{\ensuretwodigits,\ensurethreedigits,\ensurefourdigits}
   \begin{syntax}
     \V\ensuretwodigits \marg{计数器}
   \end{syntax}
@@ -5730,6 +5741,17 @@ s_0,s_1,s_2&w_0&g_0&w_1&g_1&w_2\rlap{ (in \texttt{pt})}\\\hline
 \chapter{可单独加载的宏包}
 
 \section{\pkg{collectn}}\label{sec:collectn}
+
+\begin{function}{\collectn_verb:Nnw,\l_collectn_long_verbatim_bool}
+  \begin{syntax}
+    \V*|\collectn_verbatim:Nnw| \meta{tl} \marg{code} \meta{token} \meta{tokens} \meta{token}
+    \V*|\collectn_verbatim:Nnw| \meta{tl} \marg{code} \marg{balanced tokens}
+  \end{syntax}
+向后以 verbatim 的形式收集内容，将其保存至 \meta{tl} 中，再执行 \meta{code}。
+\meta{token} 或 \meta{\meta{balanced tokens}} 不在命令的参数里。
+
+\cs{l_collectn_long_verbatim_bool} 控制是否接受长的 verbatim 文本（包含 \tn{par} 的）。
+\end{function}
 
 \begin{function}{\collectn_varwidth:nnw,\collectn_varwidth_end:}
   \begin{syntax}
@@ -5914,6 +5936,65 @@ s_0,s_1,s_2&w_0&g_0&w_1&g_1&w_2\rlap{ (in \texttt{pt})}\\\hline
 或 \cs{vbox_set_split_to_ht:NNn} 来分割该盒子。
 \end{function}
 
+\begin{function}[TF]{\collectn_if_in:n}
+  \begin{syntax}
+    \V*|\collectn_if_in:nTF| \marg{token list} \marg{true code} \marg{false code}
+  \end{syntax}
+判断下一个记号是否在给定的 \meta{token list} 中。
+
+无法判断显式或隐式的左、右括号和空格。
+\end{function}
+
+\begin{function}{\collectn_delimited_inline:NNn,\collectn_delimited_variable:NNNn}
+  \begin{syntax}
+    \V*|\collectn_delimited_inline:NNn| \meta{token_1} \meta{token_2} \marg{inline code}
+    \V*|\collectn_delimited_variable:NNNn| \meta{token_1} \meta{token_2} \meta{tl} \marg{code}
+  \end{syntax}
+获取接下来的以 \meta{token_1} 和 \meta{token_2} 定界的参数。
+若不存在，则为 \cs{q_no_value}。\meta{inline code} 可以用 \verb|#1| 获取这个参数，
+\meta{tl} 用于保存这个参数。
+\end{function}
+
+\begin{function}{\collectn_delimited_any_inline:nn}
+  \begin{syntax}
+    \V*|\collectn_delimited_any_inline:nn| \marg{paired tokens} \marg{inline code}
+  \end{syntax}
+判断接下来的定界的参数的定界符是否在 \meta{paried tokens} 之中。
+\meta{inline code} 可使用 2 个参数，第一个为此定界符在 \meta{paired tokens} 中的位置，
+第二个为它的值。若不存在，则第一个值为 0，第二个值为 \cs{q_no_value}。
+\end{function}
+
+\begin{function}{\collectn_delimited_all_inline:nn}
+  \begin{syntax}
+    \V*|\collectn_delimited_all_inline:nn| \marg{paried tokens} \marg{inline code}
+  \end{syntax}
+对于 \meta{paried tokens} 给出的定界符对，逐一考察是否接下来的参数以此定界符对定界。
+\end{function}
+
+\begin{function}{\l_collectn_delimited_strip_bool}
+用于控制上面四个命令在获取定界的参数时，若其参数整个用 \verb|{}| 包裹，是否移除此 \verb|{}|。
+\end{function}
+
+\begin{xample}
+\ExplSyntaxOn \ttfamily
+\bool_set_false:N \l_collectn_delimited_strip_bool
+\collectn_delimited_inline:NNn [ ] { \tl_to_str:n { |#1| } } [{bracket}] ;
+\collectn_delimited_inline:NNn [ ] { \tl_to_str:n { |#1| } } \scan_stop: ;
+\par
+\collectn_delimited_any_inline:nn { []() } { \tl_to_str:n { |#1,#2| } }
+  [[bracket]] ;
+\collectn_delimited_any_inline:nn { []() } { \tl_to_str:n { |#1,#2| } }
+  ({brace}) ;
+\par
+\collectn_delimited_all_inline:nn { []() } { \tl_to_str:n { |#1| } }
+  (brace) [[bracket]] ;
+\collectn_delimited_all_inline:nn { []() } { \tl_to_str:n { |#1| } }
+  ({brace}) ;
+\ExplSyntaxOff
+\stopxamplecode
+\xampleprint
+\end{xample}
+
 \begin{function}{\collectn_lohi:Nnw,\collectn_lohis:Nnw}
   \begin{syntax}
     \V*|\collectn_lohi:Nnw| \meta{tl} \marg{code} \meta{content}
@@ -6048,6 +6129,20 @@ s_0,s_1,s_2&w_0&g_0&w_1&g_1&w_2\rlap{ (in \texttt{pt})}\\\hline
 \subsection{定义键}
 
 \subsection{设置键}
+
+\subsection{\pkg{lt3ekeys-elkernel}}
+
+本宏包为 \LaTeX 和 \LaTeXiii 的一些有用的内部命令提供公共接口。
+
+\begin{function}{\elkernel_arg_to_keyvalue:Nnn}
+  \begin{syntax}
+    \V*|\elkernel_arg_to_keyvalue:Nnn| \meta{result} \marg{key} \marg{arg}
+  \end{syntax}
+检查 \meta{arg} 是否为键值对，若不是，则把 \meta{key} 作为键，\meta{arg} 作为值。
+将结果保存到 \meta{result} 中。
+
+检查是否为键值对的方法和 \pkg{ltcmd} 的 \texttt = spec 一致。
+\end{function}
 
 \subsection{定义命令——\pkg{lt3ekeyscmd}}\label{sec:lt3ekeyscmd}
 
@@ -6231,15 +6326,16 @@ $2^{15}-1=32767$，在 \LuaLaTeX 和 (u)p\LaTeX 中为 $2^{16}-1=65535$。
   \item[\CCE E] \texttt E\marg{tokens}\marg{defaults}，使用 \texttt W 参数实现，每个符号可以重复使用；
   \item[\CCE w] \texttt w\marg{token pairs}，智能匹配多个 \texttt d 类型的参数，从而可以以任意顺序给出参数的值；
   \item[\CCE W] \texttt W\marg{token pairs}\marg{defaults}，智能匹配多个 \texttt D 类型的参数，从而可以以任意顺序给出参数的值；
-  \item[\CCS g] 可选的以 \verb|{| 开始的参数，\verb|{| 可以是显式或隐式的；若后面跟着的不是 \verb|{| 而是 \verb|\relax|，则移除这个 \verb|\relax|；
-  \item[\CCS G] \texttt G\marg{default}，可选的以 \verb|{| 开始的参数，\verb|{| 可以是显式或隐式的；若后面跟着的不是 \verb|{| 而是 \verb|\relax|，则移除这个 \verb|\relax|；
+  \item[\CCE g] 可选的以 \verb|{| 开始的参数，\verb|{| 可以是显式或隐式的；若后面跟着的不是 \verb|{| 而是 \verb|\relax|，则移除这个 \verb|\relax|；
+  \item[\CCE G] \texttt G\marg{default}，可选的以 \verb|{| 开始的参数，\verb|{| 可以是显式或隐式的；若后面跟着的不是 \verb|{| 而是 \verb|\relax|，则移除这个 \verb|\relax|；
   \item[\CCS l] \verb|{| 前的内容，如没有 \verb|{| 则出错；
   \item[\CCS u] \texttt u\marg{tokens}，\meta{tokens} 前的内容，\meta{tokens} 会被移除，如没有 \meta{tokens} 则出错；
   \item[\CCE U] \texttt U\marg{tokens_1}\marg{tokens_2}，\meta{tokens_1} 前的内容，移除 \meta{tokens_1} 并留下 \meta{tokens_2}，如没有 \meta{tokens_1} 则出错；
+  \item[\CCS v] 以 verbatim 的形式读取文字；
 \end{itemize}
 }
 
-未实现的参数类型为 \IterateList{vb+!>=}{\texttt{#1}，} 使用它们仅给出警告，不会报错。
+未实现的参数类型为 \IterateList{b+!>=}{\texttt{#1}，} 使用它们仅给出警告，不会报错。
 
 除非另有说明否则上述参数类型的参数中均不能出现显式或隐式的空格（\texttt\textvisiblespace）、宏变量字符（\texttt\#）、左右括号（\texttt{\{ \}}），即 \verb|d<#|、\verb|t\bgroup| 等均为错误用法。
 
@@ -6328,6 +6424,13 @@ $\veta{integer}>\veta{n}$ 或 $\veta{integer}<0$ 则使用 \meta{else}。
     \V*|\ekeys_exp_not_braced:n| \marg{text}
   \end{syntax}
 展开为 \texttt\{\cs{exp_not:n}\marg{text}\texttt\}。
+\end{function}
+
+\begin{function}{\ekeys_cmd_after_declare:n,\ekeys_cmd_after_declare:e}
+  \begin{syntax}
+    \V*|\ekeys_cmd_after_declare:n| \marg{code}
+  \end{syntax}
+定义完本命令后执行 \meta{code}。在定义命令的外面使用是无效的。
 \end{function}
 
 \subsection{定义命令扩展——\pkg{lt3ekeysext}}\label{sec:lt3ekeysext}
@@ -6481,6 +6584,9 @@ $ \ab[\dfrac12] $, $ \ab\Big(\dfrac12) $, $ \ab*|\dfrac12| $, $ \ab? $
 可以使用参数，分别为 \veta{ekeys-cmd} 的名称，给该扫描器的额外的参数，
 此 \veta{ekeys-cmd} 已有的参数个数，是否为 raw 参数（使用了 \verb|&|），
 以及是否为 nested 参数（使用了 \verb|@|）。
+
+注意，直接在 \meta{initial action} 中定义 \veta{ekeys-cmd} 和 \veta{ekeys-collector}
+是不行的。但可以在其中使用 \cs{ekeys_cmd_after_declare:n}，先定义完本命令后再定义新的命令。
 \end{function}
 
 给扫描器的额外的参数指的是：

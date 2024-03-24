@@ -1,6 +1,13 @@
 \CUSProvideLibrary{pgf}{\cus@d@te}{\cus@versi@n}{pgf and tikz support}
 \usetikzlibrary{spath3}
 
+\ekeysdeclarecmd\pgfdeclareimagep{O{}mm}
+  {\cus@getgraphicsname\@curr@file{\cus@filename{#3}}%
+    \ifx\@curr@file\relax\def\@curr@file{""}\fi
+    \pgf@declareimage[#1]{#2}{\@curr@file}}
+\ekeysdeclarecmd\pgfimagep{&O{}m}
+  {\pgfdeclareimagep#1{pgflastimage}{#2}\pgfuseimage{pgflastimage}}
+
 % shade text, see: https://tex.stackexchange.com/questions/192496/
 \newbox\cus@picturebox 
 \protected\def\shadetext#1#2{%
