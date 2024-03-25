@@ -3085,6 +3085,18 @@ Unicode 代码点。
 需要用户自行加载 \pkg{graphicx} 宏包。
 \end{function}
 
+\begin{function}[noTF]{\cus_get_graphics_full_name:nN,}
+  \begin{syntax}
+    \V*|\cus_get_graphics_full_name:nN|   \marg{filename} \meta{tl}
+    \V*|\cus_get_graphics_full_name:nNTF| \marg{filename} \meta{tl} \marg{true code} \marg{false code}
+  \end{syntax}
+将 \meta{tl} 设置为 \meta{filename} 对应的图片文件名，若图片不存在则为 \cs{q_no_value}。
+
+它会自动查找 \tn{graphicspath} 设置的路径，且可以自动补全文件扩展名。
+
+需要用户自行加载 \pkg{graphicx} 宏包。
+\end{function}
+
 
 \section{\cusmodule{util}模块}\label{sec:module-util}
 
@@ -5736,6 +5748,47 @@ s_0,s_1,s_2&w_0&g_0&w_1&g_1&w_2\rlap{ (in \texttt{pt})}\\\hline
 \cs{thetotal\meta{counter}s} 一般用于正文中。只能在加载了 \texttt{.aux} 文件后才能使用。
 即可以在 \hook{begindocument}（或 \cs{AtBeginDocument}）、\hook{begindocument/end} 钩子中使用。
 \end{function}
+
+
+\section{\cuslibrary{pdf}库}
+
+本库提供一些与 PDF 文件的特性相关的功能。它们只能在使用了 \cs{DocumentMetadata} 之后使用。
+
+默认情况下，在 \TeX 中直接导入 PDF 文件会丢失该 PDF 的超链接信息，使用本库可以解决此问题。
+
+\begin{keyval}[path=pdf]{pax,pax+}
+  \begin{syntax}
+    pax = \marg{pdf file list}
+  \end{syntax}
+为了能够保留导入的 PDF 文件的超链接信息，需要为这些 PDF 文件预先生成一些必要的辅助文件。
+本选项用于设置需要保留超链接信息的那些 PDF 文件。
+
+如果使用 \LuaLaTeX 则可以自动生成。其它引擎需要开启 \texttt{shell-escape} 功能。
+
+仅在导言区设置才有效。
+\end{keyval}
+
+\begin{keyval}[path=pdf]{graphics-path}
+  \begin{syntax}
+    graphics-path = \marg{path clist}
+  \end{syntax}
+在查找需要保留超链接的 PDF 文件时，设置查找路径。
+如不设置，则使用 \tn{graphicspath} 设置的。
+\end{keyval}
+
+\begin{function}{\includegraphicspax}
+  \begin{syntax}
+    \V\includegraphics * \oarg{graphics options} \marg{filename}
+  \end{syntax}
+用此命令导入 PDF 文件可以保留超链接。
+\end{function}
+
+\begin{keyval}[path=pdf]{redefine}
+  \begin{syntax}
+    redefine = <&\TTF> & false
+  \end{syntax}
+是否将 \tn{includegraphics} 重定义为 \tn{includegraphicspax}。
+\end{keyval}
 
 
 \chapter{可单独加载的宏包}

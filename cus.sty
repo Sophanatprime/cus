@@ -21,8 +21,8 @@
 % cus.module.util.tex and cusclass.cls .
 \NeedsTeXFormat{LaTeX2e}[2023/06/01]
 \RequirePackage{l3keys2e,xtemplate}
-\def\cus@d@te{2024/03/24}
-\def\cus@versi@n{0.0.4b}
+\def\cus@d@te{2024/03/25}
+\def\cus@versi@n{0.0.4c}
 \ProvidesExplPackage{cus}{\cus@d@te}{\cus@versi@n}{Chinese User Scheme (CUS) basic file}
 
 \def\CusTeX{C\kern-.12em \raise.0466ex\hbox{u}\kern-.1em\lower .4ex\hbox{S}\kern-.15em\TeX}
@@ -148,6 +148,8 @@
 \bool_new:N \l__cus_tmpa_bool
 \bool_new:N \l__cus_tmpb_bool
 \bool_new:N \l__cus_tmpc_bool
+\ior_new:N \g__cus_tmp_ior
+\iow_new:N \g__cus_tmp_iow
 
 \int_new:N \l__cus_nest_int 
 \tl_new:N \g__cus_pdfstring_disable_tl 
