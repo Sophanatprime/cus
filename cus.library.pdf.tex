@@ -75,8 +75,19 @@
       }
   }
 \cs_new:Npn \__cus_pdf_pax_run_script: { dofile " \c_sys_jobname_str _pax_script.lua " }
-\cs_new:Npn \__cus_pdf_pax_run_lt_script:
-  { lualatex~ ' \string\directlua { \__cus_pdf_pax_run_script: } \noexpand\stop ' }
+\sys_if_platform_windows:TF
+  {
+    \cs_new:Npn \__cus_pdf_pax_run_lt_script:
+      {
+        lualatex~ "\string\def\string\x{
+          \exp_not:N \csname quote@name\endcsname{ \c_sys_jobname_str _pax_script.lua }
+        }\string\directlua{dofile(\string\x)}\noexpand\stop"
+      }
+  }
+  {
+    \cs_new:Npn \__cus_pdf_pax_run_lt_script:
+      { lualatex~ ' \string\directlua { \__cus_pdf_pax_run_script: } \noexpand\stop ' }
+  }
 \cs_new_protected:Npn \__cus_pax_compile:N #1 
   { 
     \group_begin: 
