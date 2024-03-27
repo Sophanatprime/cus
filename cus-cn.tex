@@ -1,4 +1,4 @@
-% \DocumentMetadata{pdfversion=1.7}
+\DocumentMetadata{}
 \documentclass[twoside]{book}
 \PassOptionsToPackage{silent}{xeCJK}
 \usepackage{ctex}
@@ -5425,7 +5425,7 @@ BNF 范式排版环境。
 \item \meta{inner pos} 表示如果设置的 \meta{height} 过大时，盒子的内容在盒子内的垂直位置，可选值为 \texttt{b}、\texttt{c}、\texttt{t}、\texttt{s}，分别表示置于盒子底部、居中、置于顶部、垂直分散对齐，默认为垂直分散对齐。
 \end{itemize}
 
-另见 \csref{cus_peek_minipage:Nnnnnnw}、\csref{cus_peek_varwidth:Nnnnnnw}。
+另见 \cs{collectn_minipage:Nnnnnnw}、\cs{collectn_varwidth:Nnnnnnw}。
 \end{function}
 
 虽然这两个命令不能配置 \meta{material}，但 \cuslibrary{box} 库提供了 \csref{fparbox} 和 \csref{fvarbox} 命令可以设置盒子外框，见\cref{sec:fparbox-fvarbox}及\cref{eg:hyperref-fparbox}。
@@ -5773,14 +5773,14 @@ s_0,s_1,s_2&w_0&g_0&w_1&g_1&w_2\rlap{ (in \texttt{pt})}\\\hline
     graphics-path = \marg{path clist}
   \end{syntax}
 在查找需要保留超链接的 PDF 文件时，设置查找路径。
-如不设置，则使用 \tn{graphicspath} 设置的。
+如果没有设置，则使用 \tn{graphicspath} 设置的。
 \end{keyval}
 
 \begin{function}{\includegraphicspax}
   \begin{syntax}
-    \V\includegraphics * \oarg{graphics options} \marg{filename}
+    \V\includegraphicspax * \oarg{graphics options} \marg{filename}
   \end{syntax}
-用此命令导入 PDF 文件可以保留超链接。
+用此命令导入 PDF 文件可以保留超链接。需编译两次。
 \end{function}
 
 \begin{keyval}[path=pdf]{redefine}
@@ -7168,6 +7168,10 @@ $ \foo<a|b> $\quad $ \foo\displaystyle<\sum|\prod> $.
 \CHToI{tcolorbox}{\tn{kvtcb@boxsep}};
 \CHToI{tcolorbox}{\tn{kvtcb@top@rule@stand}, \tn{kvtcb@bottom@rule@stand}, \tn{kvtcb@top}, \tn{kvtcb@bottom}};
 \CHToI{tcolorbox}{\tn{kvtcb@left@rule@stand}, \tn{kvtcb@right@rule@stand}, \tn{kvtcb@leftupper}, \tn{kvtcb@rightupper}};
+
+\section{\CHFrom{library.pdf}}
+\CHToI{graphicx}{\tn{Gin@ii}};
+\CHToI{newpax}{\tn{NEWPAX@cmd@\meta{type}}, \tn{NEWPAX@skip}, \tn{NEWPAX@includegraphics}, \tn{NEWPAX@AddAnnots}, \tn{NEWPAX@file}, \tn{NEWPAX@Gin@page}};
 
 \section{\pkg{lt3ekeys}、\pkg{lt3ekeyscmd} 和 \pkg{lt3ekeysext}}
 \CHToI{ltcmd}{\cs{__cmd_peek_nonspace:NTF}, \cs{__cmd_peek_nonspace_remove:NTF}};

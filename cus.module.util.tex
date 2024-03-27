@@ -668,8 +668,12 @@
 
 \tl_const:Nn \c__cus_verbatimize_macros_tl { \#\$\%\\\ \{\}\^ }
 \NewDocumentCommand \Verbatimize { s } 
-  { \IfBooleanTF {#1} \cus_verb_cmd:w \cus_verbatimize:n }
-\NewDocumentCommand \cus_verb_cmd:w { +v } {#1}
+  { \bool_if:nTF {#1} \cus_verb_cmd:w \cus_verbatimize:n }
+\cs_new_protected:Npn \cus_verb_cmd:w 
+  { 
+    \bool_set_true:N \l_elkernel_long_v_bool 
+    \elkernel_collect_verb:Nnw \l__cus_verbatimize_tl { \l__cus_verbatimize_tl }
+  }
 \cs_new_protected:Npn \cus_verbatimize:n #1
   {
     \group_align_safe_begin:

@@ -17,13 +17,13 @@
   }
 \cs_new_protected:Npn \__cus_algo_put_right:Nn #1#2
   {
-    \__kernel_tl_set:Nx #1
-      { \__kernel_exp_not:w \exp_after:wN {#1} { \__kernel_exp_not:w {#2} } }
+    \elkernel_tl_set:Nx #1
+      { \elkernel_exp_not:w \exp_after:wN {#1} { \elkernel_exp_not:w {#2} } }
   }
 \cs_new_protected:Npn \__cus_algo_push:Nn #1#2
   { 
-    \__kernel_tl_set:Nx #1
-      { { \__kernel_exp_not:w {#2} } \__kernel_exp_not:w \exp_after:wN {#1} }
+    \elkernel_tl_set:Nx #1
+      { { \elkernel_exp_not:w {#2} } \elkernel_exp_not:w \exp_after:wN {#1} }
   }
 \cs_new_protected:Npn \__cus_algo_pop:NNTF #1#2
   {
@@ -31,7 +31,7 @@
       \tl_set_eq:NN #2 \q_no_value
       \exp_after:wN \use_ii:nn
     \else:
-      \__kernel_tl_set:Nx #2 
+      \elkernel_tl_set:Nx #2 
         { \exp_after:wN \__cus_algo_pop_aux:Nn \exp_after:wN #1 #1 } \if_false: { \fi: }
       \exp_after:wN \use_i:nn
     \fi:
@@ -41,15 +41,15 @@
     \if_meaning:w #1 \c_empty_tl
       \tl_set_eq:NN #2 \q_no_value 
     \else:
-      \__kernel_tl_set:Nx #2 
+      \elkernel_tl_set:Nx #2 
         { \exp_after:wN \__cus_algo_pop_aux:Nn \exp_after:wN #1 #1 } \if_false: { \fi: }
     \fi:
   }
 \cs_new:Npn \__cus_algo_pop_aux:Nn #1#2
   { 
-    \__kernel_exp_not:w {#2} \if_false: { \fi: } 
-    \exp_after:wN \__kernel_tl_set:Nx \exp_after:wN #1 \exp_after:wN { \if_false: } \fi:
-    \__kernel_exp_not:w \exp_after:wN { \if_false: } \fi:
+    \elkernel_exp_not:w {#2} \if_false: { \fi: } 
+    \exp_after:wN \elkernel_tl_set:Nx \exp_after:wN #1 \exp_after:wN { \if_false: } \fi:
+    \elkernel_exp_not:w \exp_after:wN { \if_false: } \fi:
   }
 
 %region 拓扑排序
@@ -74,7 +74,6 @@
     \cs_set:Npn \__cus_sort_get:n ##1 {#1}
     \cs_set:Npn \__cus_sort_set:n ##1 {#2}
     \__cus_topological_sort:
-    % \tl_build_get:NN \g__cus_sort_result_tl #3
     \tl_build_gend:N \g__cus_sort_result_tl
     \tl_set_eq:NN #3 \g__cus_sort_result_tl
   }
@@ -85,7 +84,6 @@
     \cs_set_eq:NN \__cus_sort_get:n #1
     \cs_set_eq:NN \__cus_sort_set:n #2
     \__cus_topological_sort:
-    % \tl_build_get:NN \g__cus_sort_result_tl #3
     \tl_build_gend:N \g__cus_sort_result_tl
     \tl_set_eq:NN #3 \g__cus_sort_result_tl
   }

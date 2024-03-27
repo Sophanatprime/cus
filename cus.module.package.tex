@@ -133,15 +133,15 @@
 \cs_new_eq:cN { __cus_package_rule_|_gset:nn } \__cus_package_rule_or_gset:nn 
 
 
-\__cus_int_let:Nw \c__cus_package_rule_unrelated_int = 0~
-\__cus_int_let:Nw \c__cus_package_rule_xW_int = 1~ % imcompatible-warning
-\__cus_int_let:Nw \c__cus_package_rule_xE_int = 2~ % imcompatible-error
-\__cus_int_let:Nw \c__cus_package_rule_xI_int = 3~ % imcompatible-ignore
-\__cus_int_let:Nw \c__cus_package_rule_voids_int = 4~
-\__cus_int_let:Nw \c__cus_package_rule_require_int = 5~
-\__cus_int_let:Nw \c__cus_package_rule_call_int = 6~
-\__cus_int_let:Nw \c__cus_package_rule_or_int = 7~
-\__cus_int_let:Nw \c__cus_package_rule_ordered_int = 8~
+\int_const:Nn \c__cus_package_rule_unrelated_int { 0 }
+\int_const:Nn \c__cus_package_rule_xW_int { 1 } % imcompatible-warning
+\int_const:Nn \c__cus_package_rule_xE_int { 2 } % imcompatible-error
+\int_const:Nn \c__cus_package_rule_xI_int { 3 } % imcompatible-ignore
+\int_const:Nn \c__cus_package_rule_voids_int { 4 }
+\int_const:Nn \c__cus_package_rule_require_int { 5 }
+\int_const:Nn \c__cus_package_rule_call_int { 6 }
+\int_const:Nn \c__cus_package_rule_or_int { 7 }
+\int_const:Nn \c__cus_package_rule_ordered_int { 8 }
 \cs_new:Npn \__cus_package_if_related:nnTF #1#2
   {
     \bool_lazy_and:nnTF

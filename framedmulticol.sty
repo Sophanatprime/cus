@@ -86,11 +86,20 @@
 %%
 \NeedsTeXFormat{LaTeX2e}[2020/10/01]
 \ProvidesPackage{framedmulticol}
-[2023/04/05 v0.1 add frame for multicolumn text]
+[2024/02/01 v0.2 add frame for multicolumn text]
 \RequirePackage{multicol}
 \RequirePackage{ctexpatch}
 \ExplSyntaxOn 
 \dim_if_exist:NF \@tempdimd { \dim_new:N \@tempdimd }
+\cs_if_exist:NF \IfPageOdd
+  {
+    \cs_new:Npn \IfPageOdd 
+      { 
+        \if_int_odd:w \c@page \exp_after:wN \use_i:nn 
+        \else: \exp_after:wN \use_ii:nn 
+        \fi: 
+      }
+  }
 %% patch multicol
 \cs_new_protected:Npn \fmulticol@update@framedgeometry #1 { }
 \cs_new_protected:Npn \fmulticol@update@height #1 { }
@@ -117,21 +126,21 @@
   }
 \cs_set_eq:NN \fmulticol@update@boxes \fmulticol@swapcolumninevenpages 
 %% see multicolrule.sty
-\dim_new:N \l__fmulticols_tmpa_dim 
-\dim_new:N \l__fmulticols_rule_extend_top_dim
-\dim_new:N \l__fmulticols_rule_extend_bot_dim
+\dim_new:N \l__fmulticol_tmpa_dim 
+\dim_new:N \l__fmulticol_rule_extend_top_dim
+\dim_new:N \l__fmulticol_rule_extend_bot_dim
 \cs_new_protected:Npn \fmulticol@rule 
   { 
-    \dim_set:Nn \l__fmulticols_tmpa_dim 
+    \dim_set:Nn \l__fmulticol_tmpa_dim 
       {
         \box_ht:N \mult@rightbox + % height
         \dim_max:nn {\dimen\tw@} {\box_dp:N \mult@rightbox} + % depth
         \dim_max:nn {\box_ht:N \mult@nat@firstbox - \box_ht:N \mult@rightbox} {0pt} % overflow
       }
     \box_move_down:nn 
-      { \l__fmulticols_tmpa_dim - \box_ht:N \mult@rightbox }
+      { \l__fmulticol_tmpa_dim - \box_ht:N \mult@rightbox }
       {
-        \vbox_to_ht:nn \l__fmulticols_tmpa_dim 
+        \vbox_to_ht:nn \l__fmulticol_tmpa_dim 
           {
             \tex_vss:D
             \hbox:n
@@ -140,7 +149,7 @@
                   {
                     \exp_not:N \fmulticol@drawrule 
                       { \dim_use:N \columnseprule } 
-                      { \dim_eval:n { \l__fmulticols_tmpa_dim + \l__fmulticols_rule_extend_top_dim + \l__fmulticols_rule_extend_bot_dim } } 
+                      { \dim_eval:n { \l__fmulticol_tmpa_dim + \l__fmulticol_rule_extend_top_dim + \l__fmulticol_rule_extend_bot_dim } } 
                       { \dim_use:N \c_zero_dim } 
                       { \exp_not:N \columnseprulecolor } 
                   }
@@ -191,13 +200,21 @@
     \cs_set_eq:NN \RL@column@boxes \fmulticol@RL@column@boxes
   }
 \RequirePackage {adjmulticol}
-\tl_new:N \l__fmulticols_adj_inner_tl 
-\tl_new:N \l__fmulticols_adj_outer_tl 
+\ctex_patch_cmd:Nnn \adjmc@page@sofar
+  { \ifodd\c@page } { \iftrue \fmulticol@adjmc@ifoddpage }
+\cs_new:Npn \fmulticol@adjmc@ifoddpage #1\else #2\fi
+  { 
+    \fi
+    \legacy_if:nTF { @boxedmulticols } 
+      { \IfPageOdd{#1}{#2} } { \ifodd\c@page#1\else#2\fi }
+  }
+\tl_new:N \l__fmulticol_adj_inner_tl 
+\tl_new:N \l__fmulticol_adj_outer_tl 
 %%end-of patch 
 \cs_new_protected:Npn \fmulticolsetup { \keys_set:nn { fmulticol } }
 \keys_define:nn { fmulticol } 
   {
-    columns .code:n = \tl_set:Nx \l__fmulticols_cols_tl { \int_eval:n {#1} } ,
+    columns .code:n = \tl_set:Nx \l__fmulticol_cols_tl { \int_eval:n {#1} } ,
     columns .initial:n = 2 ,
     cols .meta:n = { columns = {#1} } ,
     first-minimal .dim_set:N = \premulticols ,
@@ -206,7 +223,7 @@
     outer-sep .meta:n = { outer-skip = {#1} } ,
     column-sep .dim_set:N = \columnsep ,
     sep .meta:n = { column-sep = {#1} } ,
-    heading .tl_set:N = \l__fmulticols_heading_tl ,
+    heading .tl_set:N = \l__fmulticol_heading_tl ,
     rule-width .dim_set:N = \columnseprule ,
     rule-color .code:n = 
       \tl_set:Nx \columnseprulecolor { \__fmulticol_color_select:n {#1} } ,
@@ -218,18 +235,18 @@
     flush .value_forbidden:n = true ,
     aligned .meta:n = { flush } ,
     aligned .value_forbidden:n = true ,
-    balanced .bool_set:N = \l__fmulticols_balanced_bool ,
+    balanced .bool_set:N = \l__fmulticol_balanced_bool ,
     balanced .initial:n = true ,
-    not-balanced .code:n = \bool_set_false:N \l__fmulticols_balanced_bool ,
+    not-balanced .code:n = \bool_set_false:N \l__fmulticol_balanced_bool ,
     not-balanced .value_forbidden:n = true ,
     columns* .meta:n = { not-balanced , columns = {#1} } ,
     cols*    .meta:n = { columns* = {#1} } ,
 
     % hook point 
-    before .tl_set:N = \l__fmulticols_before_tl ,
-    after  .tl_set:N = \l__fmulticols_after_tl  ,
-    begin  .tl_set:N = \l__fmulticols_begin_tl  ,
-    end    .tl_set:N = \l__fmulticols_end_tl    ,
+    before .tl_set:N = \l__fmulticol_before_tl ,
+    after  .tl_set:N = \l__fmulticol_after_tl  ,
+    begin  .tl_set:N = \l__fmulticol_begin_tl  ,
+    end    .tl_set:N = \l__fmulticol_end_tl    ,
 
     enable-swap-column .code:n = 
       \cs_set_eq:NN \fmulticol@update@boxes \fmulticol@swapcolumninevenpages ,
@@ -238,18 +255,25 @@
     disable-swap-column .value_forbidden:n = true ,
     swap-column .bool_set:N = \fmulticol@swapcolumn ,
 
-    adj .bool_set:N = \l__fmulticols_adj_bool ,
-    adj-inner .code:n = \bool_set_true:N \l__fmulticols_adj_bool 
-      \tl_set:Nx \l__fmulticols_adj_inner_tl { \dim_eval:n {#1} } ,
-    adj-outer .code:n = \bool_set_true:N \l__fmulticols_adj_bool 
-      \tl_set:Nx \l__fmulticols_adj_outer_tl { \dim_eval:n {#1} } ,
+    adj .bool_set:N = \l__fmulticol_adj_bool ,
+    adj-inner .code:n = \bool_set_true:N \l__fmulticol_adj_bool 
+      \tl_set:Nx \l__fmulticol_adj_inner_tl { \dim_eval:n {#1} } ,
+    adj-outer .code:n = \bool_set_true:N \l__fmulticol_adj_bool 
+      \tl_set:Nx \l__fmulticol_adj_outer_tl { \dim_eval:n {#1} } ,
     adj*      .meta:n = { adj , not-balanced } ,
+    _adj      .code:n = \__fmulticol_adj:Nnnn #1 ,
+    shorten   .code:n = \bool_set_true:N \l__fmulticol_adj_bool
+      \__fmulticol_adj:Nnnn + {#1} { 0pt } { 0pt } ,
+    widen     .code:n = \bool_set_true:N \l__fmulticol_adj_bool 
+      \__fmulticol_adj:Nnnn - {#1} { 0pt } { 0pt } ,
+
+    wrap-box .bool_set:N = \l__fmulticol_wrap_box_bool ,
 
     framed .choice: ,
     framed-options  .clist_set:N = \fmulticol@framed@options ,
     framed-options+ .code:n = \clist_put_right:Nn \fmulticol@framed@options {#1} ,
-    rule-top .dim_set:N = \l__fmulticols_rule_extend_top_dim ,
-    rule-bottom .dim_set:N = \l__fmulticols_rule_extend_bot_dim ,
+    rule-top .dim_set:N = \l__fmulticol_rule_extend_top_dim ,
+    rule-bottom .dim_set:N = \l__fmulticol_rule_extend_bot_dim ,
 
     % be careful to use
     addto-baselineskip .dim_set:N = \multicolbaselineskip ,
@@ -278,7 +302,7 @@
     unknown .code:n = 
       { 
         \exp_args:Nf \__fmulticol_if_head_int:nTF { \l_keys_key_str } 
-          { \tl_set:Nx \l__fmulticols_cols_tl { \int_eval:n { \l_keys_key_str } } } 
+          { \tl_set:Nx \l__fmulticol_cols_tl { \int_eval:n { \l_keys_key_str } } } 
           { \msg_error:nnx { fmulticol } { unknown-key } { \l_keys_key_str } }
       } ,
   }
@@ -298,9 +322,36 @@
       \exp_after:wN \use_i:nn
     \fi:
   }
+\cs_new:Npn \__fmulticol_adj:Nnnn #1#2#3#4
+  {
+    \tl_if_blank:nTF {#2}
+      {
+        \__kernel_tl_set:Nx \l__fmulticol_adj_inner_tl { #1 \dim_eval:n {#3} }
+        \__kernel_tl_set:Nx \l__fmulticol_adj_outer_tl { #1 \dim_eval:n {#4} }
+      }
+      {
+        \seq_set_split:Nnn \l__fmulticol_tmp_seq { , } {#2}
+        \int_compare:nNnTF { \seq_count:N \l__fmulticol_tmp_seq } = 1
+          {
+            \seq_pop_left:NN \l__fmulticol_tmp_seq \l__fmulticol_adj_inner_tl
+            \tl_set:Nx \l__fmulticol_adj_outer_tl
+              { #1 \dim_eval:n { \l__fmulticol_adj_inner_tl + #4 } }
+            \__kernel_tl_set:Nx \l__fmulticol_adj_inner_tl
+              { #1 \dim_eval:n { \l__fmulticol_adj_inner_tl + #3 } }
+          }
+          {
+            \seq_pop_left:NN \l__fmulticol_tmp_seq \l__fmulticol_adj_inner_tl
+            \__kernel_tl_set:Nx \l__fmulticol_adj_inner_tl 
+              { #1 \dim_eval:n { \l__fmulticol_adj_inner_tl + #3 } }
+            \seq_pop_left:NN \l__fmulticol_tmp_seq \l__fmulticol_adj_outer_tl
+            \__kernel_tl_set:Nx \l__fmulticol_adj_outer_tl 
+              { #1 \dim_eval:n { \l__fmulticol_adj_outer_tl + #4 } }
+          }
+      }
+  }
 \msg_new:nnn { fmulticol } { unknown-key }
   { The~key~`#1'~is~unknown~and~is~being~ignored. }
-\cs_new_protected:Npn \__fmulticols_process_framedoptions: 
+\cs_new_protected:Npn \__fmulticol_process_framedoptions: 
   {
     \hbox_set:Nn \c_zero_int % we never use it 
       { 
@@ -368,52 +419,53 @@
 \cs_new_protected_nopar:Npn \fmulticol@stopmulticolumns  { \endmulticols }
 \NewDocumentCommand \startmulticolumns { +O{} }
   {
-    \l__fmulticols_before_tl
+    \l__fmulticol_before_tl
     \group_begin:
+    \cs_if_exist:NT \@captype { \bool_set_true:N \l__fmulticol_wrap_box_bool }
     \keys_set:nn { fmulticol } {#1}
-    \__fmulticols_process_framedoptions: 
-    \int_compare:nNnTF \l__fmulticols_cols_tl < 2
+    \__fmulticol_process_framedoptions: 
+    \int_compare:nNnTF \l__fmulticol_cols_tl < 2
       { 
-        \bool_if:NTF \l__fmulticols_adj_bool 
+        \bool_if:NTF \l__fmulticol_adj_bool 
           {
             \cs_set:Npx \fmulticol@startmulticolumns 
               { 
                 \exp_not:c 
-                  { adjmulticols \bool_if:NF \l__fmulticols_balanced_bool * }
+                  { adjmulticols \bool_if:NF \l__fmulticol_balanced_bool * }
                   { 1 } 
-                  { \l__fmulticols_adj_inner_tl }
-                  { \l__fmulticols_adj_outer_tl }
-                  [ \exp_not:N \l__fmulticols_heading_tl ]
+                  { \l__fmulticol_adj_inner_tl }
+                  { \l__fmulticol_adj_outer_tl }
+                  [ \exp_not:N \l__fmulticol_heading_tl ]
               }
             \cs_set:Npx \fmulticol@stopmulticolumns 
               {
                 \tl_set:Nn \exp_not:N \@currenvir { adjmulticols }
                 \exp_not:c
-                  { endadjmulticols \bool_if:NF \l__fmulticols_balanced_bool * }
+                  { endadjmulticols \bool_if:NF \l__fmulticol_balanced_bool * }
               }
           }
           {
-            \cs_set:Npn \fmulticol@startmulticolumns { \l__fmulticols_heading_tl }
+            \cs_set:Npn \fmulticol@startmulticolumns { \l__fmulticol_heading_tl }
             \cs_set_eq:NN \fmulticol@stopmulticolumns \prg_do_nothing: 
           }
       }
       {
-        \bool_if:NTF \l__fmulticols_adj_bool 
+        \bool_if:NTF \l__fmulticol_adj_bool 
           {
             \cs_set:Npx \fmulticol@startmulticolumns 
               {
                 \exp_not:c
-                  { adjmulticols \bool_if:NF \l__fmulticols_balanced_bool * }
-                  { \l__fmulticols_cols_tl }
-                  { \l__fmulticols_adj_inner_tl }
-                  { \l__fmulticols_adj_outer_tl }
-                  [ \exp_not:N \l__fmulticols_heading_tl ]
+                  { adjmulticols \bool_if:NF \l__fmulticol_balanced_bool * }
+                  { \l__fmulticol_cols_tl }
+                  { \l__fmulticol_adj_inner_tl }
+                  { \l__fmulticol_adj_outer_tl }
+                  [ \exp_not:N \l__fmulticol_heading_tl ]
               }
             \cs_set:Npx \fmulticol@stopmulticolumns 
               {
                 \tl_set:Nn \exp_not:N \@currenvir { adjmulticols }
                 \exp_not:c
-                  { endadjmulticols \bool_if:NF \l__fmulticols_balanced_bool * }
+                  { endadjmulticols \bool_if:NF \l__fmulticol_balanced_bool * }
               }
           }
           {
@@ -421,27 +473,35 @@
               {
                 \tl_set:Nn \exp_not:N \@currenvir { multicols }
                 \exp_not:c
-                  { multicols \bool_if:NF \l__fmulticols_balanced_bool * }
-                  { \l__fmulticols_cols_tl }
-                  [ \exp_not:N \l__fmulticols_heading_tl ]
+                  { multicols \bool_if:NF \l__fmulticol_balanced_bool * }
+                  { \l__fmulticol_cols_tl }
+                  [ \exp_not:N \l__fmulticol_heading_tl ]
               }
             \cs_set:Npx \fmulticol@stopmulticolumns 
               {
                 \tl_set:Nn \exp_not:N \@currenvir { multicols }
                 \exp_not:c
-                  { endmulticols \bool_if:NF \l__fmulticols_balanced_bool * }
+                  { endmulticols \bool_if:NF \l__fmulticol_balanced_bool * }
               }
           }
       }
+    \bool_lazy_and:nnT { \bool_if_p:N \l__fmulticol_adj_bool }
+      { \bool_if_p:N \l__fmulticol_wrap_box_bool }
+      {
+        \tl_put_left:Nx \fmulticol@startmulticolumns
+          { \hbox to\linewidth\bgroup\vbox\bgroup\hsize\linewidth }
+        \tl_put_right:Nx \fmulticol@stopmulticolumns
+          { \egroup\hss\egroup }
+      }
     \fmulticol@startmulticolumns \relax 
-    \l__fmulticols_begin_tl
+    \l__fmulticol_begin_tl
   }
 \cs_new_protected_nopar:Npn \stopmulticolumns 
   { 
-    \l__fmulticols_end_tl 
+    \l__fmulticol_end_tl 
     \fmulticol@stopmulticolumns 
     \group_end: 
-    \l__fmulticols_after_tl 
+    \l__fmulticol_after_tl 
   }
 \fmulticolsetup { env-no-framed }
 %% longfbox 
