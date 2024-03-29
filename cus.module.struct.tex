@@ -25,7 +25,9 @@
         \tl_if_blank:nF {#1} { \keys_set:nn { cus/cbl-setup } {#1} }
         \g__cus_cbl_before_load_tl
         \int_gzero:N \g__cus_cbl_count_int
+        \group_begin: \makeatletter
         \@input { \g__cus_cbl_file_tl .toc } 
+        \group_end:
         \g__cus_cbl_after_load_tl
         \bool_if:NT \g__cus_cbl_write_bool 
           {
