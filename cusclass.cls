@@ -9,4 +9,4 @@
   }
 
 
-\ProcessKeysOptions { cus / class }
+\ProcessKeyOptions [ cus / class ]

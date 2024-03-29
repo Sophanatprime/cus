@@ -20,9 +20,8 @@
 % cus.module.pdfmana.tex, cus.module.space.tex, cus.module.struct.tex,
 % cus.module.util.tex and cusclass.cls .
 \NeedsTeXFormat{LaTeX2e}[2023/06/01]
-\RequirePackage{l3keys2e,xtemplate}
-\def\cus@d@te{2024/03/27}
-\def\cus@versi@n{0.0.4e}
+\def\cus@d@te{2024/03/29}
+\def\cus@versi@n{0.0.4f}
 \ProvidesExplPackage{cus}{\cus@d@te}{\cus@versi@n}{Chinese User Scheme (CUS) basic file}
 
 \def\CusTeX{C\kern-.12em \raise.0466ex\hbox{u}\kern-.1em\lower .4ex\hbox{S}\kern-.15em\TeX}
@@ -241,32 +240,51 @@
     \str_gset:cx { cus/library~#1 } {#2}
   }
 \cs_new:Npn \cus@iflibraryloaded #1 { \cs_if_exist:cTF { cus/library~#1 } }
-\prop_new:N \c__cus_library_delayed_prop
-\prop_set_from_keyval:Nn \c__cus_library_delayed_prop 
-  { pgf=tikz , tcb=tcolorbox }
-\cs_new:Npn \__cus_load_library_real:nnn #1#2#3
+\prop_new:N \g__cus_library_delayed_prop
+\cs_new_protected:Npn \CUSLibraryDelayedUntil #1
   {
-    \cus@iflibraryloaded {#1} { \use:n }
+    \tl_set:Nx \l__cus_tmp_tl { \tl_range:Nnn \CurrentFile { 13 } { -5 } }
+    \prop_if_in:NoTF \g__cus_library_delayed_prop \l__cus_tmp_tl
+      { }
+      {
+        \prop_gput:Nxx \g__cus_library_delayed_prop \l__cus_tmp_tl {#1}
+        \@ifpackageloaded {#1} 
+          { }
+          {
+            \cs_undefine:c { cus/library~\l__cus_tmp_tl }
+            \cs_undefine:c { @pkg-disable@cus.library.\l__cus_tmp_tl .tex }
+            \cs_undefine:c { ver@cus.library.\l__cus_tmp_tl .tex }
+            \exp_args:Neee
+            \hook_gput_code:nnn { package/#1/after } { cus/load }
+              {
+                % \file_input:n { cus.library.\l__cus_tmp_tl.tex }
+                \__cus_load_library_real:nnn { \l__cus_tmp_tl }
+                  { \exp_not:v { cus/library-options~\l__cus_tmp_tl } }
+                  { \exp_not:v { cus/library-version~\l__cus_tmp_tl } }
+              }
+            \tex_endinput:D 
+          }
+      }
+  }
+\cs_new_protected:Npn \__cus_load_library_real:nnn #1#2#3
+  {
+    \cus@iflibraryloaded {#1} { }
       { 
         \file_if_exist:nTF { cus.library.#1.tex }
-          { \elkernel_file_with_options:nnn { cus.library.#1.tex } {#3} {#2} \use:n }
-          { \msg_error:nnn { cus } { library-not-exist } {#1} \use_none:n }
+          { \elkernel_file_with_options:nnn { cus.library.#1.tex } {#3} {#2} }
+          { \msg_error:nnn { cus } { library-not-exist } {#1} }
       }
-        {
-          \CUSIfLibraryAtLeast {#1} {#3} { }
-            { \msg_error:nnxxx { cus } { library-out-of-date } {#1} {#3} { \use:c { cus/library~#1 } } }
-        }
+    \cus@iflibraryloaded {#1}
+      {
+        \CUSIfLibraryAtLeast {#1} {#3} { }
+          { \msg_error:nnxxx { cus } { library-out-of-date } {#1} {#3} { \use:c { cus/library~#1 } } }
+      } { }
   }
 \NewDocumentCommand \CUSLoadLibrary { m O{} O{0000/00/00} }
   {
-    \prop_if_in:NnTF \c__cus_library_delayed_prop {#1}
-      {
-        \hook_gput_code:nnn 
-          { package/ \prop_item:Nn \c__cus_library_delayed_prop {#1} / after }
-          { cus/load }
-          { \__cus_load_library_real:nnn {#1} {#2} {#3} }
-      }
-      { \__cus_load_library_real:nnn {#1} {#2} {#3} }
+    \tl_gset:cn { cus/library-options~#1 } {#2}
+    \tl_gset:cn { cus/library-version~#1 } {#3}
+    \__cus_load_library_real:nnn {#1} {#2} {#3}
   }
 \cs_new:Npn \CUSIfModuleAtLeast #1#2 % module, date(xxxx/xx/xx), true, false
   { \exp_args:Nv \__cus_date_if_at_least:nnTF { cus/module~#1 } {#2} }
@@ -492,4 +510,4 @@
 
 
 
-\ProcessKeysPackageOptions { cus/option }
+\ProcessKeyOptions [ cus/option ]
