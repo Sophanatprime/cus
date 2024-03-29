@@ -40,6 +40,22 @@
     \fi:
   }
 \int_new:N \g_cus_document_cbl_index_int 
+\tl_new:N \g__cus_contents_patch_tl
+\tl_gput_right:Nn \g__cus_contents_patch_tl 
+  {
+    \cs_set_eq:NN \ifintitle \use_ii:nn
+    \cs_set_eq:NN \ifincblentry \use_i:nn
+    \cs_set_eq:NN \label \__cus_use_none_exp_om:w 
+    \cs_set_eq:NN \index \__cus_use_none_exp_om:w 
+    \cs_set_eq:NN \glossary \__cus_use_none_exp_om:w 
+  }
+\cus_pkg_code:nnn { biblatex } { }
+  { \tl_gput_right:Nn \g__cus_contents_patch_tl { \blx@contentssafe@citecommands } }
+\tl_put_right:Nn \g__cus_cbl_before_load_tl
+  {
+    \cs_set_eq:NN \addtocontents \cus_gput_contents:nn 
+    \cs_set_eq:NN \contentsline \cus_contents_line:nnnnn 
+  }
 \cs_new_protected:Npn \cus_gput_contents:nn #1#2
   {
     % 为了防止出现 \protect\addvspace{length} 的情况，目录项必须大于 3
@@ -47,13 +63,7 @@
     \if_int_compare:w \tl_count:n {#2} > 3 \exp_stop_f:
     \int_gincr:N \g_cus_document_cbl_index_int 
     \protected@write \@auxout
-      {
-        \cs_set_eq:NN \ifintitle \use_ii:nn
-        \cs_set_eq:NN \ifincblentry \use_i:nn
-        \cs_set_eq:NN \label \__cus_use_none_exp_om:w 
-        \cs_set_eq:NN \index \__cus_use_none_exp_om:w 
-        \cs_set_eq:NN \glossary \__cus_use_none_exp_om:w 
-      }
+      { \g__cus_contents_patch_tl }
       {
         \token_to_str:N \@writefile { toc } 
           { \__cus_gput_contents:nnn {#1} #2 }
@@ -496,14 +506,8 @@
 \cs_new_protected_nopar:Npn \cus@cbl@contentsline { \__cus_contents_line:nnnnnnn }
 \cs_new_protected_nopar:Npn \cus@type@contentsline { \__cus_contents_line:nnnnnnn }
 \cus_pkg_code:nnn { hyperref }
+  { \cus_gbey_psrrule:nn { toc } { level-uniform } }
   {
-    \cs_set_eq:NN \addtocontents \cus_gput_contents:nn 
-    \cs_set_eq:NN \contentsline \cus_contents_line:nnnnn 
-    \cus_gbey_psrrule:nn { toc } { level-uniform }
-  }
-  {
-    \cs_set_eq:NN \addtocontents \cus_gput_contents:nn 
-    \cs_set_eq:NN \contentsline \cus_contents_line:nnnnn 
     \hook_new:n { hyp/link/toc }
     \cus_gbey_psrrule:nn { toc } { level-uniform-hyper }
   }
