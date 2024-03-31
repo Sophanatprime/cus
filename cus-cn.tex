@@ -2235,6 +2235,7 @@ Unicode 代码点。
 \end{function}
 
 也可直接使用 \cs{background} 放置背景图片。
+\needspace{3\baselineskip}
 \begin{xample}
 \background(ob){\includegraphics[width=\marginparwidth]{ctanlion.pdf}}
 \stopxamplecode
@@ -3551,11 +3552,12 @@ Unicode 代码点。
 \subsection{杂项}
 
 \nofuncskip 
-\begin{function}[pTF]{\cus_if_preamble:,\cus_if_document:,\cus_if_after_documentclass:}
+\begin{function}[pTF]{\cus_if_preamble:,\cus_if_document:,
+  \cus_if_class_loaded:,\cus_if_after_documentclass:}
   \begin{syntax}
     \verb|\cus_if_preamble:TF| \marg{true code} \marg{false code}
   \end{syntax}
-测试是否在导言区、正文或在 \tn{documentclass} 后。
+测试是否在导言区、正文，或是否已经加载了文档类，或是否在 \tn{documentclass} 后。
 \end{function}
 
 \begin{function}[EXP]{\cus_exp_args:Nd,\cus_exp_args:NNd,\cus_exp_args:Nnd,
@@ -3890,8 +3892,6 @@ Unicode 代码点。
   \end{syntax}
 直接执行 \meta{处理器} 的 \meta{规则}。可用于其它规则中，相当于一个宏。其后需有对应数目的参数。
 \end{function}
-
-\enlargethispage{12pt}
 
 \begin{function}[EXP]{\cus_psr_argument_count:n}
   \begin{syntax}
@@ -4348,6 +4348,13 @@ cbl 列表除了 \cs{cus@type@contentsline}、\cs{cus@type@contentsline@}、
 这些宏包的 \veta{level name} 的 \veta{level} 值都是 $1$，即与 \tn{section} 同级。
 可以使用 \csref{addcombinedlisttype} 修改。
 
+\begin{function}{\setplaintocdepth}
+  \begin{syntax}
+    \V\setplaintocdepth \marg{整数或层级名称}
+  \end{syntax}
+设置 \texttt{tocdepth} 计数器的值。可以用来控制目录显示的层级。
+\end{function}
+
 
 \section{\pkg{etoc}风格的目录设置方式}
 
@@ -4562,7 +4569,7 @@ cbl 列表除了 \cs{cus@type@contentsline}、\cs{cus@type@contentsline@}、
   {\showhbarl └ \showthelevel list finish\par}
 \setlength{\parindent}{0pt}
 \setlength{\lineskip}{0pt} \setlength{\lineskiplimit}{\maxdimen}
-\fontspec{TH-Times}\small
+\IfFontExistsTF{TH-Times}{\fontspec{TH-Times}}{}\small
 \specifiedtoc 
 \stopmulticolumns 
 \stopxamplecode
@@ -4585,7 +4592,7 @@ cbl 列表除了 \cs{cus@type@contentsline}、\cs{cus@type@contentsline@}、
   {\showhbarl └ \showthelevel list finish\par}
 \setlength{\parindent}{0pt}
 \setlength{\lineskip}{0pt} \setlength{\lineskiplimit}{\maxdimen}
-\fontspec{TH-Times}\small
+\IfFontExistsTF{TH-Times}{\fontspec{TH-Times}}{}\small
 \specifiedtoc 
 \label{ref:toc-code-order-2}
 \vpagerefcompare{ref:toc-code-order-1}{ref:toc-code-order-2}{}
@@ -4823,7 +4830,9 @@ verbatim 和分段。
 
 \begin{keyval}[path=/tikz]{tangent,at tangent}
   \begin{syntax}
+    tangent=\meta{pos}
     tangent=\meta{name} at\meta{pos}
+    tangent=\meta{name} at\meta{pos} and ...
     at tangent=\meta{name}
   \end{syntax}
 \keyref[/tikz]{tangent} 用于记录一条路径在 \meta{pos} 的切点坐标及切线方向，
@@ -5317,8 +5326,6 @@ BNF 范式排版环境。
 \xampletext
 \end{xample}
 
-\enlargethispage{10pt}
-
 完全等价的一个写法是：
 \begin{xample}[language={[BNF]{TeX}}]
 \begin{latexbnf}[hyper, hyper-color=purple]
@@ -5752,9 +5759,12 @@ s_0,s_1,s_2&w_0&g_0&w_1&g_1&w_2\rlap{ (in \texttt{pt})}\\\hline
 
 \section{\cuslibrary{pdf}库}
 
-本库提供一些与 PDF 文件的特性相关的功能。它们只能在使用了 \cs{DocumentMetadata} 之后使用。
+本库提供一些与 PDF 文件的特性相关的功能。它们只能在使用了 
+\cs[break-at-any]{DocumentMetadata} 之后使用。
 
 默认情况下，在 \TeX 中直接导入 PDF 文件会丢失该 PDF 的超链接信息，使用本库可以解决此问题。
+相较于直接使用 \pkg{newpax} 宏包，若导入的 PDF 文件中有很多超链接，
+本库提供的 \cs{includegraphicspax} 速度会快很多。
 
 \begin{keyval}[path=pdf]{pax,pax+}
   \begin{syntax}
@@ -5801,7 +5811,7 @@ s_0,s_1,s_2&w_0&g_0&w_1&g_1&w_2\rlap{ (in \texttt{pt})}\\\hline
     \V*|\collectn_verbatim:Nnw| \meta{tl} \marg{code} \marg{balanced tokens}
   \end{syntax}
 向后以 verbatim 的形式收集内容，将其保存至 \meta{tl} 中，再执行 \meta{code}。
-\meta{token} 或 \meta{\meta{balanced tokens}} 不在命令的参数里。
+\meta{token} 或 \meta{\meta{balanced tokens}} 不能在命令的参数里。
 
 \cs{l_collectn_long_verbatim_bool} 控制是否接受长的 verbatim 文本（包含 \tn{par} 的）。
 \end{function}
@@ -6058,9 +6068,13 @@ s_0,s_1,s_2&w_0&g_0&w_1&g_1&w_2\rlap{ (in \texttt{pt})}\\\hline
 然后执行 \meta{code}。
 
 \meta{tl} 由形如 
-\verb|{_|\marg{text}\verb|}| 或 \verb|{^|\marg{text}\verb|}| 的项组成。
+\verb|{^|\marg{text}\verb|}| 或 \verb|{_|\marg{text}\verb|}| 的项组成。
+其中 \verb|^| 和 \verb|_| 的类别码分别为 7 和 8。
 
 它们会自动展开后面的内容，并且自动移除空格和 \tn{relax}。
+
+它们只会匹配类别码为 7 和 8 的显式或隐式字符。若加载了 \pkg{underscore} 宏包，则 \texttt{\_}
+的类别码会修改为 13，在文本模式下无法匹配，但在数学模式下可以。
 \end{function}
 
 \begin{xample}
@@ -6196,6 +6210,23 @@ s_0,s_1,s_2&w_0&g_0&w_1&g_1&w_2\rlap{ (in \texttt{pt})}\\\hline
 
 检查是否为键值对的方法和 \pkg{ltcmd} 的 \texttt = spec 一致。
 \end{function}
+
+\begin{function}[TF]{\elkernel_if_date_at_least:nn}
+  \begin{syntax}
+    \V*|\elkernel_if_date_at_least:nnTF| \marg{date_1} \marg{date_2} \marg{true} \marg{false}
+  \end{syntax}
+测试 \meta{date_1} 是否等于或晚于 \meta{date_2}。
+年月日可用 \texttt{\textbackslash} 或 \texttt{-} 分隔，但不可混用。
+\end{function}
+
+\begin{xample}
+\ExplSyntaxOn
+\tl_to_str:N \fmtversion;
+\elkernel_if_date_at_least:nnTF { \fmtversion } { 2024/06/01 } { t } { f }
+\ExplSyntaxOff
+\stopxamplecode
+\xampleprint
+\end{xample}
 
 \subsection{定义命令——\pkg{lt3ekeyscmd}}\label{sec:lt3ekeyscmd}
 
@@ -6760,14 +6791,14 @@ $ \foo<a|b> $\quad $ \foo\displaystyle<\sum|\prod> $.
         \collectn_scan_keywords:nTF { true, false, on, off, yes, no }
           {
             \int_if_odd:nTF \l_collectn_keywords_int
-              { \ekeys_cmd_scanner_end: 1 }
-              { \ekeys_cmd_scanner_end: 0 }
+              { \ekeys_cmd_scanner_end: 1~ }
+              { \ekeys_cmd_scanner_end: 0~ }
           }
-          { \ekeys_cmd_scanner_end: }
+          { \ekeys_cmd_scanner_end: -1~ }
       }
   }
+\DeclareEKeysCommand \foo { K{u{replace-keyword-to-num}} u{~} } {[#1]}
 \ExplSyntaxOff
-\DeclareEKeysCommand \foo { K{u{replace-keyword-to-num}} m } {[#1]}
 \foo TRUE; \foo on; \foo false; \foo ;
 \stopxamplecode
 \xampleprint

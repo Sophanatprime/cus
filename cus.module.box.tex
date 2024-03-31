@@ -749,7 +749,7 @@
 \cs_new_eq:NN \__cus_filler_math: \__cus_filler:
 \cs_new:Npn \__cus_filler_aux:nn { \cus_align_leaders:nn }
 \NewDocumentCommand \filler { O{} } { \cus_filler:n {#1} }
-\NewDocumentCommand \dashfiller { O{0pt} G{\linewidth} !O{1ex} !O{0.4pt} } % r, w, s, ru
+\ekeysdeclarecmd \dashfiller { O{0pt} G{\linewidth} O{1ex} O{0.4pt} } % r, w, s, ru
   { \exp_args:Nnff \cus_dash_approx:nnnn {#1} { \dim_eval:n {#2} } { \dim_eval:n {#4} } {#3} }
 \NewDocumentCommand \atleastfiller { O{} m } % filler at least #2 width
   { 

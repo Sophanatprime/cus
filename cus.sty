@@ -20,8 +20,8 @@
 % cus.module.pdfmana.tex, cus.module.space.tex, cus.module.struct.tex,
 % cus.module.util.tex and cusclass.cls .
 \NeedsTeXFormat{LaTeX2e}[2023/06/01]
-\def\cus@d@te{2024/03/29}
-\def\cus@versi@n{0.0.4f}
+\def\cus@d@te{2024/03/31}
+\def\cus@versi@n{0.0.4g}
 \ProvidesExplPackage{cus}{\cus@d@te}{\cus@versi@n}{Chinese User Scheme (CUS) basic file}
 
 \def\CusTeX{C\kern-.12em \raise.0466ex\hbox{u}\kern-.1em\lower .4ex\hbox{S}\kern-.15em\TeX}
@@ -94,11 +94,9 @@
   }
 %%
 
-\RequirePackage{xparse}
 \RequirePackage{ctexhook,ctexpatch}
 \RequirePackage{etl}
-% \RequirePackage{parserange}
-\RequirePackage{lt3ekeysext}
+\RequirePackage{lt3ekeysext}[2024/03/31]
 \RequirePackage{updatemarks}
 
 \sys_if_engine_xetex:TF 
@@ -211,16 +209,12 @@
 \cs_new:Npn \cus@ifmoduleloaded #1 { \cs_if_exist:cTF { cus/module~#1 } }
 \NewDocumentCommand \CUSLoadModule { m O{} O{0000/00/00} }
   {
-    \cus@ifmoduleloaded {#1} { \use:n }
+    \cus@ifmoduleloaded {#1} { }
       { 
         \file_if_exist:nTF { cus.module.#1.tex }
-          { \elkernel_file_with_options:nnn { cus.module.#1.tex } {#3} {#2} \use:n }
-          { \msg_error:nnn { cus } { module-not-exist } {#1} \use_none:n }
+          { \elkernel_file_with_options:nnn { cus.module.#1.tex } {#3} {#2} }
+          { \msg_error:nnn { cus } { module-not-exist } {#1} }
       }
-        {
-          \CUSIfModuleAtLeast {#1} {#3} { }
-            { \msg_error:nnxxx { cus } { module-out-of-date } {#1} {#3} { \use:c { cus/module~#1 } } }
-        }
   }
 \msg_new:nnnn { cus } { library-out-of-date } 
   { The~library~`#1'~you~try~to~load~is~out~of~date,~please~update~this~package. }
@@ -241,32 +235,47 @@
   }
 \cs_new:Npn \cus@iflibraryloaded #1 { \cs_if_exist:cTF { cus/library~#1 } }
 \prop_new:N \g__cus_library_delayed_prop
-\cs_new_protected:Npn \CUSLibraryDelayedUntil #1
+\ekeysdeclarecmd \CUSLibraryDelayedUntil { s m }
   {
     \tl_set:Nx \l__cus_tmp_tl { \tl_range:Nnn \CurrentFile { 13 } { -5 } }
-    \prop_if_in:NoTF \g__cus_library_delayed_prop \l__cus_tmp_tl
-      { }
+    \bool_if:nT {#1} 
+      { 
+        \cus_if_class_loaded:F 
+          {
+            \__cus_load_library_hook:nn \cus_hook_gput_dc:n { \l__cus_tmp_tl }
+            \use_i:nnnn \tex_endinput:D
+          }
+      }
+    \tl_if_blank:nF {#2}
       {
-        \prop_gput:Nxx \g__cus_library_delayed_prop \l__cus_tmp_tl {#1}
-        \@ifpackageloaded {#1} 
+        \prop_if_in:NoTF \g__cus_library_delayed_prop \l__cus_tmp_tl
           { }
           {
-            \cs_undefine:c { cus/library~\l__cus_tmp_tl }
-            \cs_undefine:c { @pkg-disable@cus.library.\l__cus_tmp_tl .tex }
-            \cs_undefine:c { ver@cus.library.\l__cus_tmp_tl .tex }
-            \exp_args:Neee
-            \hook_gput_code:nnn { package/#1/after } { cus/load }
-              {
-                % \file_input:n { cus.library.\l__cus_tmp_tl.tex }
-                \__cus_load_library_real:nnn { \l__cus_tmp_tl }
-                  { \exp_not:v { cus/library-options~\l__cus_tmp_tl } }
-                  { \exp_not:v { cus/library-version~\l__cus_tmp_tl } }
+            \prop_gput:Nxx \g__cus_library_delayed_prop \l__cus_tmp_tl {#2}
+            \@ifpackageloaded {#2} 
+              { }
+              { 
+                \__cus_load_library_hook:nn 
+                  { \hook_gput_code:nnn { package/#2/after } {cus/load} } \l__cus_tmp_tl
+                \tex_endinput:D 
               }
-            \tex_endinput:D 
           }
       }
   }
-\cs_new_protected:Npn \__cus_load_library_real:nnn #1#2#3
+\cs_new_protected:Npn \__cus_load_library_hook:nn #1#2
+  { 
+    \cs_undefine:c { cus/library~#2 }
+    \cs_undefine:c { @pkg-disable@cus.library.#2.tex }
+    \cs_undefine:c { ver@cus.library.#2.tex }
+    \exp_args:Nne \use:n {#1}
+      {
+        % \file_input:n { cus.library.#2.tex }
+        \__cus_load_library_delayed:nnn { #2 }
+          { \exp_not:v { cus/library-options~#2 } }
+          { \exp_not:v { cus/library-version~#2 } }
+      }
+  }
+\cs_new_protected:Npn \__cus_load_library_delayed:nnn #1#2#3
   {
     \cus@iflibraryloaded {#1} { }
       { 
@@ -274,37 +283,14 @@
           { \elkernel_file_with_options:nnn { cus.library.#1.tex } {#3} {#2} }
           { \msg_error:nnn { cus } { library-not-exist } {#1} }
       }
-    \cus@iflibraryloaded {#1}
-      {
-        \CUSIfLibraryAtLeast {#1} {#3} { }
-          { \msg_error:nnxxx { cus } { library-out-of-date } {#1} {#3} { \use:c { cus/library~#1 } } }
-      } { }
   }
 \NewDocumentCommand \CUSLoadLibrary { m O{} O{0000/00/00} }
   {
-    \tl_gset:cn { cus/library-options~#1 } {#2}
-    \tl_gset:cn { cus/library-version~#1 } {#3}
-    \__cus_load_library_real:nnn {#1} {#2} {#3}
-  }
-\cs_new:Npn \CUSIfModuleAtLeast #1#2 % module, date(xxxx/xx/xx), true, false
-  { \exp_args:Nv \__cus_date_if_at_least:nnTF { cus/module~#1 } {#2} }
-\cs_new:Npn \CUSIfLibraryAtLeast #1#2 % library, date(xxxx/xx/xx), true, false
-  { \exp_args:Nv \__cus_date_if_at_least:nnTF { cus/library~#1 } {#2} }
-\cs_new:Npn \__cus_date_if_at_least:nnTF #1#2
-  {
-    \if_int_odd:w \__cus_date_if_at_least:w #1 \s__cus_mark #2 \s__cus_stop \exp_stop_f:
-      \exp_after:wN \use_i:nn
-    \else:
-      \exp_after:wN \use_ii:nn
-    \fi:
-  }
-\cs_new:Npn \__cus_date_if_at_least:w #1/#2/#3 \s__cus_mark #4/#5/#6 \s__cus_stop
-  {
-    \bool_lazy_any_p:n
+    \tl_if_exist:cF { cus/library-options~#1 }
       {
-        { \int_compare_p:nNn {#1} > {#4} }
-        { \int_compare_p:nNn {#2} > {#5} }
-        { \int_compare_p:nNn {#3} > {#6} }
+        \tl_gset:cn { cus/library-options~#1 } {#2}
+        \tl_gset:cn { cus/library-version~#1 } {#3}
+        \__cus_load_library_delayed:nnn {#1} {#2} {#3}
       }
   }
 %% fmt (fmt version), engine, package, library of package, class, module, library
@@ -398,13 +384,12 @@
 \CUSLoadModule { ltx }
 \CUSLoadModule { util }
 \CUSLoadModule { algo }
-\CUSLoadModule { package }
 
 \group_begin:
 \cs_set:Npn \__cus_latex_hook_new:nnNn #1#2#3#4
   {
     \cus_toks_new:N #3
-    \hook_gput_code:nnn {#1} {#2} { \cus_toks_use:N #3 }
+    \hook_gput_code:nnn {#1} {#2} { \cus_toks_use_gclear:N #3 }
     \cs_new_protected:cpn { cus_hook_gput_ #4 :n } { \cus_toks_gput_right:Nn #3 }
     \cs_new_protected:cpn { cus_hook_gput_ #4 :w } ##1 \cus_hook_end:
       { \cus_toks_gput_right:Nn #3 {##1} }
@@ -418,6 +403,7 @@
     {enddocument/afterlastpage}{cus/document}\g__cus_after_lastpage_toks{lp} ,
     {enddocument/afteraux}  {cus/document}\g__cus_after_aux_toks        {aa} ,
     {shipout/after}         {cus/reset}   \g__cus_page_set_toks         {pg} ,
+    {class/after}           {cus/initial} \g__cus_class_hook_toks       {dc} ,
   }
 \clist_map_inline:Nn \l__cus_hook_tl { \__cus_latex_hook_new:nnNn #1 }
 \group_end:
@@ -428,6 +414,13 @@
 \cs_new:Npn \cus_if_preamble:F { \cus_if_preamble:TF { } }
 \cs_new:Npn \cus_if_document:T #1 { \cus_if_document:TF {#1} { } }
 \cs_new:Npn \cus_if_document:F { \cus_if_document:TF { } }
+\prg_new_conditional:Npnn \cus_if_class_loaded: { T, F, TF }
+  {
+    \tl_if_head_eq_meaning:VNTF \normalsize { \@latex@error }
+      { \prg_return_false: } { \prg_return_true: }
+  }
+\cs_new_protected:Npn \cus_after_class:n
+  { \cus_if_class_loaded:TF { \use:n } { \cus_hook_gput_dc:n } }
 
 \cus_hook_gput_ae:n 
   {
@@ -441,17 +434,20 @@
   { \msg_error:nnx { cus } { patch-failure } { \token_to_str:N } }
 \msg_new:nnn { cus } { patch-failure } { Patch~command~`#1'~failure. }
 
-
 \CUSLoadModule { counter }
 \CUSLoadModule { space }
-\CUSLoadModule { bgfg }
-\CUSLoadModule { layout }
-%\CUSLoadModule { notes }
 \CUSLoadModule { buffer }
 \CUSLoadModule { box }
-\CUSLoadModule { index }
-\CUSLoadModule { struct }
 \CUSLoadModule { pdfmana }
+\cus_after_class:n 
+  {
+    \CUSLoadModule { package }
+    \CUSLoadModule { bgfg }
+    \CUSLoadModule { layout }
+    % \CUSLoadModule { notes }
+    \CUSLoadModule { index }
+    \CUSLoadModule { struct }
+  }
 
 
 \cus_pkg_code:nnn { array } { }

@@ -1907,6 +1907,11 @@
       { \exp_args:Nnf \setcounter { secnumdepth } { \cus_heading_level:n { toc-#1 } } }
   }
 \cs_new_protected_nopar:Npn \setsecnumdepth { \setsecnumberdepth }
+\NewDocumentCommand \setplaintocdepth { >{\TrimSpaces} m }
+  { 
+    \cus_if_head_int:nTF {#1} { \setcounter { tocdepth } { \int_eval:n {#1} } }
+      { \exp_args:Nnf \setcounter { tocdepth } { \cus_heading_level:n { toc-#1 } } }
+  }
 
 % 判断是不是已经 patch 了
 \cs_if_exist:NF \ctex_cleveref_hook:
