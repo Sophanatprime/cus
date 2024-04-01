@@ -6,7 +6,7 @@
     \ekeysdeclarecmd \includegraphicspax { s O{} m }
       { \IfBooleanTF {#1} { \Gin@ii [{clip,#2}] {#3} }{ \Gin@ii [{#2}] {#3} } }
   }
-\CusIfPdfmana { } { \c__cus_pdf_patch_tl \tex_endinput:D }
+\CusIfPdfmana { } { \c__cus_pdf_patch_tl \file_input_stop: }
 
 \keys_define:nn { cus/pdf }
   {

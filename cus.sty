@@ -20,8 +20,8 @@
 % cus.module.pdfmana.tex, cus.module.space.tex, cus.module.struct.tex,
 % cus.module.util.tex and cusclass.cls .
 \NeedsTeXFormat{LaTeX2e}[2023/06/01]
-\def\cus@d@te{2024/03/31}
-\def\cus@versi@n{0.0.4g}
+\def\cus@d@te{2024/04/01}
+\def\cus@versi@n{0.0.4h}
 \ProvidesExplPackage{cus}{\cus@d@te}{\cus@versi@n}{Chinese User Scheme (CUS) basic file}
 
 \def\CusTeX{C\kern-.12em \raise.0466ex\hbox{u}\kern-.1em\lower .4ex\hbox{S}\kern-.15em\TeX}
@@ -196,24 +196,24 @@
   { The~module~`#1'~you~try~to~load~does~not~exist. }
 \cs_new_protected_nopar:Npn \CUSProvideModule #1#2#3#4
   {
-    \str_if_exist:cT { cus/module~#1 } { \tex_endinput:D }
+    \str_if_exist:cT { cus/module~#1 } { \file_input_stop: }
     \ProvidesFile {#1} [#2~#3~#4]
     \str_gset:cx { cus/module~#1 } {#2}
   }
 \cs_new_protected_nopar:Npn \CUSProvideExplModule #1#2#3#4
   {
-    \str_if_exist:cT { cus/module~#1 } { \tex_endinput:D }
+    \str_if_exist:cT { cus/module~#1 } { \file_input_stop: }
     \ProvidesExplFile {#1} {#2} {#3} {#4}
     \str_gset:cx { cus/module~#1 } {#2}
   }
 \cs_new:Npn \cus@ifmoduleloaded #1 { \cs_if_exist:cTF { cus/module~#1 } }
-\NewDocumentCommand \CUSLoadModule { m O{} O{0000/00/00} }
+\NewDocumentCommand \CUSLoadModule { +O{} m O{0000/00/00} }
   {
-    \cus@ifmoduleloaded {#1} { }
+    \cus@ifmoduleloaded {#2} { }
       { 
-        \file_if_exist:nTF { cus.module.#1.tex }
-          { \elkernel_file_with_options:nnn { cus.module.#1.tex } {#3} {#2} }
-          { \msg_error:nnn { cus } { module-not-exist } {#1} }
+        \file_if_exist:nTF { cus.module.#2.tex }
+          { \elkernel_file_with_options:nnn { cus.module.#2.tex } {#3} {#1} }
+          { \msg_error:nnn { cus } { module-not-exist } {#2} }
       }
   }
 \msg_new:nnnn { cus } { library-out-of-date } 
@@ -223,13 +223,13 @@
   { The~library~`#1'~you~try~to~load~does~not~exist. }
 \cs_new_protected_nopar:Npn \CUSProvideLibrary #1#2#3#4
   {
-    \str_if_exist:cT { cus/library~#1 } { \tex_endinput:D }
+    \str_if_exist:cT { cus/library~#1 } { \file_input_stop: }
     \ProvidesFile {#1} [#2~#3~#4]
     \str_gset:cx { cus/library~#1 } {#2}
   }
 \cs_new_protected_nopar:Npn \CUSProvideExplLibrary #1#2#3#4
   {
-    \str_if_exist:cT { cus/library~#1 } { \tex_endinput:D }
+    \str_if_exist:cT { cus/library~#1 } { \file_input_stop: }
     \ProvidesExplFile {#1} {#2} {#3} {#4}
     \str_gset:cx { cus/library~#1 } {#2}
   }
@@ -243,7 +243,7 @@
         \cus_if_class_loaded:F 
           {
             \__cus_load_library_hook:nn \cus_hook_gput_dc:n { \l__cus_tmp_tl }
-            \use_i:nnnn \tex_endinput:D
+            \use_i:nnnn \file_input_stop:
           }
       }
     \tl_if_blank:nF {#2}
@@ -257,7 +257,7 @@
               { 
                 \__cus_load_library_hook:nn 
                   { \hook_gput_code:nnn { package/#2/after } {cus/load} } \l__cus_tmp_tl
-                \tex_endinput:D 
+                \file_input_stop: 
               }
           }
       }
@@ -280,17 +280,34 @@
     \cus@iflibraryloaded {#1} { }
       { 
         \file_if_exist:nTF { cus.library.#1.tex }
-          { \elkernel_file_with_options:nnn { cus.library.#1.tex } {#3} {#2} }
+          { 
+            \exp_last_unbraced:Ne \elkernel_file_with_options:nnn 
+              {
+                { cus.library.#1.tex } 
+                {#3} 
+                {
+                  \clist_if_exist:cT { cus/library-options-passed~#1 }
+                    { \exp_not:v { cus/library-options-passed~#1 } , }
+                  \exp_not:n {#2} 
+                }
+              }
+          }
           { \msg_error:nnn { cus } { library-not-exist } {#1} }
       }
   }
-\NewDocumentCommand \CUSLoadLibrary { m O{} O{0000/00/00} }
+\cs_new_protected:Npn \CUSPassOptionsToLibrary #1#2
   {
-    \tl_if_exist:cF { cus/library-options~#1 }
+    \clist_if_exist:cF { cus/library-options-passed~#2 }
+      { \clist_new:c { cus/library-options-passed~#2 } }
+    \clist_put_right:cn { cus/library-options-passed~#2 } {#1}
+  }
+\NewDocumentCommand \CUSLoadLibrary { +O{} m O{0000/00/00} }
+  {
+    \tl_if_exist:cF { cus/library-options~#2 }
       {
-        \tl_gset:cn { cus/library-options~#1 } {#2}
-        \tl_gset:cn { cus/library-version~#1 } {#3}
-        \__cus_load_library_delayed:nnn {#1} {#2} {#3}
+        \tl_gset:cn { cus/library-options~#2 } {#1}
+        \tl_gset:cn { cus/library-version~#2 } {#3}
+        \__cus_load_library_delayed:nnn {#2} {#1} {#3}
       }
   }
 %% fmt (fmt version), engine, package, library of package, class, module, library
@@ -338,7 +355,7 @@
     \exp_last_unbraced:Ne \__cus_load_library_aux:nwn 
       { \cus_split_bracket_tail_default:nn {#1} { 0000/00/00 } }
   }
-\cs_new:Npn \__cus_load_library_aux:nwn #1[#2]#3 { \CUSLoadLibrary {#1} [{#3}] [{#2}] }
+\cs_new:Npn \__cus_load_library_aux:nwn #1[#2]#3 { \CUSLoadLibrary [{#3}] {#1} [{#2}] }
 \msg_new:nnn { cus } { package-disable } 
   { Compiling~aborted,~you~should~not~use~package~`#1'. }
 \cs_new_nopar:Npn \__cus_disable_packages:n #1
@@ -363,8 +380,8 @@
               }
               {
                 \tl_if_novalue:nTF {#4}
-                  { \RequirePackage [#2] {#3} }
-                  { \RequirePackage [#2] {#3} [#4] }
+                  { \RequirePackage [{#2}] {#3} }
+                  { \RequirePackage [{#2}] {#3} [#4] }
               }
           }
       }

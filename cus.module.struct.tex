@@ -1456,32 +1456,47 @@
             \cus_if_keyval_variable:nNnn {##3}
               \l__cus_title_curr_keys_tl
               {
-                \__cus_title_full:onnnnn \l__cus_title_curr_keys_tl
+                \__cus_title:onnnnn \l__cus_title_curr_keys_tl
                   {#2} {#3} {##1} {##5} {##5}
               }
               {
                 \tl_if_empty:NTF \l__cus_title_curr_keys_tl
-                  { \__cus_title_normal:nnnnn {#2} {#3} {##1} {##5} {##5} }
-                  { \__cus_title_normal:nnnnn {#2} {#3} {##1} {##3} {##5} }
+                  { \__cus_title:nnnnnn { } {#2} {#3} {##1} {##5} {##5} }
+                  { \__cus_title:nnnnnn { } {#2} {#3} {##1} {##3} {##5} }
               }
           }
-          { \__cus_title_full:nnnnnn {##3} {#2} {#3} {##1} {##4} {##5} }
+          { \__cus_title:nnnnnn {##3} {#2} {#3} {##1} {##4} {##5} }
         \__cus_restore_title_setting:n {#2}
         \__cus_title_ending:
-        \ignorespaces
       }
   }
+\tl_new:N \g__cus_title_next_keys_tl
+\bool_new:N \g__cus_title_next_known_bool
 % key, title str, class, star or else, entry, title 
-\cs_new_protected:Npn \__cus_title_full:nnnnnn #1#2 
+\cs_new_protected:Npn \__cus_title:nnnnnn #1#2 
   {
-    \__cus_store_title_setting:nn {#2} {#1}
-    \cus_setup_title:nn {#2} {#1}
-    \__cus_title_normal:nnnnn {#2} 
+    \exp_args:Nno \__cus_store_title_setting:nn 
+      {#2} { \g__cus_title_next_keys_tl , #1 }
+    \tl_if_blank:oTF \g__cus_title_next_keys_tl
+      { \cus_setup_title:nn {#2} {#1} }
+      {
+        \bool_if:NTF \g__cus_title_next_known_bool
+          {
+            \exp_args:Nno \cus_setup_known_title:nn 
+              {#2} { \g__cus_title_next_keys_tl , #1 }
+          }
+          {
+            \exp_args:Nno \cus_setup_title:nn 
+              {#2} { \g__cus_title_next_keys_tl , #1 }
+          }
+      }
+    \tl_gclear:N \g__cus_title_next_keys_tl
+    \bool_gset_false:N \g__cus_title_next_known_bool
+    \__cus_title:nnnnn {#2}
   }
-\cs_new_protected:Npn \__cus_title_full:onnnnn 
-  { \exp_args:No \__cus_title_full:nnnnnn }
+\cs_new_protected:Npn \__cus_title:onnnnn { \exp_args:No \__cus_title:nnnnnn }
 % title str, class, star or else, entry, title 
-\cs_new_protected:Npn \__cus_title_normal:nnnnn #1#2#3#4#5
+\cs_new_protected:Npn \__cus_title:nnnnn #1#2#3#4#5
   {
     \use:e 
       { 
@@ -1491,7 +1506,12 @@
       } 
         {#5}
   }
-\NewDocumentCommand \setuptitle { O{*} +m }
+\ekeysdeclarecmd \setupnexttitle { t? t+ m }
+  {
+    \bool_gset:Nn \g__cus_title_next_known_bool {#1}
+    \bool_if:nTF {#2} \tl_gput_right:Nn \tl_gset:Nn \g__cus_title_next_keys_tl {,#3}
+  }
+\ekeysdeclarecmd \setuptitle { @O{*} m }
   {
     \seq_set_from_clist:Nn \l__cus_tmpa_seq {#1}
     \seq_if_in:NnTF \l__cus_tmpa_seq { * }
@@ -1500,6 +1520,9 @@
         { \setuponetitle {##1} {#2} }
   }
 \cs_new_protected:Npn \cus_setup_title:nn #1 { \keys_set:nn { cus/title/#1 } }
+\clist_new:N \l__cus_title_unknown_keys_clist
+\cs_new_protected:Npn \cus_setup_known_title:nn #1 
+  { \keys_set_known:nnN { cus/title/#1 } \l__cus_title_unknown_keys_clist }
 \cs_new_protected:Npn \cus_title_level_do:nn #1#2
   {
     \cs_set:Npn \__cus_title_level_do:n ##1 {#2}
@@ -1574,14 +1597,16 @@
 \cs_new_nopar:Npn \titleinternalvalue #1 { \cs:w title~parameter@#1 \cs_end: }
 \cs_new_protected:Npn \__cus_define_title_keys:n #1
   {
-    \cus_setup_title_store_restore:nnN {#1}
+    % 这些键都使用预定义的通用恢复方法（所有标题都一致的恢复方法）
+    % 区别于默认恢复方法，它们可能无需恢复，也可能需要特殊处理
+    \cus_setup_title_store_restore:nnn {#1}
       { 
         style, name, name-preto, name-appto, number, numbering, 
         number-from, number-within, number-without, 
         number-format, label-format,
         bookmark, bookmark* 
       }
-      @ 
+      { general }
     \keys_define:nn { cus/title } { #1 .meta:nn = { cus/title/#1 } {##1} }
     \keys_define:nn { cus/title/ #1 }
       {
@@ -1615,7 +1640,7 @@
         numbering     .choice: ,
         numbering / true .code:n = \__cus_title_set_mode:nn {#1} { normal } ,
         numbering / yes  .code:n = \__cus_title_set_mode:nn {#1} { normal } ,
-        numbering / one  .code:n = \__cus_title_set_mode:nn {#1} { normal } ,
+        numbering / on  .code:n = \__cus_title_set_mode:nn {#1} { normal } ,
         numbering / false.code:n = \__cus_title_set_mode:nn {#1} { nonumber } ,
         numbering / no   .code:n = \__cus_title_set_mode:nn {#1} { nonumber } ,
         numbering / off  .code:n = \__cus_title_set_mode:nn {#1} { nonumber } ,
@@ -1654,7 +1679,11 @@
         bookmark*       .code:n = \cus_gset_next_bookmark_text:n {##1} ,
         bookmark        .code:n = 
           \cus_gset_next_bookmark_text:n 
-            { \legacy_if:nT { BKM@numbered } { \tl_use:c { titlethe #1 } ~ } ##1 } ,
+            { 
+              \legacy_if:nT { BKM@numbered } 
+                { \titleifname { \tl_use:c { titlethe #1 } ~ } { } } ##1 
+            } ,
+        bookmark-extra.tl_set:c = { title~parameter@#1@bookmark-extra } ,
         break         .tl_set:c = title~parameter@#1@break ,
         break+          .code:n = \tl_put_right:cn { title~parameter@#1@break } {##1} ,
         format        .tl_set:c = title~parameter@#1@format ,
@@ -1671,17 +1700,10 @@
         aftertitle+     .code:n = \tl_put_right:cn { title~parameter@#1@aftertitle } {##1} ,
       }
   }
-%\seq_const_from_clist:Nn \c__cus_store_key_seq
-%  {
-%    beforeskip, afterskip, indent, numbering, afterindent, fixskip, hang, runin,
-%    pagestyle, mark, level, tocline, break, format, nameformat, numberformat,
-%    titleformat, aftername, aftertitle
-%  }
 \seq_new:N \l__cus_title_restore_key_seq
 \cs_new_protected:Npn \__cus_title_initial:n #1
   { 
     \int_gincr:N \g_cus_title_int
-    \seq_clear:N \l__cus_title_restore_key_seq 
     \tl_gset:Nx \CurrentTitleLevel { \tl_use:c { title~parameter@ #1 @level } }
     \tl_gset:Nn \CurrentTitleName  {#1}
     \cs_set_eq:NN \ifintitle \use_i:nn
@@ -1694,6 +1716,11 @@
   { \iow_now:Ne \@auxout { \gdef\string\@titlecount@last{\thetitlecount} } }
 \tl_gset:Nx \CurrentTitleLevel { -10001 }
 \str_new:N \CurrentTitleName
+
+% 在设置标题选项时，需要保存此前的值，在标题完成之后，再恢复至原来的值
+% 这通过 \__cus_store_title_setting:nn 和 \__cus_restore_title_setting:n 完成
+% 如果需要特殊的处理，可以使用
+% \cus_set_title_key_store_code:nn 和 \cus_set_title_key_restore_code:nn 
 \cs_new_protected:Npn \__cus_store_title_setting:nn #1#2
   {
     \keyval_parse:nnn
@@ -1709,6 +1736,7 @@
   }
 \cs_new_protected:Npn \__cus_store_title_setting_key:nn #1#2
   {
+    % 如果没有该变量，且没有设置特殊的处理方式，那就不恢复
     \cs_if_exist:cT { title~parameter@#1@#2 }
       { 
         \seq_put_right:Nn \l__cus_title_restore_key_seq {#2}
@@ -1728,12 +1756,7 @@
         \cs:w title~restore@#1@##1@command \cs_end: % 可以通过它来改变 restore 方法
         \__cus_restore_title_setting_key:nn {#1} {##1}
       }
-  }
-\cs_new_protected:Npn \__cus_title_ending:
-  {
-    \prop_gclear:N \g__cus_title_info_prop
-    \clist_gclear:c { title~parameter@ \CurrentTitleName @info }
-    \cs_set_eq:NN \ifintitle \use_ii:nn
+    \seq_clear:N \l__cus_title_restore_key_seq
   }
 \cs_new_protected:Npn \__cus_restore_title_setting_key:nn #1#2
   { \cs_set_eq:cc { title~parameter@#1@#2 } { title~tmpstore@#1@#2 } }
@@ -1742,50 +1765,61 @@
     \cs_set_protected:cpn { title~restore@ #1 @command }
       \__cus_restore_title_setting_key:nn ##1##2
   }
+\cs_new_protected:Npn \__cus_title_ending:
+  {
+    \prop_gclear:N \g__cus_title_info_prop
+    \clist_gclear:c { title~parameter@ \CurrentTitleName @info }
+    \cs_set_eq:NN \ifintitle \use_ii:nn
+  }
 
+% 设置标题#1的恢复方法
 \cs_new_protected:Npn \cus_setup_title_store_restore:nn #1
   { 
     \keyval_parse:nnn 
-      { \__cus_setup_title_store_restore:nn {#1} } 
+      { \__cus_setup_title_store_restore:nn {#1} } % 如果没有值，则表示忽略该键
       { \__cus_setup_title_store_restore:nnn {#1} } 
   }
+% 设置标题#1的键#2使用预定义的恢复方法#3
+% 预定义的方法有：none（忽略）、general（通用的恢复方法）、default（默认的恢复方法）
+\cs_new_protected:Npn \cus_setup_title_store_restore:nnn #1#2#3
+  {
+    \clist_map_inline:nn {#2}
+      { \__cus_setup_title_store_restore_by:nnn {#1} {##1} {#3} }
+  }
+% 设置标题通用的恢复方法
 \cs_new:Npn \cus_setup_title_store_restore:n { \cus_setup_title_store_restore:nn { } }
-\cs_new:Npn \__cus_setup_title_store_restore:nn #1#2
+\cs_new:Npn \__cus_setup_title_store_restore:nn #1#2 % title,key
   { \__cus_setup_title_store_restore:nnnn {#1} {#2} { } { } }
-\cs_new:Npn \__cus_setup_title_store_restore:nnn #1#2#3
+\cs_new:Npn \__cus_setup_title_store_restore:nnn #1#2#3 % title,key,store restore code
   {
     % \bool_lazy_and:nnTF 
     %   { \tl_if_head_is_group_p:n {#3} }
     %   { \int_compare_p:nNn { 2 } = { \tl_count:n {#3} } }
     \tl_if_head_is_group:nTF {#3}
-      { \__cus_setup_title_store_restore:nnnn {#1} {#2} #3 }
-      { \__cus_setup_title_store_restore:nnN {#1} {#2} {#3} }
+      { \__cus_setup_title_store_restore:nnnn {#1} {#2} #3 } % 直接设置为它们
+      { \__cus_setup_title_store_restore_by:nnn {#1} {#2} {#3} }
   }
 \cs_new_protected:Npn \__cus_setup_title_store_restore:nnnn #1#2#3#4
   {
     \cus_set_title_key_store_code:nn   { #1@#2 } {#3}
     \cus_set_title_key_restore_code:nn { #1@#2 } {#4}
   }
-\cs_new_protected:Npn \__cus_setup_title_store_restore:nnN #1#2#3
-  {
-    \use:c { __cus_setup_title_store_restore_ #3 :nn } {#1} {#2}
-  }
-\cs_new_protected:cpn { __cus_setup_title_store_restore_ :nn } #1#2
+\cs_new_protected:Npn \__cus_setup_title_store_restore_by:nnn #1#2#3
+  { \use:c { __cus_setup_title_store_restore_#3:nn } {#1} {#2} }
+\cs_new_protected:Npn \__cus_setup_title_store_restore_:nn #1#2 % none
   { \__cus_setup_title_store_restore:nnnn {#1} {#2} { } { } }
-\cs_new_protected:cpn { __cus_setup_title_store_restore_@:nn } #1#2
+\cs_new_eq:NN 
+  \__cus_setup_title_store_restore_none:nn
+  \__cus_setup_title_store_restore_:nn
+\cs_new_protected:Npn \__cus_setup_title_store_restore_general:nn #1#2
   {
     \cs_set_eq:cc { title~store@#1@#2@command } { title~store@@#2@command }
     \cs_set_eq:cc { title~restore@#1@#2@command } { title~restore@@#2@command }
   }
-\cs_new_protected:cpn { __cus_setup_title_store_restore_&:nn } #1#2
+\cs_new_protected:Npn \__cus_setup_title_store_restore_default:nn #1#2
   {
     \cs_set_eq:cN { title~store@#1@#2@command } \scan_stop:
     \cs_set_eq:cN { title~restore@#1@#2@command } \scan_stop:
-  }
-\cs_new_protected:Npn \cus_setup_title_store_restore:nnN #1#2#3
-  {
-    \clist_map_inline:nn {#2}
-      { \__cus_setup_title_store_restore:nnN {#1} {##1} {#3} }
   }
 \cus_setup_title_store_restore:n 
   {
@@ -1797,6 +1831,8 @@
     label-format ,
     bookmark ,
     bookmark* ,
+    bookmark-extra ,
+    % 以上这些键，不需要保存和恢复
 
     , name=
       {
@@ -2019,6 +2055,22 @@
   }
 \cs_new:Npn \__cus_if_incsname:TF 
   { \tex_ifincsname:D \exp_after:wN \use_i:nn \else: \exp_after:wN \use_ii:nn \fi: }
+\cs_new:Npn \title@extras { \title@bookmarkextra \title@recordproperties }
+\cs_new:Npn \title@bookmarkextra
+  { 
+    \tl_if_empty:cF { title~parameter@ \CurrentTitleName @bookmark-extra }
+      {
+        \exp_last_unbraced:Ne \cus_bookmark:nn 
+          { 
+            \exp_args:Nv \__cus_title_bookmark:n 
+              { title~parameter@ \CurrentTitleName @bookmark-extra } 
+          }
+        \tl_clear:c { title~parameter@ \CurrentTitleName @bookmark-extra }
+      }
+  }
+\cs_new:Npn \__cus_title_bookmark:n #1
+  { \exp_last_unbraced:Ne \__cus_title_bookmark:wn { \cus_split_bracket_head:n {#1} } }
+\cs_new:Npn \__cus_title_bookmark:wn [#1] #2 { {#1} {#2} }
 \cs_new:Npn \title@addtocline #1
   {
     \prop_gconcat:NNN \g__cus_title_info_prop
@@ -2143,8 +2195,8 @@
   \fi 
   \title@beforerecord
   \title@gettitle{#2}%
-  \title@recordproperties
   \title@addtocline{#2}%
+  \title@extras
   \title@mark{#2}%
   \begingroup
     \title@heading@format@initial 
@@ -2160,7 +2212,7 @@
   \title@makeanchor{#1}%
   \title@beforerecord
   \title@gettitle{#2}%
-  \title@recordproperties
+  \title@extras
   \begingroup
     \title@heading@format@initial 
     \title@format{%
@@ -2194,22 +2246,17 @@
   \title@ifstar{#2}{\title@class@top@@}{\title@class@top@}{#1}}
 \protected\def\title@class@top@ #1#2#3{%
   \ifnum \c@secnumdepth >\m@ne
-    \if@mainmatter 
-      \title@ifnumbering
-        {\title@ifnametrue \refstepcounter{#1}}
-        {\title@ifnamefalse \title@makeanchor{#1}}%
-    \else 
-      \title@ifnamefalse 
-      \title@makeanchor{#1}%
-    \fi 
+    \title@ifnumbering
+      {\title@ifnametrue \refstepcounter{#1}}
+      {\title@ifnamefalse \title@makeanchor{#1}}%
   \else 
     \title@ifnamefalse 
-    \title@makeanchor{#1}
+    \title@makeanchor{#1}%
   \fi 
   \title@beforerecord
   \title@gettitle{#2}%
-  \title@recordproperties
   \title@addtocline{#2}%
+  \title@extras
   \title@mark{#2}%
   \if@twocolumn 
     \@topnewpage[\@maketophead{#1}{#3}]%
@@ -2222,7 +2269,7 @@
   \title@makeanchor{#1}%
   \title@beforerecord
   \title@gettitle{#2}%
-  \title@recordproperties
+  \title@extras
   \if@twocolumn 
     \@topnewpage[\@makestophead{#1}{#3}]%
   \else 
@@ -2301,31 +2348,29 @@
   \fi 
   \title@beforerecord
   \title@gettitle{#2}%
-  \title@recordproperties
+  \title@addtocline{#2}%
+  \title@extras
+  \title@mark{#2}%
   \title@ifrunin
     {\def\@svsechd{%
       \normalfont\title@format{%
         {\title@indentbox{\title@getindent}}\@svsec 
         \title@titleformat{#3}%
-        \title@aftertitle}%
-      \title@mark{#2}%
-      \title@addtocline{#2}}}
+        \title@aftertitle}}}
     {\begingroup
       \title@heading@format@initial
       \title@format{%
         \title@headinghang{\@svsec}%
         \title@titleformat{#3}%
         \title@aftertitle}\par 
-      \endgroup
-      \title@mark{#2}%
-      \title@addtocline{#2}}%
+      \endgroup}%
   \title@class@endnormal{#1}}
 \protected\def\title@class@normal@@ #1#2#3{%
   \title@makeanchor{#1}%
   \title@ifnamefalse 
   \title@beforerecord
   \title@gettitle{#2}%
-  \title@recordproperties
+  \title@extras
   \title@ifrunin
     {\def\@svsechd{%
       \normalfont\title@format{%
@@ -2400,9 +2445,9 @@
   \fi
   \title@beforerecord
   \title@gettitle{#1}%
-  \title@recordproperties
-  \title@mark{#2}%
   \title@addtocline{#2}%
+  \title@extras
+  \title@mark{#2}%
   \title@heading@format@initial 
   {\title@format{%
     \@svsec
@@ -2414,7 +2459,7 @@
   \title@makeanchor{#1}%
   \title@beforerecord
   \title@gettitle{#2}%
-  \title@recordproperties
+  \title@extras
   \title@heading@format@initial 
   {\title@format{%
     \@svsec
@@ -2464,7 +2509,7 @@
       }%
       \title@beforerecord
       \title@gettitle{#2}%
-      \title@recordproperties%
+      \title@extras
       \title@heading@format@initial 
       \title@format{%
         \@svsec
@@ -2601,12 +2646,14 @@
   {
     \cleardoublepage
     \@mainmatterfalse 
+    \setuptitle[0]{mode=nonumber}
     \pagenumbering{roman}
   }
 \DeclareDocumentCommand \mainmatter { O{} } 
   {
     \cleardoublepage
     \@mainmattertrue 
+    \setuptitle[0]{mode=normal}
     \pagenumbering{arabic}
   }
 \DeclareDocumentCommand \backmatter { O{} } 
@@ -2617,4 +2664,5 @@
       \clearpage
     \fi
     \@mainmatterfalse
+    \setuptitle[0]{mode=nonumber}
   }

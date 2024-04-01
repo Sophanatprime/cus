@@ -2401,6 +2401,20 @@ Unicode 代码点。
 设置标题的样式。\meta{title level} 为章节标题层级，如：\verb|chapter|、\verb|section|、\verb|1|。\meta{title} 为章节标题名，而非标题命令（\verb|\chapter|、\verb|\section|）。
 \end{function}
 
+\begin{function}{\setupnexttitle}
+  \begin{syntax}
+    \V\setupnexttitle     <{title keys}>
+    \V\setupnexttitle   + <{title keys}>
+    \V\setupnexttitle ?   <{title keys}>
+    \V\setupnexttitle ? + <{title keys}>
+  \end{syntax}
+设置标题的选项 \meta{title keys}，但只作用于接下来的那个标题，这个标题完成后，会清空它。
+
+带 \texttt{+} 的，把 \marg{title keys} 附加到之前所保存的选项之后。
+带 \texttt{?} 的，仅会设置已知的选项，当选项未定义时会忽略它们，当为某些标题定义了额外的键时，
+它很有用。
+\end{function}
+
 以下几节描述了章节标题中可用的键值选项，它们均可以被设置，但并不一定在所有的标题类中都有效。
 这里的 \texttt{...} 代表各章节标题命令的名称。
 
@@ -2726,15 +2740,20 @@ Unicode 代码点。
 在当前标题下写入的 \meta{property} 的值。
 \end{keyval}
 
-\begin{keyval}[path=title/...]{bookmark,bookmark*}
+\begin{keyval}[path=title/...]{bookmark,bookmark*,bookmark-extra}
   \begin{syntax}
     bookmark  = \marg{text}
     bookmark* = \marg{text}
+    bookmark-extra = \marg{text}
+    bookmark-extra = \oarg{bookmark options} \marg{text}
   \end{syntax}
 设置\emph{此条}标题在书签中的文字。
 
 \opt{bookmark} 会在 \pkg{bookmark} 宏包设置了 \opt{numbered} 选项后，把数字也加上。
 \linebreak\opt{bookmark*} 则直接设置书签为 \meta{text}。
+
+\opt{bookmark-extra} 额外添加一个书签。
+用在带星号的命令中可以为其增加书签。
 \end{keyval}
 
 \begin{function}{\titleaddinfo,\titleremoveinfo,\titleremoveallinfo}
@@ -2988,6 +3007,18 @@ Unicode 代码点。
 提供库文件。库文件名必须是：“\opt{cus.library.\meta{库名}.tex}”。
 \end{function}
 
+\begin{function}[module=cus]{\CUSLibraryDelayedUntil}
+  \begin{syntax}
+    \V\CUSLibraryDelayedUntil   \marg{package}
+    \V\CUSLibraryDelayedUntil * \{\}
+    \V\CUSLibraryDelayedUntil * \marg{package}
+  \end{syntax}
+用于库文件的第一行，将本库标记为需要延迟加载。
+
+标记本库延迟至加载了 \meta{package} 之后再加载，
+带星号的命令将库延迟至加载了文档类之后再加载。
+\end{function}
+
 \begin{function}[module=cus]{\CUSDependency}
 \begin{syntax}
   \verb|\CUSDependency| \marg{key-val}
@@ -3005,13 +3036,12 @@ Unicode 代码点。
 \cs{CUSDependency} 可用的键值选项。
 \end{keyval}
 
-\begin{function}[module=cus]{\CUSLoadLibrary,\CUSIfLibraryAtLeast}
+\begin{function}[module=cus]{\CUSLoadLibrary,\CUSPassOptionsToLibrary}
 \begin{syntax}
-  \verb|\CUSLoadLibrary|      \marg{库名} \oarg{日期}
-  \verb|\CUSIfLibraryAtLeast| \marg{库名} \marg{日期} \marg{true code} \marg{false code}
+  \V\CUSLoadLibrary \oarg{选项} \marg{库名} \oarg{日期}
+  \V\CUSPassOptionsToLibrary \marg{选项} \marg{库名}
 \end{syntax}
 \end{function}
-
 
 \begin{function}[EXP]{\text_mdfive_hash:n}
   \begin{syntax}
@@ -4552,9 +4582,8 @@ cbl 列表除了 \cs{cus@type@contentsline}、\cs{cus@type@contentsline@}、
 之后，我们照常设置标题的页码，并使用括号括住带有超链接的页码。
 最后，用到了先前定义的 \tn[no-index]{ifinmiddle}，如果在中间，则插入一个分号分隔。
 
-想要双栏并排显示只需使用 \csref{startmulticolumns} 即可。
+想要双栏并排显示只需使用 \csref{startmulticolumns}。
 
-\enlargethispage{10pt}
 下面这个例子展示了本文目录在 \CusTeX 目录机制下的输出顺序。
 \begin{xample}
 \startmulticolumns[cols=4,ragged,column-sep=10pt]
