@@ -329,7 +329,15 @@
           { \exp_after:wN \__cus_tmp:w \l__cus_tmp_tl }
       }
   }
-\cs_new_nopar:Npn \__cus_load_module:n #1 { }
+\cs_new_nopar:Npn \__whu_load_module:n
+  { \keyval_parse:NNn \__whu_load_module_aux:n \__whu_load_module_aux:nn }
+\cs_new:Npn \__whu_load_module_aux:n #1 { \__whu_load_module_aux:nn {#1} { } }
+\cs_new:Npn \__whu_load_module_aux:nn #1
+  { 
+    \exp_last_unbraced:Ne \__whu_load_module_aux:nwn 
+      { \whu_split_bracket_tail_default:nn {#1} { 0000/00/00 } }
+  }
+\cs_new:Npn \__whu_load_module_aux:nwn #1[#2]#3 { \WHULoadModule {#1} [{#3}] [{#2}] }
 \cs_new_nopar:Npn \__cus_load_library:n
   { \keyval_parse:NNn \__cus_load_library_aux:n \__cus_load_library_aux:nn }
 \cs_new:Npn \__cus_load_library_aux:n #1 { \__cus_load_library_aux:nn {#1} { } }
