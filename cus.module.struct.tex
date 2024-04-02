@@ -1604,7 +1604,10 @@
         style, name, name-preto, name-appto, number, numbering, 
         number-from, number-within, number-without, 
         number-format, label-format,
-        bookmark, bookmark* 
+        beforerecord<, beforerecord>, properties+, 
+        bookmark, bookmark*,
+        break+, format+, nameformat+, numberformat+, titleformat+, 
+        aftername+, aftertitle+, 
       }
       { general }
     \keys_define:nn { cus/title } { #1 .meta:nn = { cus/title/#1 } {##1} }
@@ -1868,6 +1871,67 @@
         \cs_set_eq:cc { title~tmpstore@#1@mode } { title~parameter@#1@mode }
       }
       { \cs_set_eq:cc { title~parameter@#1@mode } { title~tmpstore@#1@mode } }
+    , beforerecord<=
+      {
+        \seq_put_right:Nn \l__cus_title_restore_key_seq { beforerecord }
+        \cs_set_eq:cc { title~tmpstore@#1@beforerecord } { title~parameter@#1@beforerecord }
+      }
+      { \cs_set_eq:cc { title~parameter@#1@beforerecord } { title~tmpstore@#1@beforerecord } }
+    , beforerecord>=
+      {
+        \seq_put_right:Nn \l__cus_title_restore_key_seq { beforerecord }
+        \cs_set_eq:cc { title~tmpstore@#1@beforerecord } { title~parameter@#1@beforerecord }
+      }
+      { \cs_set_eq:cc { title~parameter@#1@beforerecord } { title~tmpstore@#1@beforerecord } }
+    , properties+=
+    {
+      \seq_put_right:Nn \l__cus_title_restore_key_seq { properties }
+      \cs_set_eq:cc { title~tmpstore@#1@properties } { title~parameter@#1@properties }
+    }
+    { \cs_set_eq:cc { title~parameter@#1@properties } { title~tmpstore@#1@properties } }
+    , break+=
+      {
+        \seq_put_right:Nn \l__cus_title_restore_key_seq { break }
+        \cs_set_eq:cc { title~tmpstore@#1@break } { title~parameter@#1@break }
+      }
+      { \cs_set_eq:cc { title~parameter@#1@break } { title~tmpstore@#1@break } }
+    , format+=
+      {
+        \seq_put_right:Nn \l__cus_title_restore_key_seq { format }
+        \cs_set_eq:cc { title~tmpstore@#1@format } { title~parameter@#1@format }
+      }
+      { \cs_set_eq:cc { title~parameter@#1@format } { title~tmpstore@#1@format } }
+    , nameformat+=
+      {
+        \seq_put_right:Nn \l__cus_title_restore_key_seq { nameformat }
+        \cs_set_eq:cc { title~tmpstore@#1@nameformat } { title~parameter@#1@nameformat }
+      }
+      { \cs_set_eq:cc { title~parameter@#1@nameformat } { title~tmpstore@#1@nameformat } }
+    , numberformat+=
+      {
+        \seq_put_right:Nn \l__cus_title_restore_key_seq { numberformat }
+        \cs_set_eq:cc { title~tmpstore@#1@numberformat } { title~parameter@#1@numberformat }
+      }
+      { \cs_set_eq:cc { title~parameter@#1@numberformat } { title~tmpstore@#1@numberformat } }
+    , titleformat+=
+      {
+        \seq_put_right:Nn \l__cus_title_restore_key_seq { titleformat }
+        \cs_set_eq:cc { title~tmpstore@#1@titleformat } { title~parameter@#1@titleformat }
+      }
+      { \cs_set_eq:cc { title~parameter@#1@titleformat } { title~tmpstore@#1@titleformat } }
+    , aftername+=
+      {
+        \seq_put_right:Nn \l__cus_title_restore_key_seq { aftername }
+        \cs_set_eq:cc { title~tmpstore@#1@aftername } { title~parameter@#1@aftername }
+      }
+      { \cs_set_eq:cc { title~parameter@#1@aftername } { title~tmpstore@#1@aftername } }
+    , aftertitle+=
+      {
+        \seq_put_right:Nn \l__cus_title_restore_key_seq { aftertitle }
+        \cs_set_eq:cc { title~tmpstore@#1@aftertitle } { title~parameter@#1@aftertitle }
+      }
+      { \cs_set_eq:cc { title~parameter@#1@aftertitle } { title~tmpstore@#1@aftertitle } }
+    , 
   }
 
 \cs_new_protected:Npn \__cus_title_keys_preamble_set:nn #1 % warning words, set code 
@@ -2547,7 +2611,10 @@
   \let\cus@tmp\ignorespaces
   \def\ignorespaces{\let\ignorespaces\cus@tmp\cus@ignorepars}} % 这里暂时使用 \ignorepars，另见 titlesec 的 \ttlhx@wrap
 
-
+\ifdefined\if@openright \else\ExpandArgs{c}\newif{if@openright}\@openrightfalse\fi
+\ifdefined\if@mainmatter \else\ExpandArgs{c}\newif{if@mainmatter}\@mainmattertrue\fi
+\def\chaptermark#1{\markboth{\MakeUppercase{\titleifname{\titlethechapter\ }{}#1}}{}}
+\def\sectionmark#1{\markright{\MakeUppercase{\titleifname{\titlethesection\ }{}#1}}}
 \definetitle\part[page]{
   name={第,部分},
   number=\Roman{part},
