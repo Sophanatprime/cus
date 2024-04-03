@@ -20,14 +20,12 @@
 % cus.module.pdfmana.tex, cus.module.space.tex, cus.module.struct.tex,
 % cus.module.util.tex and cusclass.cls .
 \NeedsTeXFormat{LaTeX2e}[2023/06/01]
-\def\cus@d@te{2024/04/02}
-\def\cus@versi@n{0.0.4i}
+\def\cus@d@te{2024/04/03}
+\def\cus@versi@n{0.0.4g}
 \ProvidesExplPackage{cus}{\cus@d@te}{\cus@versi@n}{Chinese User Scheme (CUS) basic file}
 
 \def\CusTeX{C\kern-.12em \raise.0466ex\hbox{u}\kern-.1em\lower .4ex\hbox{S}\kern-.15em\TeX}
 \def\CusLaTeX{C\kern-.12em \raise.0466ex\hbox{u}\kern-.1em\lower .4ex\hbox{S}\kern-.1em\LaTeX}
-
-\cs_new_eq:NN \BKP \tl_show:n %%TODO
 
 %% primitive alternative and latex3 adding
 \cs_new_eq:NN \__cus_strcmp:ww \tex_strcmp:D 
@@ -43,7 +41,7 @@
 \cs_new:Npn \__cus_f:w { \exp:w \exp_end_continue_f:w }
 \cs_new_protected:Npn \__cus_int_let:cw { \exp_args:Nc \__cus_int_let:Nw }
 
-\int_const:Nn \c__cus_mone_int { \m@ne }
+\int_const:Nn \c__cus_mone_int { -1 }
 \int_const:Nn \c__cus_zero_int { 0 }
 \int_const:Nn \c__cus_one_int { 1 }
 \int_const:Nn \c__cus_two_int { 2 }

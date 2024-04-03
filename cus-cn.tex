@@ -4,6 +4,10 @@
 \usepackage{ctex}
 \usepackage{fontawesome5}
 
+\makeatletter
+\@ifundefined{input@path}{\let\input@path\@empty}{}
+\g@addto@macro\input@path{{./module}{./library}{./lt3ekeys}{./cus-doc}{./cus-doc-aux}}
+\makeatother
 \usepackage[library={doc,box,bnf,ref,counter,pgf}]{cus}
 \SetKeys[updatemarks]{multicol}
 \newcommand{\hook}{\cmd[module=hook point,type=hook point]}
@@ -30,7 +34,7 @@
 }
 
 \usepackage{graphicx}
-\graphicspath{{.}{./cus-aux/}{./cusdoc-aux}}
+\setgraphicspath{./cus-doc, ./cus-doc-aux}
 \usepackage{xcolor}
 
 %region math & fonts
@@ -536,7 +540,7 @@ Logo。输出 \CusTeX，\CusLaTeX。
   \end{syntax}
 判断图片文件是否存在。\tn{@curr@file} 展开为此文件名，若无此文件则为 \tn{relax}。
 
-它会自动查找 \tn{graphicspath} 设置的路径，且可以自动补全文件扩展名。
+它会自动查找 \tn{setgraphicspath} 设置的路径，且可以自动补全文件扩展名。
 
 需要用户自行加载 \pkg{graphicx} 宏包。
 \end{function}
@@ -548,9 +552,22 @@ Logo。输出 \CusTeX，\CusLaTeX。
   \end{syntax}
 如果图片存在时使用图片，否则什么也不做。
 
-它会自动查找 \tn{graphicspath} 设置的路径，且可以自动补全文件扩展名。
+它会自动查找 \tn{setgraphicspath} 设置的路径，且可以自动补全文件扩展名。
 
 需要用户自行加载 \pkg{graphicx} 宏包。
+\end{function}
+
+\begin{function}{\setinputpath,\setgraphicspath}
+  \begin{syntax}
+    \V\setinputpath      \marg{path clist}
+    \V\setinputpath    + \marg{path clist}
+    \V\setgraphicspath   \marg{path clist}
+    \V\setgraphicspath + \marg{path clist}
+  \end{syntax}
+设置导入文件或导入图片时需要查找的路径。\meta{path clist} 使用逗号分隔，
+且需使用 \texttt/ 作为目录分隔符。带 \texttt+ 的命令为附加到原有的设置之后。
+
+使用 \tn{setgraphicspath} 时需要自行加载 \pkg{graphicx} 宏包。
 \end{function}
 
 \subsection{参数处理器，Argument processors}
@@ -950,7 +967,7 @@ Unicode 代码点。
 
 \begin{table}[thb]
   \IfPageOdd{\makebox[\linewidth][l]}{\makebox[\linewidth][r]}%
-    {\includegraphics{cus-aux/tab-defined-papername}}
+    {\includegraphics{tab-defined-papername}}
   \caption{预定义的纸张名}\label{tab:defined-papername}
 \end{table}
 
@@ -3111,7 +3128,7 @@ Unicode 代码点。
   \end{syntax}
 将 \meta{cmd} 设置为 \meta{filename} 对应的图片文件名，若图片不存在则为 \tn{relax}。
 
-它会自动查找 \tn{graphicspath} 设置的路径，且可以自动补全文件扩展名。
+它会自动查找 \tn{setgraphicspath} 设置的路径，且可以自动补全文件扩展名。
 
 需要用户自行加载 \pkg{graphicx} 宏包。
 \end{function}
@@ -3123,7 +3140,7 @@ Unicode 代码点。
   \end{syntax}
 将 \meta{tl} 设置为 \meta{filename} 对应的图片文件名，若图片不存在则为 \cs{q_no_value}。
 
-它会自动查找 \tn{graphicspath} 设置的路径，且可以自动补全文件扩展名。
+它会自动查找 \tn{setgraphicspath} 设置的路径，且可以自动补全文件扩展名。
 
 需要用户自行加载 \pkg{graphicx} 宏包。
 \end{function}
@@ -4802,7 +4819,7 @@ cbl 列表除了 \cs{cus@type@contentsline}、\cs{cus@type@contentsline@}、
   \end{syntax}
 它们的功能和 \tn{pgfdeclareimage}、\tn{pgfimage} 相同。
 
-它们会自动查找 \tn{graphicspath} 设置的路径，且可以自动补全文件扩展名。
+它们会自动查找 \tn{setgraphicspath} 设置的路径，且可以自动补全文件扩展名。
 \end{function}
 
 \subsection{文字渐变}
@@ -5812,7 +5829,7 @@ s_0,s_1,s_2&w_0&g_0&w_1&g_1&w_2\rlap{ (in \texttt{pt})}\\\hline
     graphics-path = \marg{path clist}
   \end{syntax}
 在查找需要保留超链接的 PDF 文件时，设置查找路径。
-如果没有设置，则使用 \tn{graphicspath} 设置的。
+如果没有设置，则使用 \tn{setgraphicspath} 设置的。
 \end{keyval}
 
 \begin{function}{\includegraphicspax}
@@ -7085,8 +7102,9 @@ $ \foo<a|b> $\quad $ \foo\displaystyle<\sum|\prod> $.
 \section{\CHFrom{module.ltx}}
 
 \CHToI{latex}{\tn{@dischyph}};
-\CHToI{graphics}{\tn{Ginclude@graphics}};
-\CHToA{graphics}{\tn{IfGraphicsExists}, \tn{InputIfGraphicsExists}};
+\CHToI{latex}{\tn{input@path}};
+\CHToI{graphicx}{\tn{Ginput@path}, \tn{Ginclude@graphics}};
+\CHToA{graphicx}{\tn{IfGraphicsExists}, \tn{InputIfGraphicsExists}};
 
 \section{\CHFrom{module.util}}
 \CHToI{l3seq}{\cs{__seq_push_item_def:n}, \cs{__seq_pop_item_def:}, \cs{s__seq}, \cs{__seq_item:n}};
