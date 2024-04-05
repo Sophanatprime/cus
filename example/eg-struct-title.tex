@@ -1,0 +1,97 @@
+% !TEX options=--synctex=1 --shell-escape --interaction=nonstopmode %DOCFILE%
+% !TEX program=xelatex
+% \DocumentMetadata{}
+\documentclass[openany]{book}
+\InputIfFileExists{eg-config.tex}{}{}
+\usepackage{amsmath,amssymb}
+\PassOptionsToPackage{silent}{xeCJK}
+\usepackage{ctex}
+\usepackage{xeCJKfntef}
+\edef\UD{\string _}
+\usepackage{xunicode-addon}
+\usepackage[library={ref,box,doc}]{cus}
+\setuplayout{paper=a4,hmargin=1.7cm,top=2cm,bottom=1.5cm,
+  hfoffset=0pt,nomarginpar,
+  columnsep=35pt,headsep=10pt,footskip=30pt,}
+\pagestyle{fancy}
+\sethead [l] {{\hologo{CusTeX}} --- 使用 \CusTeX 制作章节标题和目录（一）}
+\sethead [r] {Page -- \thepage}
+\setfoot {}
+\setheadrulewidth {1pt}
+\usepackage{graphicx,xcolor}
+\graphicspath{{./}{./image}{../image}}
+\usepackage{unicode-math}
+% \setmainfont{texgyrepagella}[
+%   Extension      = .otf,
+%   UprightFont    = *-regular,
+%   BoldFont       = *-bold,
+%   ItalicFont     = *-italic,
+%   BoldItalicFont = *-bolditalic]
+\setmainfont{TeXGyreTermesX}[
+  Extension      = .otf,
+  UprightFont    = *-Regular,
+  BoldFont       = *-Bold,
+  ItalicFont     = *-Italic,
+  BoldItalicFont = *-BoldItalic,
+  SlantedFont    = *-Slanted,
+  BoldSlantedFont= *-BoldSlanted]
+\setsansfont{texgyreheros}[
+  Extension      = .otf,
+  UprightFont    = *-regular,
+  BoldFont       = *-bold,
+  ItalicFont     = *-italic,
+  BoldItalicFont = *-bolditalic]
+\setmonofont{cmun}[
+  Extension      = .otf,
+  UprightFont    = *btl,
+  BoldFont       = *tb,
+  ItalicFont     = *bto,
+  BoldItalicFont = *tx,
+  HyphenChar     = None]
+\setmathfont{XITS Math}
+\usepackage{array,booktabs,tabularx,makecell,longtable}
+\usepackage{tabularray}
+\usepackage{enumitem}
+\usepackage[colorlinks]{hyperref}
+\usepackage{nameref,varioref,cleveref}
+\usepackage{pgfornament,pgfornament-han}
+\usepackage[many,listings,minted]{tcolorbox}
+\newcounter{example}
+\newtcblisting[use counter=example, number format=\arabic, crefname={代码}{代码}]
+  {examcode}[2][]{comment above* listing, 
+  title=代码 \thetcbcounter, enhanced,
+  comment={\tcbuselistingtext\par\bigskip #2},
+  sharp corners=downhill, arc=12pt, skin=bicolor,
+  fontupper=\linespread{1}\selectfont, left=6pt,
+  colback=blue!1!white, colframe=blue!75!black,colbacklower=white,
+  attach boxed title to top right={yshift=-\tcboxedtitleheight},
+  boxed title style={
+    colframe=blue!75!black,colback=blue!15!white,
+    sharp corners=downhill,arc=12pt,
+  },
+  coltitle=blue!90!black, fonttitle=\bfseries,
+  % listing options={style=tcblatex, basicstyle=\normalsize\ttfamily},
+  before skip=\medskipamount, after=\newpage, 
+  listing engine=minted,minted style=colorful,
+  minted language=tex,
+  minted options={tabsize=2,fontsize=\normalsize,autogobble,mathescape},
+  breakable,
+  #1
+}
+\fvset{formatcom=\xeCJKVerbAddon}
+\raggedbottom 
+\enablecombinedlist[from=cus-cn, write=false]
+\begin{document}
+
+\title{使用 \CusTeX 制作章节标题和目录（一）}
+\author{Longaster}
+\maketitle
+
+\setuptitle{numbering=false}
+\setuptitle[chapter]{beforeskip=3ex plus 2ex minus 1ex, afterskip=2.5ex plus 1ex minus 1ex, pagestyle=fancy}
+
+\input{eg-strut-title-1t9.tex}
+
+\input{eg-strut-title-10t19.tex}
+
+\end{document}
