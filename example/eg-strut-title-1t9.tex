@@ -1,0 +1,403 @@
+
+\begin{examcode}[label=eg:standard-toc]{这个例子展示了标准目录的输出结果。}
+\tableofcontents
+% 或 \standardplaincombinedlist{\contentsname}{toc}
+\end{examcode}
+
+
+\begin{examcode}[label=eg:standard-multitoc]{这个例子展示了多栏目录的输出方式。}
+\multicolplaincombinedlist[ragged,outer-sep=0pt]{\contentsname}{toc}
+\end{examcode}
+
+
+\begin{examcode}[label=eg:specifiedtoc-structure]{这个例子展示了 \cs{SpecifiedCombinedList} 的调用结构}
+\startmulticolumns[cols=3,ragged,outer-sep=0pt]
+
+\newcommand\showthelevel{$l_{\tocthelevel}$ }
+\newcommand\showhbarl{\Replicate{2*(\tocthelevel)}{│}} 
+\newcommand\showhbarb{\Replicate{2*(\tocthelevel)+1}{│}} 
+\newcounter{structure}
+\newcounter{structurei}
+\numberwithin{structurei}{structure}
+\newcounter{structureii}
+\numberwithin{structureii}{structurei}
+% xunicode-addon 重新定义了 \textcircled，要把它的内容完全展开才能正确输出
+\renewcommand*{\thestructure}{\smash{\expanded{\textcircled{\arabic{structure}}}}}
+\renewcommand*{\thestructurei}{\smash{\expanded{\textcircled{\arabic{structurei}}}}}
+\renewcommand*{\thestructureii}{\smash{\expanded{\textcircled{\arabic{structureii}}}}}
+\newcommand\theitemindex{\stepcounter{structure\romannumeral\tocthelevel}%
+  \makebox[1em]{\UseName{thestructure\romannumeral\tocthelevel}} }
+
+\tocsetstyle{chapter,section,subsection,0,1,2}
+  {\showhbarl ┌ \showthelevel list start\par}
+  {\showhbarb ┌ \showthelevel block start\par}
+  {\showhbarb \theitemindex \showthelevel block item\par}
+  {\showhbarb └ \showthelevel block finish\par}
+  {\showhbarl └ \showthelevel list finish\par}
+
+\setlength{\parindent}{0pt}
+\setlength{\lineskip}{0pt} \setlength{\lineskiplimit}{\maxdimen}
+\IfFontExistsTF{TH-Times}{\fontspec{TH-Times}}{\ttfamily}\small
+
+\specifiedtoc 
+
+\stopmulticolumns 
+\end{examcode}
+
+
+\begin{examcode}[label=eg:minimal-enumitem-toc]{本例展示了使用 \pkg{enumitem} 宏包的 \env{description} 环境制作目录的一个例子。}
+\startmulticolumns[ragged,outer-sep=0pt]
+
+\newcommand{\ifinmiddle}[2]{\ifnum\tocthelevel=\tocthenextlevel\relax #1\else #2\fi}
+\setlist[description,1]{nosep,leftmargin=2\ccwd}
+\setlist[description,2]{nosep,leftmargin=.8\ccwd}
+
+\tocsetstyle{chapter,section}
+  {\begin{description}}
+  {}
+  {\item[\tocifnumbered{\tocthenumber}{\rule{1ex}{1ex}}]
+    \tocthename\quad\toclink{\tocthepage}\par}
+  {}
+  {\end{description}}
+\tocsetstyle{subsection}
+  {\par\begingroup\small\itshape\raggedright【\ }
+  {}
+  {\tocthenumber\enskip\tocthename（\toclink{\tocthepage}）\ifinmiddle{；}{}}
+  {}
+  {】\par\endgroup\par}
+
+\specifiedtoc
+
+\stopmulticolumns
+\end{examcode}
+
+
+\begin{examcode}[label=eg:colorbox-title-toc]{本例展示了为目录添加彩色背景的方法，长标题可以换行。}
+\startmulticolumns[ragged,outer-sep=0pt,column-sep=2em]
+
+\colorlet{tocgreen}{green!65!black}
+\hypersetup{hidelinks}
+\newcommand{\tochyperpage}{\toclink{\tocthepage}}
+
+\makeatletter
+\tocsetstyle {chapter}
+  {}
+  {\noindent}
+  {\fparbox{\linewidth}[padding={0pt,\fboxsep},
+      border-color=tocgreen, background-color=tocgreen]
+    {\bfseries\large \raggedright \color{white}%
+      \hangindent4\ccwd \hangafter1 % 更推荐使用 list 环境或 description 环境 
+      \strut \tocifnumbered{\tocthenumber\unskip\quad}{}\tocthename
+      \breakablefiller[space]\tochyperpage \strut\par }\par }
+  {\smallskip}
+  {}
+\tocsetstyle {section}
+  {\smallskip
+    \begin{list}{}{\leftmargin3\ccwd \labelsep\z@ \rightmargin 2em 
+      \itemindent-\ccwd \listparindent\itemindent
+      \topsep\z@ \partopsep\z@ \itemsep\z@ \parsep\z@ \parskip\z@}}
+  {\item \begingroup\color{tocgreen}\bfseries}
+  {\tocifnumbered{\tocthenumber\unskip\quad}{}\tocthename \breakablefiller[space]%
+    \rlap{\makebox[2em][r]{\tochyperpage\;}}\par }
+  {\endgroup}
+  {\end{list}}
+\tocsetstyle {subsection}
+  {}
+  {\begingroup\color{black}\bfseries}
+  {\tocifnumbered{\tocthenumber\unskip\quad}{}\tocthename \breakablefiller[dotted]%
+    \rlap{\makebox[2em][r]{\tochyperpage\;}}\par }
+  {\endgroup}
+  {}
+\makeatother 
+
+\specifiedtoc
+
+\stopmulticolumns
+\end{examcode}
+
+
+\begin{examcode}[label=eg:crazy-inline-toc]{本例展示了一个疯狂的例子。另见 \pkg{etoc} 宏包第 23 节。}
+\begingroup
+\newcommand\toccolorlist{red7,brown8,yellow6,olive6,teal7,cyan7,%
+  azure7,blue7,magenta6,purple6}
+\ExplSyntaxOn
+\cs_set_nopar:Npn \toccolor #1
+  {
+    \tl_set:Nx \tocthecolor
+      {
+        \clist_item:Nn \toccolorlist
+          { \int_mod:nn {#1} { \clist_count:N \toccolorlist } + 1 }
+      }
+    \color { \tocthecolor }
+  }
+\ExplSyntaxOff
+\newcounter{toccolornum}
+\newcommand{\ifinmiddle}[2]{\ifnum\tocthelevel=\tocthenextlevel\relax #1\else #2\fi}
+\newcommand{\ifhaschild}[2]{\ifnum\tocthelevel<\tocthenextlevel\relax #1\else #2\fi}
+\newcommand{\iftoout}[2]{\ifnum\tocthelevel>\tocthenextlevel\relax #1\else #2\fi}
+\newcommand{\tocpageandnumber}{\,%
+  \lohi{\tocifnumbered{\tocthenumber\unskip}{}}{\toclink{P.~\tocthepage}}}
+
+\tocsetstyle{chapter}
+  {}
+  {（\bgroup\stepcounter{toccolornum}\toccolor{\value{toccolornum}}}
+  {{\bfseries\large \tocthename}\tocpageandnumber \ifhaschild{：}{}}
+  {。\egroup）}
+  {}
+\tocsetstyle{section}
+  {}
+  {}
+  {\textnormal{\tocthename}\tocpageandnumber \ifhaschild{：}{}}
+  {\iftoout{}{；}}
+  {}
+\tocsetstyle{subsection}
+  {}{}
+  {\textit{\tocthename}\tocpageandnumber \ifinmiddle{，}{}}
+  {}{}
+
+\specifiedtoc
+\endgroup
+\end{examcode}
+
+
+\begin{examcode}[label=eg:longtable-toc]{本例把目录放在 \env{longtable} 中。另见 \pkg{etoc} 宏包第 29 节。}
+\begingroup 
+\makeatletter
+\newcommand{\tochangfrom}{\@hangfrom}
+\makeatother
+\tocsetstyle{chapter}
+  {\begin{longtable}{|>{\bfseries}c|m{7cm}|r|}\hline
+    \multicolumn{3}{|c|}{\Large\bfseries\strut\strut TABLE OF CONTENTS}}
+  {}
+  {\\\hline% 注意 \\ 必须放在 \multicolumn 紧前面，如果没有前面的 \multicolumn，则
+           % 此行需改为 \tociffirst{\kill}{\\\hline}%
+    \multicolumn{3}{||c||}
+      {\bfseries \rule[-4ex]{0pt}{9ex}%
+        \fvarbox[c]{7cm}[border-style=none]{%
+          \leftskip4\ccwd \hspace*{-4\ccwd}% 在 varwidth 环境中，悬挂缩进需要一点技巧
+          \tocifnumbered{\tocthenumber\unskip\quad}{}\tocthename \par}}}
+  {}
+  {\\\hline\end{longtable}}
+\tocsetstyle{section}
+  {}{\\\hline} % 注意 \\ 的位置
+  {\tocthenumber & \tocthename & \toclink{\tocthepage}}
+  {}{}
+\tocsetstyle{subsection}
+  {}{\\} % 注意 \\ 的位置
+  { & \tochangfrom{\tocthenumber\unskip\enskip}\tocthename & \toclink{\tocthepage}}
+  {}{}
+\specifiedtoc 
+\endgroup
+\end{examcode}
+
+
+\begin{examcode}[label=eg:paracol-deco-toc]{本例展示了一个多栏目录，左侧输出垂直居中的装饰，右侧输出文字。}
+\begingroup 
+\hypersetup{hidelinks}
+\newcommand\toccolorlist{red7,brown8,yellow6,olive6,teal7,cyan7,%
+  azure7,blue7,magenta6,purple6}
+\newcommand\tocornamentlist{%
+  {\pgfornament[width=\columnwidth,color=\tocthecolor]{8}},%
+  {\pgfornamenthan[width=\columnwidth,color=\tocthecolor]{55}},%
+  {\pgfornament[width=\columnwidth,color=\tocthecolor]{67}},%
+  {\pgfornament[width=\columnwidth,color=\tocthecolor]{9}},%
+  {\pgfornament[width=\columnwidth,color=\tocthecolor]{4}},%
+  {\pgfornament[width=\columnwidth,color=\tocthecolor]{10}},%
+  {\pgfornamenthan[width=\columnwidth,color=\tocthecolor]{56}},%
+  {\pgfornamenthan[width=\columnwidth,color=\tocthecolor]{57}},%
+  {\pgfornament[width=\columnwidth,color=\tocthecolor]{24}},%
+  {\pgfornament[width=\columnwidth,color=\tocthecolor]{1}}%
+}
+\ExplSyntaxOn 
+\cs_set_nopar:Npn \toccolor #1
+  {
+    \tl_set:Nx \tocthecolor
+      {
+        \clist_item:Nn \toccolorlist
+          { \int_mod:nn {#1} { \clist_count:N \toccolorlist } + 1 }
+      }
+    \color { \tocthecolor }
+  }
+\cs_set_nopar:Npn \tocornament #1
+  {
+    \clist_item:Nn \tocornamentlist 
+      { \int_mod:nn {#1} { \clist_count:N \tocornamentlist } + 1 }
+  }
+\ExplSyntaxOff
+\makeatletter
+\newcounter{tochicount}
+\newcommand{\tochyperpage}{\toclink{\tocthepage}}
+\tocsetstyle{chapter}
+  {\begingroup}
+  {\stepcounter{tochicount}%
+    \toccolor{\value{tochicount}}% 设置文字的颜色
+    \colorlet{cusfiller}{\tocthecolor}% 设置填充的颜色
+    \colseprulecolor{\tocthecolor}% 设置竖线的颜色
+    \startparacol[cols=2,column-width-left={2cm/20pt},column-sep-rule=1pt]%
+      \setlength{\parindent}{0pt}\nointerlineskip}
+  {\vfill\makebox[\columnwidth]{\tocornament{\value{tochicount}}}% 输出左侧装饰
+    \vfill\switchcolumn[1]%
+% 往下的内容基本和$\text{\cref{eg:colorbox-title-toc} }$类似
+    \fparbox{\columnwidth}[padding={0pt,\fboxsep},
+        border-color=\tocthecolor, background-color=\tocthecolor]
+      {\bfseries\Large \raggedright \color{white}%
+        \hangindent4\ccwd \hangafter1 % 更推荐使用 list 环境或 description 环境 
+        \strut \tocifnumbered{\tocthenumber\unskip\quad}{}\tocthename
+        \breakablefiller[space]\tochyperpage \strut\par }\par}
+  {\stopparacol \normalcolseprulecolor \bigskip}
+  {\endgroup}
+\tocsetstyle {section}
+  {\medskip % 这里可以再次开启一个多栏环境，注意它不能分页
+    % \startmulticolumns[ragged,outer-sep=0pt,
+    %   rule-width=.6pt,column-sep=1.5em,rule-color=\tocthecolor]
+    \begin{list}{}{\leftmargin3\ccwd \labelsep\z@ \rightmargin 2em 
+      \itemindent-3\ccwd \listparindent-\ccwd
+      \topsep\z@ \partopsep\z@ \itemsep\z@ \parsep\z@ \parskip\z@}}
+  {\item \begingroup\bfseries}
+  {\tocifnumbered{\tocthenumber\unskip\quad}{}\tocthename \breakablefiller[space]%
+    \rlap{\makebox[2em][r]{\tochyperpage\;}}\par }
+  {\endgroup\par 
+% 这里增加了虚线的内容
+    \ifnum\tocthelevel=\tocthenextlevel 
+      \nobreak
+      \noindent\kern-\leftmargin
+      \dashfiller[.5ex]{\columnwidth}[2pt][2pt]\kern-\rightmargin \par 
+    \fi}
+  {\end{list}\par % \stopmulticolumns
+  }
+\tocsetstyle {subsection}
+  {}
+  {\begingroup}
+  {\tocifnumbered{\tocthenumber\unskip\quad}{}\tocthename \breakablefiller[dotted]%
+    \rlap{\makebox[2em][r]{\tochyperpage\;}}\par }
+  {\endgroup}
+  {}
+\makeatother
+\specifiedtoc
+\endgroup
+\end{examcode}
+
+
+\begin{examcode}[label=eg:minipage-deco-toc]{本例展示了把每个章节都放在一个盒子中，这个盒子不能分页。}
+\begingroup 
+\makeatletter
+\hypersetup{hidelinks}
+
+% 颜色
+\newcommand\toccolorlist{red7,brown8,yellow6,olive6,teal7,cyan7,%
+  azure7,blue7,magenta6,purple6}
+% 左侧的装饰 
+\newcommand\tocornamentlist{%
+  {\pgfornament[width=\columnwidth,color=\tocthecolor]{8}},%
+  {\pgfornamenthan[width=\columnwidth,color=\tocthecolor]{55}},%
+  {\pgfornament[width=\columnwidth,color=\tocthecolor]{67}},%
+  {\pgfornament[width=\columnwidth,color=\tocthecolor]{9}},%
+  {\pgfornament[width=\columnwidth,color=\tocthecolor]{4}},%
+  {\pgfornament[width=\columnwidth,color=\tocthecolor]{10}},%
+  {\pgfornamenthan[width=\columnwidth,color=\tocthecolor]{56}},%
+  {\pgfornamenthan[width=\columnwidth,color=\tocthecolor]{57}},%
+  {\pgfornament[width=\columnwidth,color=\tocthecolor]{24}},%
+  {\pgfornament[width=\columnwidth,color=\tocthecolor]{1}}%
+}
+
+\newsavebox{\tocminibox}
+% 绘制外框和角落
+\newcommand{\tocornament@corner}[2][han]{%
+  \begin{tikzpicture}
+    \node[draw,line width=.5bp,inner sep=24bp,outer sep=0pt](bx){\usebox{\tocminibox}};
+    \tikzset{every node/.style={inner sep=0pt,outer sep=0pt}}
+    \foreach \a/\s in {north west/none,south west/h,south east/c,north east/v}
+      {\node[anchor=\a,at=(bx.\a)]
+        {\UseName{pgfornament#1}[width=25bp,symmetry=\s]{\number#2}};}
+  \end{tikzpicture}}
+
+% 外框列表
+\newcommand{\tocornamentcornerlist}{%
+  \tocornament@corner[]{33},%
+  \tocornament@corner{19},%
+  \tocornament@corner{9},%
+  \tocornament@corner{5},%
+  \tocornament@corner[]{61},%
+  \tocornament@corner{1},%
+  \tocornament@corner{23},%
+  \tocornament@corner[]{35},%
+  \tocornament@corner[]{39},%
+  \tocornament@corner{13}%
+}
+
+\ExplSyntaxOn 
+\cs_set_nopar:Npn \toccolor #1
+  {
+    \tl_set:Nx \tocthecolor
+      {
+        \clist_item:Nn \toccolorlist
+          { \int_mod:nn {#1} { \clist_count:N \toccolorlist } + 1 }
+      }
+    \color { \tocthecolor }
+  }
+\cs_set_nopar:Npn \tocornament #1
+  {
+    \clist_item:Nn \tocornamentlist 
+      { \int_mod:nn {#1} { \clist_count:N \tocornamentlist } + 1 }
+  }
+\cs_set_nopar:Npn \tocornamentcorner #1
+  {
+    \clist_item:Nn \tocornamentcornerlist 
+      { \int_mod:nn {#1} { \clist_count:N \tocornamentcornerlist } + 1 }
+  }
+\ExplSyntaxOff
+
+% 左边的装饰
+\newcommand{\tocleftdeco}{\makebox[\linewidth]{\tocornament{\value{tochicount2}}}}
+\newcommand{\tocrightchapter}{%
+  \fparbox{\linewidth}[padding={0pt,\fboxsep},
+      border-color=\tocthecolor, background-color=\tocthecolor]
+    {\bfseries\Large \raggedright \rightskip2\ccwd plus 1fil \color{white}%
+      \hangindent4\ccwd \hangafter1 % 更推荐使用 list 环境或 description 环境 
+      \strut \tocifnumbered{\tocthenumber\unskip\quad}{}\tocthename
+      \breakablefiller[space]\rlap{\makebox[2\ccwd][r]{\tochyperpage}} \strut\par }\par}
+
+\newcounter{tochicount2}
+\newcommand{\tochyperpage}{\toclink{\tocthepage}}
+
+\tocsetstyle{chapter}
+  {\begingroup}
+  {\noindent \stepcounter{tochicount2}%
+    \toccolor{\value{tochicount2}}% 设置文字的颜色
+    \colorlet{cusfiller}{\tocthecolor}% 设置填充的颜色
+    \begin{lrbox}{\tocminibox}
+      % 左边和右边各用一个 minipage 
+      \begin{minipage}{2cm}
+        \tocleftdeco 
+      \end{minipage}%
+      \hspace{20pt}%
+      \begin{minipage}{\dimeval{\textwidth-2cm-20pt-50bp}}% 右边盒子的宽度计算
+  }
+  {\tocrightchapter}
+  {\end{minipage}\end{lrbox}%
+    \tocornamentcorner{\value{tochicount2}}\par 
+    \bigskip}
+  {\endgroup}
+% 下面的内容和$\text{\cref{eg:paracol-deco-toc} }$的类似
+\tocsetstyle{section}
+  {\bigskip 
+    \startmulticolumns[ragged,outer-sep=0pt,column-sep=1.5em]
+      \begin{list}{}{\leftmargin2\ccwd \labelsep\z@ \rightmargin 2em 
+        \itemindent-2\ccwd \listparindent-\ccwd
+        \topsep\z@ \partopsep\z@ \itemsep\z@ \parsep\z@ \parskip\z@}}
+  {\item \begingroup\bfseries}
+  {\tocifnumbered{\tocthenumber\unskip\quad}{}\tocthename \breakablefiller[space]%
+    \rlap{\makebox[2em][r]{\tochyperpage\;}}\par }
+  {\endgroup\par}
+  {\end{list}\par \stopmulticolumns}
+\tocsetstyle{subsection}
+  {}
+  {\begingroup}
+  {\tocifnumbered{\tocthenumber\unskip\quad}{}\tocthename \breakablefiller[dotted]%
+    \rlap{\makebox[2em][r]{\tochyperpage\;}}\par }
+  {\endgroup}
+  {}
+\makeatother
+\specifiedtoc
+\endgroup 
+\end{examcode}
