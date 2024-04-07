@@ -92,6 +92,7 @@
   }
 %%
 
+\cs_if_exist:NF \DeclareObjectType { \RequirePackage{xtemplate} }
 \RequirePackage{ctexhook,ctexpatch}
 \RequirePackage{etl}
 \RequirePackage{lt3ekeysext}[2024/03/31]
@@ -261,7 +262,7 @@
       }
   }
 \cs_new_protected:Npn \__cus_load_library_hook:nn #1#2
-  { 
+  {
     \cs_undefine:c { cus/library~#2 }
     \cs_undefine:c { @pkg-disable@cus.library.#2.tex }
     \cs_undefine:c { ver@cus.library.#2.tex }
@@ -293,6 +294,20 @@
           { \msg_error:nnn { cus } { library-not-exist } {#1} }
       }
   }
+\cs_new_protected:Npn \__cus_load_library_check:n #1
+  {
+    \tl_set:Nx \l__cus_tmp_tl { \tl_range:Nnn \CurrentFile { 13 } { -5 } }
+    \file_if_exist:nT { cus.library.\l__cus_tmp_tl.tex }
+      {
+        \cus@iflibraryloaded {#1} { }
+          {
+            \__cus_load_library_hook:nn 
+              { \hook_gput_code:nnn { file/cus.library.#1.tex/after } {cus/load} } 
+              \l__cus_tmp_tl
+            \file_input_stop:
+          }
+      }
+  }
 \cs_new_protected:Npn \CUSPassOptionsToLibrary #1#2
   {
     \clist_if_exist:cF { cus/library-options-passed~#2 }
@@ -307,6 +322,7 @@
         \tl_gset:cn { cus/library-version~#2 } {#3}
         \__cus_load_library_delayed:nnn {#2} {#1} {#3}
       }
+    \__cus_load_library_check:n {#2}
   }
 %% fmt (fmt version), engine, package, library of package, class, module, library
 \cs_new_protected_nopar:Npn \CUSDependency { \keys_set:nn { cus/dependency } }
