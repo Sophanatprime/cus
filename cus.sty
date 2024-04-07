@@ -234,6 +234,15 @@
   }
 \cs_new:Npn \cus@iflibraryloaded #1 { \cs_if_exist:cTF { cus/library~#1 } }
 \prop_new:N \g__cus_library_delayed_prop
+\prop_new_linked:N \g__cus_library_dependency_prop
+\cs_new_protected:Npn \__cus_library_add_dependency:n #1
+  {
+    \tl_set:Nx \l__cus_tmpc_tl 
+      { \prop_item:No \g__cus_library_dependency_prop \CurrentFile }
+    \clist_set:No \l__cus_tmpc_tl { \l__cus_tmpc_tl , #1 }
+    \clist_remove_duplicates:N \l__cus_tmpc_tl
+    \prop_gput:Noo \g__cus_library_dependency_prop \CurrentFile { \l__cus_tmpc_tl }
+  }
 \ekeysdeclarecmd \CUSLibraryDelayedUntil { s m }
   {
     \tl_set:Nx \l__cus_tmp_tl { \tl_range:Nnn \CurrentFile { 13 } { -5 } }
@@ -248,7 +257,10 @@
     \tl_if_blank:nF {#2}
       {
         \prop_if_in:NoTF \g__cus_library_delayed_prop \l__cus_tmp_tl
-          { }
+          { 
+            \@ifpackageloaded {#2} { } 
+              { \__cus_load_library_hook:nn { \use_none:n } \l__cus_tmp_tl \file_input_stop: } 
+          }
           {
             \prop_gput:Nxx \g__cus_library_delayed_prop \l__cus_tmp_tl {#2}
             \@ifpackageloaded {#2} 
@@ -268,43 +280,47 @@
     \cs_undefine:c { ver@cus.library.#2.tex }
     \exp_args:Nne \use:n {#1}
       {
-        % \file_input:n { cus.library.#2.tex }
         \__cus_load_library_delayed:nnn { #2 }
           { \exp_not:v { cus/library-options~#2 } }
           { \exp_not:v { cus/library-version~#2 } }
       }
   }
+\cs_new_protected:Npn \__cus_load_library_check:nT #1#2
+  { 
+    \exp_args:Nne \__cus_load_library_check:nnTF {#1}
+      { \prop_item:Nn \g__cus_library_dependency_prop { cus.library.#1.tex } }
+      {#2} { }
+  }
+\cs_new_protected:Npn \__cus_load_library_check:nnTF #1#2
+  {
+    \bool_set_true:N \l__cus_tmpc_bool
+    \clist_map_inline:nn {#2}
+      {
+        \cus@iflibraryloaded {##1} { }
+          {
+            \bool_set_false:N \l__cus_tmpc_bool
+            \__cus_load_library_hook:nn 
+              { \hook_gput_code:nnn { file/cus.library.##1.tex/after } { cus/load } }
+              {#1}
+          }
+      }
+    \bool_if:NTF \l__cus_tmpc_bool
+  }
 \cs_new_protected:Npn \__cus_load_library_delayed:nnn #1#2#3
   {
-    \cus@iflibraryloaded {#1} { }
-      { 
-        \file_if_exist:nTF { cus.library.#1.tex }
-          { 
-            \exp_last_unbraced:Ne \elkernel_file_with_options:nnn 
-              {
-                { cus.library.#1.tex } 
-                {#3} 
-                {
-                  \clist_if_exist:cT { cus/library-options-passed~#1 }
-                    { \exp_not:v { cus/library-options-passed~#1 } , }
-                  \exp_not:n {#2} 
-                }
-              }
-          }
-          { \msg_error:nnn { cus } { library-not-exist } {#1} }
-      }
-  }
-\cs_new_protected:Npn \__cus_load_library_check:n #1
-  {
-    \tl_set:Nx \l__cus_tmp_tl { \tl_range:Nnn \CurrentFile { 13 } { -5 } }
-    \file_if_exist:nT { cus.library.\l__cus_tmp_tl.tex }
+    \__cus_load_library_check:nT {#1}
       {
-        \cus@iflibraryloaded {#1} { }
+        \use:e
           {
-            \__cus_load_library_hook:nn 
-              { \hook_gput_code:nnn { file/cus.library.#1.tex/after } {cus/load} } 
-              \l__cus_tmp_tl
-            \file_input_stop:
+            \elkernel_file_with_options:nnn { cus.library.#1.tex }
+              {
+                \cs_if_exist:cTF { cus/library-version~#1 }
+                  { \exp_not:v { cus/library-version~#1 } } {#3}
+              }
+              {
+                \cs_if_exist:cT { cus/library-options~#1 }
+                  { \exp_not:v { cus/library-options~#1 } , } \exp_not:n {#2}
+              }
           }
       }
   }
@@ -320,9 +336,8 @@
       {
         \tl_gset:cn { cus/library-options~#2 } {#1}
         \tl_gset:cn { cus/library-version~#2 } {#3}
-        \__cus_load_library_delayed:nnn {#2} {#1} {#3}
       }
-    \__cus_load_library_check:n {#2}
+    \__cus_load_library_delayed:nnn {#2} {#1} {#3}
   }
 %% fmt (fmt version), engine, package, library of package, class, module, library
 \cs_new_protected_nopar:Npn \CUSDependency { \keys_set:nn { cus/dependency } }
@@ -361,8 +376,23 @@
       }
   }
 \cs_new_nopar:Npn \__cus_load_module:n #1 { }
-\cs_new_nopar:Npn \__cus_load_library:n
-  { \keyval_parse:NNn \__cus_load_library_aux:n \__cus_load_library_aux:nn }
+\cs_new_nopar:Npn \__cus_load_library:n #1
+  { 
+    \__cus_library_add_dependency:n {#1}
+    \keyval_parse:NNn \__cus_load_library_aux:n \__cus_load_library_aux:nn {#1}
+    \exp_args:No \str_if_in:nnT
+      { \exp_after:wN \s__cus_mark \CurrentFile } { \s__cus_mark cus.library. }
+      {
+        \exp_args:Ne \__cus_load_library_check:nnTF 
+          { \tl_range:Nnn \CurrentFile { 13 } { -5 } } {#1} 
+          { } 
+          { 
+            \__cus_load_library_hook:nn { \use_none:n } 
+              { \tl_range:Nnn \CurrentFile { 13 } { -5 } }
+            \file_input_stop: 
+          } 
+      }
+  }
 \cs_new:Npn \__cus_load_library_aux:n #1 { \__cus_load_library_aux:nn {#1} { } }
 \cs_new:Npn \__cus_load_library_aux:nn #1
   { 
