@@ -204,7 +204,8 @@
   % aboveskip={0\p@ \@plus 6\p@}, belowskip={0\p@ \@plus 6\p@},
   columns=fullflexible, keepspaces=true,
   breaklines=true, breakatwhitespace=true, 
-  breakindent=0pt, postbreak={\hb@xt@1.5em{\hss{\color{gray}$\hookrightarrow$}\hss}},
+  breakindent=0pt, 
+  postbreak={\hb@xt@1.5em{\hss{\transparent{.3}$\hookrightarrow$}\hss}},
   extendedchars=true, nolol,
   numberstyle=\tiny,numbersep=8pt,
   commentstyle=\color{green!55!black}}
@@ -275,6 +276,7 @@
 \setlist[itemize,2]{label=$\smwhtcircle$}
 
 \def\nofuncskip{\par\vskip-\bigskipamount\vskip\parskip\par}
+\def\zhslash{／}
 
 \raggedbottom \hfuzz=2.5pt \vfuzz=10pt 
 
@@ -2383,6 +2385,12 @@ Unicode 代码点。
 标准的 {\LaTeX} book 类中，章节标题可分为三种，一种是以 \cs{part} 为代表的，\CusTeX 将其命令为 \texttt{page} 类，一种是以 \cs{chapter} 为代表的，\CusTeX 将其命名为 \texttt{top} 类，另一种则是以 \cs{section} 为代表，\CusTeX 将其命名为 \texttt{normal} 类。\footnote{实际上，这些名称基本沿用了 \pkg{titlesec} 宏包的名称。}
 另外还有 \texttt{free}、\texttt{wrap} 类，详细用法见\cref{sec:struct-title-class}。
 
+\begin{texnote}
+定义章节标题时，为了使得 plain 格式和 template 格式的目录正常工作，需要分别定义
+\tn[no-index]{l@\meta{title command name}} 和 \opt{templatecbl} 对象类型对应的实例。
+详见\cref{ch:title-cbl}。
+\end{texnote}
+
 本模块预先定义了一些章节命令，它们与 \cls{ctexbook} 文档类的效果基本一致。
 
 \begin{function}{\part,\chapter,\section,\subsection,\subsubsection,\paragraph,\subparagraph}
@@ -2832,11 +2840,14 @@ Unicode 代码点。
 每一个标题都有一个对应的 \texttt{\textbackslash titlethe\meta{title}} 命令，表示当前实际输出的章节标题的名字。如现在 \verb|\titlethechapter| 为 “\titlethechapter”。
 
 
-\subsection{目录}
+\subsection{目录}\label{sec:struct-cbl-short}
 
 \CusTeX 重新实现了目录的制作方式，将每个目录项看成是一个个数据，不同于标准的目录制作方式，因此可能存在与其它宏包不兼容的情况。
 
 在 \CusTeX 中，目录被称为 “combined list”，这是 \ConTeXt 中的称呼。
+
+\CusTeX 的 \cusmodule{struct} 一共定义了三种格式的目录：plain、template、specified。
+这三种目录格式可定制程度依次增加，使用方式也依次更加复杂。
 
 \begin{function}{\enablecombinedlist}
 \cs{enablecombinedlist} 启用目录。可用于导言区或文档最开头。如果未使用此命令则其它目录命令不可用。
@@ -2857,20 +2868,27 @@ Unicode 代码点。
 控制当前主文件是否写入目录，及写入到哪个文件。如果设置了 \opt{to}，则写入到 \meta{file}\texttt{.toc}，否则写入 \opt{from} 键指定的那个文件。
 \end{keyval}
 
+\pkg{cus} 提供了与 \cls{book} 类相似的目录格式，这种目录称为 ``plain'' 格式的目录。
+
+当 \tn{contentsname}、\tn{listfigurename}、\tn{listtablename} 为空时，对应的 
+plain 格式目录不会附带章节标题，否则将自动添加一个正常的带序号的\emph{章}标题。
+
 \begin{function}{\tableofcontents,\listoffigures,\listoftables,\localtableofcontents}
 \begin{syntax}
   \V\tableofcontents      \oarg{multicolumns keyval}
   \V\localtableofcontents \oarg{multicolumns keyval} \string(<level>,<index>\string)
 \end{syntax}
-输出标准的目录、图片和表格目录。
+输出 plain 格式的标题、图片和表格目录。
 
-\cs{localtableofcontents} 输出局部目录，层级为 \meta{level}，位置为 \meta{index}。
+\cs{localtableofcontents} 输出局部的标题目录，层级为 \meta{level}，位置为 \meta{index}。
+\meta{level} 用于设置局部目录的层级，例如为 \texttt{chapter} 时，输出本章目录。
+默认为最近使用的那个标题的层级。
 \end{function}
 
 如下代码输出本小节的目录：
 \begin{xample}
-\renewcommand\contentsname{}
-\localtableofcontents(section)
+\renewcommand\contentsname{} % 移除自动添加的标题
+\localtableofcontents(section) % 输出本节目录，本 \section 也会输出
 \stopxamplecode
 \xampleprint
 \end{xample}
@@ -2879,7 +2897,9 @@ Unicode 代码点。
   \begin{syntax}
     \verb|\multicolplaincombinedlist| \oarg{multicolumns key-val} \marg{title} \marg{cbl type}
   \end{syntax}
-\cs{multicolplaincombinedlist} 输出多栏目录，该目录的类型是 \meta{cbl type}，并以 \meta{title} 作为标题。如果 \meta{title} 为空，则不输出标题。\meta{multicolumns key-val} 设置多栏选项，如果栏数为 1，则相当于默认的单栏目录。
+\cs{multicolplaincombinedlist} 输出 plain 格式的多栏目录，该目录的类型是 \meta{cbl type}，
+并以 \meta{title} 作为标题。如果 \meta{title} 为空，则不输出标题。
+\meta{multicolumns key-val} 设置多栏选项，如果栏数为 1，则相当于默认的单栏目录。
 \end{function}
 
 \begin{function}{\multicollocalplaincombinedlist}
@@ -2894,7 +2914,151 @@ Unicode 代码点。
 可以使用 \cs{getcbllevelrange} 获得对应位置小节目录的范围 \meta{min}、\meta{max}。
 \end{function}
 
-仿照 \pkg{etoc} 宏包，提供了类似于 \tn{etocsetstyle} 的命令。
+\pkg{cus} 提供了设置用键值对目录进行简易调整的目录格式，称为 ``template'' 格式的目录。
+
+当 \tn{contentsname}、\tn{listfigurename}、\tn{listtablename} 为空时，对应的 
+template 格式目录不会附带章节标题，否则将自动添加一个正常的带序号的\emph{章}标题。
+
+\begin{function}{\templatetoc,\templatelof,\templatelot}
+  \begin{syntax}
+    \V\templatetoc
+    \V\templatetoc \oarg{templatecbl keys} \oarg{multicolumns key} \string(\meta{level},\meta{index}\string)
+  \end{syntax}
+输出 ``template'' 格式的目录。\meta{templatecbl keys} 用于局部修改目录的输出。
+\end{function}
+
+\begin{function}{\templatecombinedlist}
+  \begin{syntax}
+    \V\templatecombinedlist \marg{type} \marg{title}
+    \V\templatecombinedlist \oarg{templatecbl keys} \oarg{multicolumns key} \marg{cbl type} 
+    ~~\string(\meta{level},\meta{index}\string) \marg{title}
+  \end{syntax}
+template 格式目录的完整形式。
+\end{function}
+
+下面列出 \meta{templatecbl keys} 可用的键值选项，它们只能在 
+\cs{templatetoc} 等命令内部使用，不能在外部的 \cs{cussetup} 中设置。
+
+\begin{keyval}[path=templatecbl]{hide,show}
+  \begin{syntax}
+    hide = \marg{cbl level list}
+  \end{syntax}
+隐藏或显示 \meta{cbl level list} 指定的目录层级。
+\end{keyval}
+
+\begin{keyval}[path=templatecbl]{*}
+  \begin{syntax}
+    * = \marg{template keys}
+  \end{syntax}
+把 \meta{template keys} 应用到当前目录类型的所有目录层级。
+\meta{template keys} 是下文将要说明的模板键。
+\end{keyval}
+
+\begin{keyval}[path=templatecbl]{no-parent}
+  \begin{syntax}
+    no-parent &&
+  \end{syntax}
+移除局部目录的第一项。
+
+对于一个局部目录，如输出本章目录（\texttt{chapter} 层级），
+不仅会输出本章的小节写入的目录条目，还会输出章（即 \tn{chapter}）写入的目录内容，
+使用此选项将不会输出章的条目。
+\end{keyval}
+
+对于没有定义的 \veta{templatecbl key}，首先会判断它是不是以 \texttt{*} 开头，
+若是，则用该键的值修改这个 \texttt{*} 后面的大括号中的那些目录实例。
+否则，尝试将它解释为一个 \texttt{templatecbl} 目录对象的一个实例名，
+然后使用该键给出的值修改此实例。如果也不是一个实例名，则会报错。
+关于目录对象和目录实例，见下文。
+
+\begin{xample}
+\renewcommand\contentsname{} % 移除自动添加的标题
+\templatetoc[no-parent,*{subsection}={ignore=true},
+  section={ignore=false}](chapter) % 输出本章目录，但隐藏 \chapter 和 \subsection
+\stopxamplecode
+\xampleprint
+\end{xample}
+
+template 格式的目录，使用 \pkg{xtemplate} 宏包处理键值。
+一个模板的对象类型用于规定的参数的数量，
+一个对象类型可以定义多个模板，每个模板有自己的处理代码和可用的键，
+在模板的基础上为一些键设置固定的值就构成了对象类型的实例。
+对象类型的实例总是唯一的，而不论它是设置了哪个模板的键。
+
+template 格式的目录，其对象类型为 \texttt{templatecbl}，可使用 7 个参数，为目录条目
+所保存的值。默认的模板为 \verb*|by name|，实例为目录条目的层级，如 \texttt{part}、
+\texttt{chapter} 等等。用户可以自己定义新的模板，详见\cref{sec:template-cbl}。
+关于如何修改定义模板、修改实例等见\cref{sec:lttemplates}或 \file{xtemplate.pdf}。
+
+\begin{figure}[ht]
+\includegraphics[width=\linewidth]{templatetoc-para}
+\caption{template 格式目录的变量}
+\end{figure}
+
+\texttt{by name} 模板可用的键如下（注意它们不能用 \cs{cussetup} 设置，且每个键都必须给出
+值，不能省略，包括布尔值的 \texttt{true} 也不能省，这是 \pkg{xtemplate} 所限）：
+\begin{description}
+  \item[\texttt{space.before}] 如果不是为 \texttt{0pt}，且在垂直模式，则在该目录项之前添加指定的间距；结果保存于 \tn{tmcbl@beforeskip} 寄存器之中；
+  \item[\texttt{space.left}] 左侧间距；结果保存于 \tn{tmcbl@leftskip} 寄存器之中；
+  \item[\texttt{space.right}] 右侧间距，默认情况下，页码会嵌入到右侧空白之中；结果保存于 \tn{tmcbl@right} 寄存器之中；
+  \item[\texttt{space.hang}] 第一行额外的缩进；结果保存于 \tn{tmcbl@hang} dim 寄存器之中；默认为 \texttt{width.name} 的值；
+  \item[\texttt{space.indent}] 除第一段外，每段首行额外的缩进；结果保存于 \tn{tmcbl@indent} dim 寄存器之中；默认为 \texttt{space.hang} 的值；
+  \item[\texttt{penalty.before}] 增加 penalty；结果保存于 \tn{tmcbl@beforepenalty} int 寄存器之中；
+  \item[\texttt{format}] 设置标题前的数字（即 \texttt{name}）、标题文字（即 \texttt{title}）、引导线（即 \texttt{leader}）和页码（即 \texttt{page}）的格式；结果保存于 \tn{tmcbl@format} 宏之中；
+  \item[\texttt{format.name}] 设置 \texttt{name} 的格式，若样式没有覆盖，\texttt{format} 所设仍会生效；结果保存于 \tn{tmcbl@nameformat} 宏之中；
+  \item[\texttt{format.title}] 设置 \texttt{title} 的格式，若样式没有覆盖，\texttt{format} 所设仍会生效；结果保存于 \tn{tmcbl@titleformat} 宏之中；
+  \item[\texttt{format.page}] 设置 \texttt{page} 的格式，若样式没有覆盖，\texttt{format} 所设仍会生效；结果保存于 \tn{tmcbl@pageformat} 宏之中；
+  \item[\texttt{width.name}] 设置 \texttt{name} 的宽度，具体效果如何取决于 \texttt{code.name}；结果保存于 \tn{tmcbl@namewidth} dim 寄存器之中；
+  \item[\texttt{width.title}] 设置 \texttt{title} 的宽度，具体效果如何取决于 \texttt{code.title}；结果保存于 \tn{tmcbl@titlewidth} dim 寄存器之中；
+  \item[\texttt{width.page}] 设置 \texttt{page} 的宽度，具体效果如何取决于 \texttt{code.page}；结果保存于 \tn{tmcbl@pagewidth} dim 寄存器之中；默认为 \verb|\@pnumwidth|；
+  \item[\texttt{width.line}] 设置 \tn{tmcbl@linewidth} dim 寄存器；
+  \item[\texttt{ignore}] 是否忽略该层级的目录项；结果保存于 \tn{tmcbl@ignore}，可使用 \tn{ifodd} 或 \cs{bool_if:NTF} 等判断；
+  \item[\texttt{name.width}] 同 \texttt{width.name}；
+  \item[\texttt{name.format}] 同 \texttt{format.name}；
+  \item[\texttt{name.code}] 同 \texttt{code.name}；
+  \item[\texttt{title.width}] 同 \texttt{width.title}；
+  \item[\texttt{title.format}] 同 \texttt{format.title}；
+  \item[\texttt{title.code}] 同 \texttt{code.title}；
+  \item[\texttt{page.width}] 同 \texttt{width.page}；
+  \item[\texttt{page.format}] 同 \texttt{format.page}；
+  \item[\texttt{page.code}] 同 \texttt{code.page}；
+  \item[\texttt{leader.code}] 同 \texttt{code.leader}；
+  \item[\texttt{leader.sep}] 设置引导线的内容的间距；最终结果保存于 \tn{tmcbl@leadersep} 宏之中，默认为 4.5；当大于 5000 时，不使用引导线，而使用 \cs{filler}；
+  \item[\texttt{leader.options}] 引导线使用 \cs{filler} 时的选项；结果保存于 \tn{tmcbl@leaderoptions} 宏之中；默认为 \texttt{space}；
+  \item[\texttt{leader.content}] 设置引导线的内容；结果保存于 \tn{tmcbl@leadercontent} 宏之中；默认为西文句点；
+  \item[\texttt{hyper.range}] 设置超链接要包含的内容，可选值为 \texttt{name}、\texttt{title}、\texttt{page} 和 \texttt{none}，可多选；最终结果保存于 \tn{tmcbl@hyperrange} int 寄存器之中，其中 \texttt{name} 将其加 1，\texttt{title} 将其加 2，\texttt{page} 将其加 4；默认为 \texttt{page}；
+  \item[\texttt{hyper.code}] 同 \texttt{code.hyper}；
+  \item[\texttt{code}] 将该目录层级要执行的代码替换为它，可使用 7 个参数，即目录条目保存的值；将结果保存在 \tn{tmcbl@code} 命令之中；
+  \item[\texttt{code.name}] 将 \texttt{name} 执行的代码替换为它，结果保存在 \tn{tmcbl@name} 命令之中；
+  \item[\texttt{code.title}] 将 \texttt{title} 执行的代码替换为它，结果保存在 \tn{tmcbl@title} 命令之中；
+  \item[\texttt{code.leader}] 将 \texttt{leader} 执行的代码替换为它，结果保存在 \tn{tmcbl@leader} 命令之中；
+  \item[\texttt{code.page}] 将 \texttt{page} 执行的代码替换为它，结果保存在 \tn{tmcbl@page} 命令之中；
+  \item[\texttt{code.hyper}] 将添加超链接要执行的代码替换为它，可使用 4 个参数，分别为 \texttt{name}、\texttt{title}、\texttt{hyper} 和 \texttt{page} 要执行的代码，结果保存在 \tn{tmcbl@hyper} 命令之中；
+  \item[\texttt{code.before}] 在目录条目之前执行代码；
+  \item[\texttt{code.after}] 在目录条目之后执行代码，默认为 \tn{par}；注意每个目录项不会自动另起一行，依靠它来另起新行。
+\end{description}
+在 \texttt{code.name}、\texttt{code.title} 等代码中可以使用上述保存的寄存器（或宏），
+若在其它地方使用它们则不保证其有正确结果。此外，在这些代码中还可以使用下述宏\zhslash 命令：
+\begin{description}
+  \item[\tn{tmcblthetype}] 当前使用的目录类型；
+  \item[\tn{tmcbltheclass}] 当前目录层级名；
+  \item[\tn{tmcblthelevel}] 当前目录层级对应的整数；
+  \item[\tn{tmcbltheinfo}] 此目录条目保存的额外信息，为一个 \LaTeX3 prop 变量，即 \cs{titleaddinfo} 添加的值；
+  \item[\tn{tmcblthename}] \texttt{name} 的文字，可能为空；
+  \item[\tn{tmcblthetitle}] \texttt{title} 的文字；
+  \item[\tn{tmcblthepage}] \texttt{page} 的文字，即 \tn{thepage} 的值；
+  \item[\tn{tmcbltheanchor}] 超链接的锚点，可能为空；可直接使用 \tn{tmcbl@hyperlink} 或 \tn{tmcbl@hyperlinkbox}添加超链接；
+  \item[\tn{tmcbl@code@}]\marg{type}\marg{count}\marg{infos}\marg{level int}\marg{list entry}\marg{thepage}\marg{anchor} 默认的 \texttt{code} 实现；
+  \item[\tn{tmcbl@name@}] 默认的 \texttt{code.name} 实现；
+  \item[\tn{tmcbl@title@}] 默认的 \texttt{code.title} 实现；
+  \item[\tn{tmcbl@leader@}] 默认的 \texttt{code.leader} 实现；
+  \item[\tn{tmcbl@page@}] 默认的 \texttt{code.page} 实现；
+  \item[\tn{tmcbl@hyper@}]\marg{name}\marg{title}\marg{leader}\marg{page} 默认的 \texttt{code.hyper} 实现；
+  \item[\tn{tmcbl@hyperlink}]\marg{text} 为 \texttt{text} 添加链接到正文标题处的超链接；
+  \item[\tn{tmcbl@hyperlinkbox}]\marg{text} 为 \texttt{text} 添加链接到正文标题处的超链接；
+\end{description}
+
+仿照 \pkg{etoc} 宏包，提供了类似于 \tn{etocsetstyle} 的命令，这种目录称为 ``specified'' 目录。
 \begin{function}{\tocsetstyle,\lotsetstyle,\lofsetstyle,
   \specifiedtoc,\specifiedlot,\specifiedlof,
   \localspecifiedtoc}
@@ -3034,6 +3198,7 @@ Unicode 代码点。
 
 标记本库延迟至加载了 \meta{package} 之后再加载，
 带星号的命令将库延迟至加载了文档类之后再加载。
+若有其它库依赖使用了本命令的库，则它们都至少会延迟至 \meta{package} 之后再加载。
 \end{function}
 
 \begin{function}[module=cus]{\CUSDependency}
@@ -3042,6 +3207,16 @@ Unicode 代码点。
 \end{syntax}
 处理库依赖。
 \end{function}
+
+\begin{texnote}
+只能以如下顺序执行上述三个命令：\cs{CUSLibraryDelayedUntil}、\cs{CUSDependency}、
+\cs{CUSProvideExplLibrary}（或 \cs{CUSProvideLibrary}）。
+在每个库文件中，它们最多只能使用一次，且必须用在库文件开头。
+若要在库文件中间使用它们，则应该将之后的内容拆分至新的库文件中。
+
+一个库文件可能会被使用多次，但在 \cs{CUSProvideExplLibrary}（或 \cs{CUSProvideLibrary}） 
+之后的内容只会执行一次。
+\end{texnote}
 
 \begin{keyval}[path=dependency]{package,module,library,disable}
 \begin{syntax}
@@ -3058,6 +3233,7 @@ Unicode 代码点。
   \V\CUSLoadLibrary \oarg{选项} \marg{库名} \oarg{日期}
   \V\CUSPassOptionsToLibrary \marg{选项} \marg{库名}
 \end{syntax}
+尽量不要使用 \cs{CUSLoadLibrary}，它可能不会正确处理库依赖。
 \end{function}
 
 \begin{function}[EXP]{\text_mdfive_hash:n}
@@ -3107,6 +3283,95 @@ Unicode 代码点。
     \verb|\ClearHookNext| \marg{hook}
   \end{syntax}
 将 \meta{code} 添加到 \meta{hook} 的下一次调用中。在正常的 \meta{hook} 代码执行完毕后再执行 \meta{code}。
+\end{function}
+
+
+\section{\LaTeXe 的模板机制}\label{sec:lttemplates}
+
+内容、排布内容的方式以及具体的配置项构成了一个“文档”。
+其中内容为用户输入，排布内容的方式一般是一个环境或命令，具体的可配置项就是命令的某些参数
+或者可供修改的变量。其中用户输入是未知的，而排布内容的方式和修改配置的方式则是固定的，
+且有多种实现方式，模板机制就是其中一种。
+
+本节内容简要介绍 \LaTeXe 的模板机制，更详细的用法请参考 \file{xtemplate.pdf}。
+目前暂以单独的宏包提供此功能，\LaTeXe Released 2024-06-01 版本将把此机制合并入内核。
+
+对象类型（object type）是对用户输入的抽象描述，它限定了用户输入参数的数目，一般也限定了顺序。
+例如，对于一个章节标题来说，用户输入参数可能是：短标题、完整标题。
+\begin{function}[module=lttemplates]{\DeclareOjbectType}
+  \begin{syntax}
+    \V\DeclareObjectType \marg{object type} \marg{no. of args}
+  \end{syntax}
+定义一个对象类型 \meta{object type}。
+\end{function}
+
+模板规定了如何处理可配置的项和用户输入的参数，亦即排布内容的方式。
+\begin{function}[module=lttemplates]{\DeclareTemplateInterface}
+  \begin{syntax}
+    \V\DeclareTemplateInterface \marg{object type} \marg{template} \marg{no. of args} \marg{key list}
+  \end{syntax}
+\LaTeXe 模板机制以键值对的方式处理可配置的项，
+本命令用于限定用户可配置哪些项，以及用何种方式保存这些项，以及这些项的默认值。
+\end{function}
+
+\begin{function}[module=lttemplates]{\DeclareTemplateCode}
+  \begin{syntax}
+    \V\DeclareTemplateCode \marg{object type} \marg{template} \marg{no. of args}
+    ~~\marg{key bindings} \marg{code}
+  \end{syntax}
+定义可配置项与哪一命令绑定起来，以及排布内容的方式。
+\end{function}
+
+\begin{function}[module=lttemplates]{\UseTemplate}
+  \begin{syntax}
+    \V\UseInstance \marg{object type} \marg{template} \marg{settings} \meta{arguments}
+  \end{syntax}
+把配置项设置为某些固定的值，并离开使用它。
+\end{function}
+
+\begin{function}[module=lttemplates]{\SetTemplateKeys}
+  \begin{syntax}
+    \V\SetTemplateKeys \marg{object type} \marg{template} \marg{keyvalues}
+  \end{syntax}
+用于在模板的代码中修改实例的值。
+\end{function}
+
+\begin{function}[module=lttemplates]{\EditTemplateDefaults}
+  \begin{syntax}
+    \V\EditTemplateDefaults \marg{object type} \marg{template} \marg{new defaults}
+  \end{syntax}
+修改模板的默认值。只会应用到新创建的实例。
+\end{function}
+
+用某一模板把可配置项设置为某些特定的值就成为了实例。
+\begin{function}[module=lttemplates]{\DeclareInstance,\DeclareInstanceCopy}
+  \begin{syntax}
+    \V\DeclareInstance \marg{object type} \marg{instance} \marg{template} \marg{parameters}
+    \V\DeclareInstanceCopy \marg{object type} \marg{instance_2} \marg{instance_1}
+  \end{syntax}
+使用 \meta{parameters} 创建 \meta{template} 的实例。
+或创建 \meta{instance_1} 的复本 \meta{instance_2}。
+\end{function}
+
+\begin{function}[module=lttemplates]{\UseInstance}
+  \begin{syntax}
+    \V\UseInstance \marg{object type} \marg{instance} \meta{arguments}
+  \end{syntax}
+使用实例。
+\end{function}
+
+\begin{function}[module=lttemplates]{\EditInstance}
+  \begin{syntax}
+    \V\EditInstance \marg{object type} \marg{instance} \marg{new values}
+  \end{syntax}
+修改已有的实例。
+\end{function}
+
+\begin{function}[module=lttemplates]{\IfInstanceExistTF,\IfInstanceExistT,\IfInstanceExistF}
+  \begin{syntax}
+    \V\IfInstanceExistTF \marg{object type} \marg{instance} \marg{true code} \marg{false code}
+  \end{syntax}
+判断实例是否存在。
 \end{function}
 
 
@@ -4403,6 +4668,41 @@ cbl 列表除了 \cs{cus@type@contentsline}、\cs{cus@type@contentsline@}、
 \end{function}
 
 
+\section{使用模板的目录}\label{sec:template-cbl}
+
+前面已经介绍了模板目录的基本使用方法。\texttt{code.name}、\texttt{code.title}、
+\texttt{code.leader}、\texttt{code.page}、\texttt{code.hyper} 也能够应付大部分的需要了。
+
+但如果要使模板目录不根据目录层级名来排布，而使用目录层级对应的整数，
+由于不同的目录层级名可以对应同一个整数，仅仅使用默认的方式将无法实现这一需求。
+本节介绍的内容可以帮助用户定义一个这样的模板目录。
+
+模板目录实际上由名为 \texttt{templatecbl} 的 socket 和 template 这两种抽象结构共同作用。
+对于一个模板格式的目录，socket 和 template 是纵向和横向的关系。
+\texttt{templatecbl} socket 用于控制模板目录的整体，
+而 \texttt{templatecbl} object type 用于控制目录项的内容。
+关于 socket 的作用和用法请参考 \file{ltsocket-doc.pdf}。
+
+默认的按照目录层级名来排布目录项是名为 \verb|by name| 的 plug，
+它限定了模板目录应当如何使用和排布这些目录项。
+对应于该 plug 的是名为 \verb|by name| 的 template，
+它限定了目录项应当如何排布它的内容。
+
+名为 \texttt{templatecbl} 的 socket 需要 5 个参数，分别为目录类型、
+\veta{templatecbl keys}、\veta{multicolumns keys}、目录自动添加的章节标题
+以及目录项的范围。用户可为该 socket 定义 plug，它用来规定如何处理目录项。
+
+名为 \texttt{templatecbl} 的 object type 需要 7 个参数，
+为目录条目保存的内容，前面已经多次提及。
+用户可为该 object type 定义 template，然后基于 template 定义实例。
+
+如果自定义了标题命令，每个标题命令都会定义一个与命令名相同的目录层级名，
+如果要基于 \texttt{by name} template 输出目录，则需要定义同名的实例，
+如假如定义了 \verb|\mytitle|，且它与 \tn{section} 同级，则可以使用
+\cs{DeclareInstanceCopy} \verb|{templatecbl}{mytitle}{section}| 
+直接复制 section 的定义。
+
+
 \section{\pkg{etoc}风格的目录设置方式}
 
 \pkg{etoc} 宏包提供了 \tn{etocsetstyle} 命令来设置目录，\CusTeX 提供了类似的命令。
@@ -4897,13 +5197,29 @@ verbatim 和分段。
 
 本库为 \cs{background} 和 \cs{foreground} 命令的 \meta{位置} 参数增加了一个可用值 
 \texttt{tikz}。可以在 \meta{code} 中使用 \TikZ 绘图代码，坐标原点为纸张\emph{左下角}。
-并预先定义了两个 node：\texttt{page} 和 \texttt{layout}。
+并预先定义了几个 node，它们只能在 \cs{foreground} 和 \cs{background} 命令中使用：
+\begin{itemize}
+  \item[\texttt{page}] 该 node 占满整个纸张，四角为纸张四角；
+  \item[\texttt{layout}] 该 node 占满整个 layout，四角为 layout 四角；
+  \item[\texttt{text}] 该 node 占满整个正文区域，四角为正文的四角；
+  \item[\texttt{margin}] 该 node 占满整个旁注区域，四角为旁注四角；
+  \item[\texttt{header}] 该 node 占满整个页眉，包括左右的偏移量，四角为页眉四角；
+  \item[\texttt{footer}] 该 node 占满整个页脚，包括左右的偏移量，四角为页脚四角。
+\end{itemize}
+相比于 \pkg{tikzpagenodes} 提供的 node，它们只需编译一次，且页眉页脚包含偏移量。
 
-\needspace{5\baselineskip}
+\needspace{2\baselineskip}
 \begin{xample}
 \background(tikz){
   \draw[thick,help lines] (layout.south west) grid (layout.north east);
-  \draw[thick,blue] (layout.center) circle (2cm);}
+  \draw[thick,blue] (layout.center) circle (2cm);
+  \draw[thick,red] (page.north west)--(page.south east);
+  \draw[thick,blue] (layout.north east)--(layout.south west);
+  \draw[thick,cyan] (text.south west)rectangle(text.north east);
+  \draw[thick,cyan] (margin.south west)rectangle(margin.north east);
+  \draw[thick,cyan] (header.south west)rectangle(header.north east);
+  \draw[thick,cyan] (footer.south west)rectangle(footer.north east);
+}
 \stopxamplecode
 \xampleprint
 如本页所示。
@@ -7241,6 +7557,12 @@ $ \foo<a|b> $\quad $ \foo\displaystyle<\sum|\prod> $.
 
 \section{\CHFrom{library.ref}}
 \CHToI{latex}{\tn{c@page}, \tn{ifG@refundefined}};
+
+\section{\CHFrom{library.pgf}}
+\CHToI{pgf}{\tn{pgf@declareimage}};
+\CHToI{tikz}{\tn{tikz@finish}, \tn{tikz@path@do@at@end}};
+\CHToI{fancyhdr}{\tn{f@nch@O@olh}, \tn{f@nch@O@orh}, \tn{f@nch@O@elh}, \tn{f@nch@O@erh}};
+\CHToI{fancyhdr}{\tn{f@nch@O@olf}, \tn{f@nch@O@orf}, \tn{f@nch@O@elf}, \tn{f@nch@O@erf}};
 
 \section{\CHFrom{library.tcb}}
 \CHToI{tcolorbox}{\tn{kvtcb@boxsep}};

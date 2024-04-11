@@ -44,25 +44,50 @@
 \def\cus@pgf@initbfnodes{%
   \cus@pgf@initpagenode
   \cus@pgf@initlayoutnode
+  \cus@pgf@inittextnode
+  \cus@pgf@initmarginnode
+  \cus@pgf@initheadernode
+  \cus@pgf@initfooternode
 }
-\def\cus@pgf@initpagenode{%
-  \@namedef{pgf@sh@ns@page}{rectangle}%
-  \@namedef{pgf@sh@nt@page}{{1}{0}{0}{1}{0pt}{0pt}}%
-  \@namedef{pgf@sh@pi@page}{\pgfpictureid}%
-  \@namedef{pgf@sh@np@page}{%
-    \def\southwest{\pgfpointorigin}%
-    \def\northeast{\pgfpoint{\paperwidth}{\paperheight}}%
-  }%
-}
-\def\cus@pgf@initlayoutnode{%
-  \@namedef{pgf@sh@ns@layout}{rectangle}%
-  \@namedef{pgf@sh@nt@layout}{{1}{0}{0}{1}{0pt}{0pt}}%
-  \@namedef{pgf@sh@pi@layout}{\pgfpictureid}%
-  \@namedef{pgf@sh@np@layout}{%
-    \def\southwest{\pgfpoint{\layoutloffset}{\the\layoutboffset}}%
-    \def\northeast{\pgfpoint{\layoutloffset+\layoutwidth}{\paperheight-\layouttoffset}}%
-  }%
-}
+\edef\cus@pgf@initbfnodes@#1{%
+  \noexpand\@namedef{pgf@sh@ns@#1}{\@nameuse{pgf@sh@ns@current page}}%
+  \noexpand\@namedef{pgf@sh@nt@#1}{\@nameuse{pgf@sh@nt@current page}}%
+  \noexpand\@namedef{pgf@sh@pi@#1}{\@nameuse{pgf@sh@pi@current page}}%
+  \noexpand\@namedef{pgf@sh@np@#1}}
+\def\cus@pgf@initpagenode{\cus@pgf@initbfnodes@{page}{%
+  \def\southwest{\pgfpointorigin}%
+  \def\northeast{\pgfpoint{\paperwidth}{\paperheight}}%
+}}
+\def\cus@pgf@initlayoutnode{\cus@pgf@initbfnodes@{layout}{%
+  \def\southwest{\pgfpoint{\layoutloffset}{\the\layoutboffset}}%
+  \def\northeast{\pgfpoint{\layoutloffset+\layoutwidth}{\paperheight-\layouttoffset}}%
+}}
+\def\cus@pgf@ifodd{\ifcase\if@twoside\ifodd\c@page 0 \else 1 \fi\else 0 \fi
+  \expandafter\@firstoftwo\else\expandafter\@secondoftwo\fi}
+\def\cus@pgf@hfO#1#2{(\@nameuse{f@nch@O@\cus@pgf@ifodd oe#1#2}+0pt)}
+\def\cus@pgf@margin{\cus@pgf@ifodd\oddsidemargin\evensidemargin}
+\def\cus@pgf@textleft{(1in+\hoffset+\cus@pgf@margin)}
+\def\cus@pgf@texttop{(1in+\voffset+\topmargin+\headheight+\headsep)}
+\def\cus@pgf@inittextnode{\cus@pgf@initbfnodes@{text}{%
+  \def\southwest{\pgfpoint{\fpeval{\cus@pgf@textleft}}
+    {\fpeval{\paperheight-\cus@pgf@texttop-\textheight}}}%
+  \def\northeast{\pgfpoint{\fpeval{\cus@pgf@textleft+\textwidth}}
+    {\fpeval{\paperheight-\cus@pgf@texttop}}}}}
+\def\cus@pgf@initmarginnode{\cus@pgf@initbfnodes@{margin}{%
+  \def\southwest{\pgfpoint{\fpeval{\cus@pgf@textleft\cus@pgf@ifodd{+\textwidth+\marginparsep}{-\marginparsep-\marginparwidth}}}
+    {\fpeval{\paperheight-\cus@pgf@texttop-\textheight}}}%
+  \def\northeast{\pgfpoint{\fpeval{\cus@pgf@textleft\cus@pgf@ifodd{+\textwidth+\marginparsep+\marginparwidth}{-\marginparsep}}}
+    {\fpeval{\paperheight-\cus@pgf@texttop}}}}}
+\def\cus@pgf@initheadernode{\cus@pgf@initbfnodes@{header}{%
+  \def\southwest{\pgfpoint{\fpeval{\cus@pgf@textleft-\cus@pgf@hfO lh}}
+    {\fpeval{\paperheight-\cus@pgf@texttop+\headsep}}}%
+  \def\northeast{\pgfpoint{\fpeval{\cus@pgf@textleft+\textwidth+\cus@pgf@hfO rh}}
+    {\fpeval{\paperheight-\cus@pgf@texttop+\headsep+\headheight}}}}}
+\def\cus@pgf@initfooternode{\cus@pgf@initbfnodes@{footer}{%
+  \def\southwest{\pgfpoint{\fpeval{\cus@pgf@textleft-\cus@pgf@hfO lf}}
+    {\fpeval{\paperheight-\cus@pgf@texttop-\textheight-\footskip}}}%
+  \def\northeast{\pgfpoint{\fpeval{\cus@pgf@textleft+\textwidth+\cus@pgf@hfO rf}}
+    {\paperheight-\cus@pgf@texttop-\textheight}}}}
 \long\@namedef{__cus_bfground_tikz:n}#1{%
   \put(0pt,-\paperheight){\hb@xt@\z@{\begin{tikzpicture}
     \cus@pgf@initbfnodes
