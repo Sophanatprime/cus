@@ -86,13 +86,14 @@
     \clist_set:Nx \l__cus_tmpa_clist {#2}
     \tl_set:Nx \l__cus_cbl_heading_level_tl 
       { \exp_args:Ne \cus_heading_level:n { #1- \l__cus_tmpa_clist } }
+    \__cus_cbl_parse_title:n {#3} % save to \l__cus_tmpc_tl
     \tl_gset:cx 
       { cus/cbl~/cbl~ /entry [ \int_use:N \g__cus_cbl_count_int ] _tl }
       {
         \exp_not:N \cus@cbl@contentsline {#1} 
           { \int_use:c { g__cus_cbl_type~#1_count_int } }
           {#2} { \l__cus_cbl_heading_level_tl }
-          { \exp_not:n {#3} } {#4} {#5} \exp_not:N \cus@cbl@contentsline@
+          { \exp_not:o \l__cus_tmpc_tl } {#4} {#5} \exp_not:N \cus@cbl@contentsline@
       }
     \tl_gset:cx 
       { cus/cbl~/type~#1 /entry [ \int_use:c { g__cus_cbl_type~#1_count_int } ] _tl }
@@ -100,7 +101,7 @@
         \exp_not:N \cus@type@contentsline {#1}
           { \int_use:N \g__cus_cbl_count_int }
           {#2} { \l__cus_cbl_heading_level_tl }
-          { \exp_not:n {#3} } {#4} {#5} \exp_not:N \cus@type@contentsline@
+          { \exp_not:o \l__cus_tmpc_tl } {#4} {#5} \exp_not:N \cus@type@contentsline@
       }
     \tl_gset:cx { cus/cbl~/type~#1 /lo_used_level_tl }
       { 
@@ -117,6 +118,28 @@
       \clist_gput_right:cx { cus/cbl~/type~#1/default~level _count_clist }
         { \int_use:c { g__cus_cbl_type~#1_count_int } }
     \fi:
+  }
+\cs_new_protected:Npn \__cus_cbl_parse_title:n #1
+  {
+    \tl_if_head_eq_meaning:nNTF {#1} \numberline
+      { \tl_set:No \l__cus_tmpc_tl { \__cus_cbl_parse_title:nnw #1 \s__cus_stop } }
+      {
+        \tl_if_in:nnTF {#1} { \hspace }
+          { \tl_set:Nx \l__cus_tmpc_tl { \__cus_cbl_parse_title:ww #1 \s__cus_stop } }
+          { \tl_set:Nn \l__cus_tmpc_tl { \nonumberline{}{#1} } }
+      }
+  }
+\cs_new_protected:Npn \nonumberline #1#2 {#1#2}
+\cs_new:Npn \__cus_cbl_parse_title:nnw #1#2#3 \s__cus_stop { #1{#2}{#3} }
+\cs_new:Npn \__cus_cbl_parse_title:ww #1 \hspace #2#3 \s__cus_stop 
+  { 
+    \nonumberline 
+      { \exp_not:n {#1} 
+        \str_if_eq:nnTF {#2} { * } 
+          { \exp_not:N \hspace*{ \tl_head:n {#3} } } 
+          { \exp_not:n { \hspace{#2} } }
+      }
+      { \str_if_eq:nnTF {#2} {*} \tl_tail:n \exp_not:n {#3} } 
   }
 \tl_put_right:Nn \g__cus_cbl_after_load_tl
   { % 在这些 clist 后添加一个额外的数字
@@ -220,39 +243,61 @@
     \exp_last_unbraced:Ne 
       \cus_exp_not_use_viii:nnnnnnnnn { \cus_contents_type_entry:nn {#1} {#2} } 
   }
-\cs_new_protected:Npn \__cus_contentsline_push_def:nn #1#2
+\cs_new_protected:Npn \__cus_contentsline_push_def:nnn #1#2#3
   {
     \int_gincr:N \g__cus_map_int
-    \cs_gset_eq:cN 
-      { __cus_iterate_contents_ \int_use:N \g__cus_map_int :w }
-    \cs_gset_eq:cN 
-      { __cus_iterate_contents@_ \int_use:N \g__cus_map_int :w }
-      \cus@cbl@contentsline@
-      \cus@cbl@contentsline
-    \cs_set:Npn \cus@cbl@contentsline ##1##2##3##4##5##6##7 {#1}
-    \cs_set:Npn \cus@cbl@contentsline@ {#2}
+    \tl_if_empty:eTF {#1}
+      {
+        \cs_gset_eq:cN 
+          { __cus_iterate_contents_ \int_use:N \g__cus_map_int :w }
+          \cus@cbl@contentsline
+        \cs_gset_eq:cN 
+          { __cus_iterate_contents@_ \int_use:N \g__cus_map_int :w }
+          \cus@cbl@contentsline@
+        \cs_set:Npn \cus@cbl@contentsline ##1##2##3##4##5##6##7 {#2}
+        \cs_set:Npn \cus@cbl@contentsline@ {#3}
+      }
+      {
+        \cs_gset_eq:cN 
+          { __cus_iterate_contents_ \int_use:N \g__cus_map_int :w }
+          \cus@type@contentsline
+        \cs_gset_eq:cN 
+          { __cus_iterate_contents@_ \int_use:N \g__cus_map_int :w }
+          \cus@type@contentsline@
+        \cs_set:Npn \cus@type@contentsline ##1##2##3##4##5##6##7 {#2}
+        \cs_set:Npn \cus@type@contentsline@ {#3}
+      }
   }
-\cs_new_protected:Npn \__cus_contentsline_pop_def:
+\cs_new_protected:Npn \__cus_contentsline_pop_def:n #1
   {
-    \cs_set_eq:Nc \cus@cbl@contentsline
-      { __cus_iterate_contents_ \int_use:N \g__cus_map_int :w }
-    \cs_set_eq:Nc \cus@cbl@contentsline@
-      { __cus_iterate_contents@_ \int_use:N \g__cus_map_int :w }
+    \tl_if_empty:eTF {#1}
+      {
+        \cs_set_eq:Nc \cus@cbl@contentsline
+          { __cus_iterate_contents_ \int_use:N \g__cus_map_int :w }
+        \cs_set_eq:Nc \cus@cbl@contentsline@
+          { __cus_iterate_contents@_ \int_use:N \g__cus_map_int :w }
+      }
+      {
+        \cs_set_eq:Nc \cus@type@contentsline
+          { __cus_iterate_contents_ \int_use:N \g__cus_map_int :w }
+        \cs_set_eq:Nc \cus@type@contentsline@
+          { __cus_iterate_contents@_ \int_use:N \g__cus_map_int :w }
+      }
     \int_gdecr:N \g__cus_map_int
   }
 \cs_new_protected:Npn \cus_map_contents_inline:n #1
   {
-    \__cus_contentsline_push_def:nn {#1} { }
+    \__cus_contentsline_push_def:nnn { } {#1} { }
     \int_step_inline:nn { \g__cus_cbl_count_int }
       { \cs:w cus/cbl~/cbl~ /entry [##1] _tl \cs_end: }
-    \__cus_contentsline_pop_def:
+    \__cus_contentsline_pop_def:n { }
   }
 \cs_new_protected:Npn \cus_map_contents_type_inline:nn #1#2 % type, code 
   {
-    \__cus_contentsline_push_def:nn {#2} { }
+    \__cus_contentsline_push_def:nnn {#1} {#2} { }
     \int_step_inline:nn { \int_use:c { g__cus_cbl_type~#1_count_int } }
       { \cs:w cus/cbl~/type~#1 /entry [##1] _tl \cs_end: }
-    \__cus_contentsline_pop_def:
+    \__cus_contentsline_pop_def:n {#1}
   }
 \cs_new_protected:Npn \__cus_contents_line:nnnnnnn #1#2#3#4#5#6#7
   {
@@ -300,6 +345,36 @@
     \prop_gput:Nxx \g__cus_heading_level_prop { #1-#2 } 
       { \int_eval:n { #3 + 0 } }
   }
+\cs_new_protected:Npn \cus_map_heading_level:nn #1#2
+  {
+    \int_gincr:N \g__cus_map_int
+    \cs_set_protected:cpn { __cus_map_tmp_ \int_use:N \g__cus_map_int :w } ##1##2 {#2}
+    \tl_if_empty:eTF {#1}
+      {
+        \exp_args:NNe \prop_map_tokens:Nn \g__cus_heading_level_prop
+          {
+            \__cus_map_heading_level_aux:Nnn
+            \cs:w __cus_map_tmp_ \int_use:N \g__cus_map_int :w \cs_end:
+          }
+      }
+      {
+        \exp_args:NNe \prop_map_tokens:Nn \g__cus_heading_level_prop
+          {
+            \__cus_map_heading_level_aux:Nnnn 
+            \cs:w __cus_map_tmp_ \int_use:N \g__cus_map_int :w \cs_end: {#1}
+          }
+      }
+    \int_gdecr:N \g__cus_map_int
+  }
+\cs_new_protected:Npn \__cus_map_heading_level_aux:Nnn #1#2#3
+  { \exp_after:wN #1 \__cus_map_heading_level_aux:w #2 \s__cus_stop }
+\cs_new_protected:Npn \__cus_map_heading_level_aux:Nnnn #1#2#3#4
+  {
+    \str_if_eq:eeT {#2}
+      { \exp_after:wN \use_i:nn \__cus_map_heading_level_aux:w #3 \s__cus_stop }
+      { \exp_after:wN #1 \__cus_map_heading_level_aux:w #3 \s__cus_stop }
+  }
+\cs_new:Npn \__cus_map_heading_level_aux:w #1 - #2 \s__cus_stop {{#1}{#2}}
 \cs_new_protected_nopar:Npn \cus_cbl_add:nn #1#2 % type , key-val 
   {
     \if_int_compare:w \g__cus_cbl_count_int < \c_one_int
@@ -365,7 +440,7 @@
       { \cus_map_contents_type_inline:nn { \tl_trim_spaces:n {#1} } }
   }
 
-\prop_new:N \g__cus_heading_level_prop
+\prop_new_linked:N \g__cus_heading_level_prop
 \seq_new:N \g__cus_cbl_type_seq 
 \int_new:N \g__cus_cbl_count_int
 \cs_set_eq:NN \total@cbl@count \g__cus_cbl_count_int
@@ -617,12 +692,11 @@
             \tl_gset:Nx \tocthenextlevel { \tl_item:Nn \tocthenextentry { 5 } } 
             \cs_gset_eq:NN \tociftailentry \use_ii:nn
           }
-        \tl_if_head_eq_meaning:nNTF {##5} \numberline 
-        % \exp_args:Nne \tl_if_in:nnTF 
-        %   { \numberline\chapternumberline\partnumberline\booknumberline }
-        %   { \tl_head:n {##5} }
-          { \__cus_specified_cbl_split:nnw ##5 \s__cus_mark }
-          { \__cus_specified_cbl_split:nnw {} {} ##5 \s__cus_mark }
+        \tl_gset:No \tocthenumber { \use_ii:nnn ##5 }
+        \tl_gset:No \tocthename { \use_iii:nnn ##5 }
+        \tl_if_empty:NTF \tocthenumber
+          { \cs_gset_eq:NN \tocifnumbered \use_ii:nn }
+          { \cs_gset_eq:NN \tocifnumbered \use_i:nn }
         \tl_gset:Nn \tocthepage {##6}
         \__cus_if_head_int_dec:nTF { \tocthepage }
           { \cs_gset_eq:NN \tocifpageisnumber \use_i:nn }
@@ -783,12 +857,11 @@
                 \cs_gset_eq:NN \tociftailentry \use_i:nn
               }
           }
-        \tl_if_head_eq_meaning:nNTF {##5} \numberline 
-        % \exp_args:Nne \tl_if_in:nnTF 
-        %   { \numberline\chapternumberline\partnumberline\booknumberline }
-        %   { \tl_head:n {##5} }
-          { \__cus_specified_cbl_split:nnw ##5 \s__cus_mark }
-          { \__cus_specified_cbl_split:nnw {} {} ##5 \s__cus_mark }
+        \tl_gset:No \tocthenumber { \use_ii:nnn ##5 }
+        \tl_gset:No \tocthename { \use_iii:nnn ##5 }
+        \tl_if_empty:NTF \tocthenumber 
+          { \cs_gset_eq:NN \tocifnumbered \use_ii:nn }
+          { \cs_gset_eq:NN \tocifnumbered \use_i:nn }
         \tl_gset:Nn \tocthepage {##6}
         \__cus_if_head_int_dec:nTF { \tocthepage }
           { \cs_gset_eq:NN \tocifpageisnumber \use_i:nn }
@@ -806,14 +879,6 @@
     \int_step_inline:nnn \l__cus_cbl_search_min_int \l__cus_cbl_search_max_int
       { \cs:w cus/cbl~ \tl_if_empty:nTF {#1} { /cbl~ } { /type~#1 } /entry [##1] _tl \cs_end: {##1} }
     \cus@toc@contentsline@end 
-  }
-\cs_new:Npn \__cus_specified_cbl_split:nnw #1#2#3 \s__cus_mark 
-  {
-    \tl_gset:Nn \tocthenumber {#2}
-    \tl_if_empty:NTF \tocthenumber 
-      { \cs_gset_eq:NN \tocifnumbered \use_ii:nn }
-      { \cs_gset_eq:NN \tocifnumbered \use_i:nn }
-    \tl_gset:Nn \tocthename {#3}
   }
 \cs_new:Npn \__cus_specified_cbl_info:w #1 , #2 \s__cus_mark 
   {
@@ -1161,6 +1226,8 @@
       }
           #4 #5
   }
+
+%% specified combinedlist
 \NewDocumentCommand \SetSpecifiedCombinedListStyle { O{}+m+m+m+m+m+m }
   {
     \bool_if:NTF \l__cus_specified_cbl_save_bool 
@@ -1217,6 +1284,7 @@
 \cs_new_protected:Npn \specifiedlot { \SpecifiedCombinedList [lot] }
 \ExplSyntaxOff
 
+%% plain combinedlist
 \@namedef{l@toc/cbl/level -1}#1#2#3#4#5#6#7{%
   \ifnum \c@tocdepth >-2\relax
     \addpenalty{-\@highpenalty}%
@@ -1280,6 +1348,8 @@
 \def\l@subsubsection#1#2{\@nameuse{l@toc/cbl/level 3}{}{}{}{}{#1}{#2}{}}
 \def\l@paragraph#1#2{\@nameuse{l@toc/cbl/level 4}{}{}{}{}{#1}{#2}{}}
 \def\l@subparagraph#1#2{\@nameuse{l@toc/cbl/level 5}{}{}{}{}{#1}{#2}{}}
+\def\l@figure#1#2{\@nameuse{l@toc/cbl/level 0}{}{}{}{}{#1}{#2}{}}
+\def\l@table#1#2{\@nameuse{l@toc/cbl/level 0}{}{}{}{}{#1}{#2}{}}
 
 
 \protected\def\localplaincombinedlist#1#2#3{%
@@ -1288,6 +1358,7 @@
   \ifnum\@tempcnta<\@ne \@tempcnta\@ne \fi 
   \advance\@tempcnta-\@ne
   \@tempcntb #3\relax 
+  \ifnum\@tempcnta>\@tempcntb \@tempcnta\z@ \@tempcntb\maxdimen \fi
   \if\relax#1\relax 
     \ifnum\@tempcntb>\total@cbl@count \@tempcntb\total@cbl@count \fi 
   \else 
@@ -1308,7 +1379,7 @@
   \fi
   \endgroup}
 \NewDocumentCommand\multicollocalplaincombinedlist
-  { O{columns=2,outer-sep=0pt} m m m m }
+  { O{columns=2,outer-sep=0pt} m m m m } % multicols key, title, type, min, max
   {\if@twocolumn
       \@restonecoltrue\onecolumn
     \else
@@ -1332,7 +1403,7 @@
   {\loc@ltableofcontents#3%
     \multicollocalplaincombinedlist[{#2}]{\contentsname}{toc}{\@tempcbla}{\@tempcblb}}
 \def\loc@ltableofcontents#1#2{%
-  \IfNoValueTF{#1}{\def\@tempa{\CurrentTitleLevel}}
+  \IfNoValueTF{#1}{\edef\@tempa{\CurrentTitleLevel}}
     {\edef\@tempa{\if\relax#1\relax \CurrentTitleLevel \else #1\fi}}%
   \IfNoValueTF{#2}{\def\@tempb{}}{\def\@tempb{#2}}%
   \expanded{\getcbllevelrange{toc}{\@tempa}[{\@tempb}]}{\@tempcbla}{\@tempcblb}}
@@ -1340,6 +1411,390 @@
   {\multicolplaincombinedlist[{#1}]{\listfigurename}{lof}}
 \DeclareRobustCommand\listoftables[1][columns=1]%[columns=2,outer-sep=0pt]
   {\multicolplaincombinedlist[{#1}]{\listtablename}{lot}}
+
+
+\ExplSyntaxOn
+%% template combinedlist
+\ekeysdeclarecmd \templatetoc { &@O{} &@O{} &@D(){} } 
+  { \templatecombinedlist#1#2{toc}#3{\contentsname} }
+\ekeysdeclarecmd \templatelof { &@O{} &@O{} &@D(){} } 
+  { \templatecombinedlist#1#2{lof}#3{\listfigurename} }
+\ekeysdeclarecmd \templatelot { &@O{} &@O{} &@D(){} } 
+  { \templatecombinedlist#1#2{lot}#3{\listtablename} }
+\ekeysdeclarecmd \templatecombinedlist { @O{} @O{} m @D(){} m }
+  { \socket_use:nw { templatecbl } {#3} {#1} {#2} {#5} {#4} }
+\socket_new:nn { templatecbl } { 5 } % type, tmcbl key, multicols key, title, range
+\socket_new_plug:nnn { templatecbl } { by~name }
+  {
+    \par
+    \group_begin:
+      \str_set:Nx \tmcblthetype {#1}
+      \tmcbl@pushdef \tmcblthetype
+        {
+          \bgroup \__cus_tmcbl_info:w ##3, \s__cus_mark
+          \use:e { \UseInstance { templatecbl } { \tmcbltheclass } } 
+            {##1}{##2}{##3}{##4}{##5}{##6}{##7}
+        }
+        { \egroup }
+      \cus@tmcbl@getrange #5,,\@nil {#1}
+      \keys_set:nn { cus/templatecbl } {#2}
+      % multicols key, title, type, min, max
+      \multicollocalplaincombinedlist [{columns=1,#3}] {#4} 
+        {\tmcblthetype} {\tmcblthemin} {\tmcblthemax}
+      \tmcbl@popdef {#1}
+    \group_end:
+    \@afterindenttrue
+  }
+\cs_new_protected:Npn \tmcbl@pushdef { \__cus_contentsline_push_def:nnn }
+\cs_new_protected:Npn \tmcbl@popdef { \__cus_contentsline_pop_def:n }
+\keys_define:nn { cus/templatecbl }
+  {
+    no-parent .code:n = \__cus_tmcbl_remove_first_entry: ,
+    no-parent .value_forbidden:n = true ,
+    hide .code:n = \__cus_tmcbl_set_instances_keys:nn {#1} { ignore=true } ,
+    show .code:n = \__cus_tmcbl_set_instances_keys:nn {#1} { ignore=false } ,
+
+    * .code = \__cus_tmcbl_edit_instance:n {#1} ,
+    unknown .code:n = 
+      \tl_if_head_eq_charcode:oNTF \l_keys_key_str *
+        { 
+          \exp_last_two_unbraced:Noo \__cus_tmcbl_edit_instance:wn
+            \l_keys_key_str { \exp_after:wN { \l_keys_value_tl } }
+        }
+        {
+          \exp_args:Nno \IfInstanceExistTF { templatecbl } \l_keys_key_str
+            { \exp_args:Nooo \EditInstance { templatecbl } \l_keys_key_str \l_keys_value_tl }
+            { \msg_error:nnx { cus } { unknown-templatecbl-key } \l_keys_key_str }
+        } ,
+  }
+\cs_new:Npn \__cus_tmcbl_info:w #1, #2 \s__cus_mark
+  {
+    \str_set:Nx \tmcbltheclass {#1}
+    \prop_clear_new:N \tmcbltheinfo
+    \clist_map_inline:nn {#2} { \prop_put:Nnn \tmcbltheinfo ##1 }
+  }
+\cs_new_protected:Npn \__cus_tmcbl_remove_first_entry:
+  {
+    \int_compare:nNnT \tmcblthemin < \tmcblthemax
+      {
+        \int_compare:nNnT \tmcblthemin > { -\maxdimen }
+          { \tl_set:Nx \tmcblthemin { \int_eval:n { \tmcblthemin + 1 } } }
+      }
+  }
+\cs_new_protected:Npn \__cus_tmcbl_edit_instance:n #1
+  {
+    \cus_map_heading_level:nn \tmcblthetype
+      {
+        \IfInstanceExistT { templatecbl } {##2}
+          { \EditInstance { templatecbl } {##2} {#1} }
+      }
+  }
+\use:e 
+  {
+    \cs_new_protected:Npn \exp_not:N \__cus_tmcbl_edit_instance:wn 
+      * #1 \c_left_brace_str #2 \c_right_brace_str
+  }
+  { \__cus_tmcbl_set_instances_keys:nn {#2} }
+\cs_new_protected:Npn \__cus_tmcbl_set_instances_keys:nn #1#2
+  { \clist_map_inline:nn {#1} { \EditInstance { templatecbl } {##1} {#2} } }
+\msg_new:nnn { cus } { unknown-templatecbl-key }
+  { `#1'~is~neither~a~valid~key~nor~a~instance~for~templatecbl. }
+
+\cs_new:Npn \cus@tmcbl@getrange #1, #2, #3 \@nil #4
+  {
+    \IfBlankTF{#1}{\def\@tempa{\CurrentTitleLevel}}
+      {\edef\@tempa{\if\relax#1\relax \CurrentTitleLevel \else #1\fi}}
+    \IfBlankTF{#2}{\def\@tempb{}}{\def\@tempb{#2}}%
+    \expanded{\getcbllevelrange{#4}{\@tempa}[{\@tempb}]}{\tmcblthemin}{\tmcblthemax}
+  }
+\skip_new:N \tmcbl@beforeskip
+\skip_new:N \tmcbl@leftskip
+\skip_new:N \tmcbl@rightskip
+\dim_new:N \tmcbl@indent
+\dim_new:N \tmcbl@hang
+\int_new:N \tmcbl@beforepenalty
+\tl_new:N \tmcbl@format
+\tl_new:N \tmcbl@nameformat
+\tl_new:N \tmcbl@titleformat
+\tl_new:N \tmcbl@pageformat
+\dim_new:N \tmcbl@pagewidth
+\dim_new:N \tmcbl@namewidth
+\dim_new:N \tmcbl@titlewidth
+\dim_new:N \tmcbl@linewidth
+\tl_new:N \tmcbl@leadercontent
+\bool_new:N \tmcbl@ignore
+\cs_new_protected:Npn \tmcbl@code #1#2#3#4#5#6#7 { }
+\cs_new_protected:Npn \tmcbl@name { }
+\cs_new_protected:Npn \tmcbl@title { }
+\cs_new_protected:Npn \tmcbl@page { }
+\cs_new_protected:Npn \tmcbl@leader { }
+\cs_new_protected:Npn \tmcbl@hyper #1#2#3#4 { }
+\int_new:N \tmcbl@hyperrange
+\tl_new:N \tmcbl@hyperrangelist
+\tl_new:N \tmcbl@before
+\tl_new:N \tmcbl@after
+\fp_new:N \tmcbl@leadersep
+\tl_new:N \tmcbl@leaderoptions
+% type, . count, info, level, list entry, thepage, anchor
+\cs_new_protected:Npn \tmcbl@code@ #1#2#3#4#5#6#7
+  {
+    \bool_lazy_and:nnT { !\tmcbl@ignore }
+      { \int_compare_p:nNn \c@tocdepth > {#4} }
+      {
+        { \tmcbl@before
+          \mode_if_vertical:T 
+            { \unless\ifnum\tmcbl@beforepenalty=\z@\addpenalty{\tmcbl@beforepenalty}\fi
+              \tmcbl@skipifnz\vskip\tmcbl@beforeskip }
+          \skip_set_eq:NN \leftskip \tmcbl@leftskip
+          \skip_set_eq:NN \rightskip \tmcbl@rightskip
+          \skip_set:Nn \parfillskip { -\rightskip }
+          \dim_set:Nn \parindent \tmcbl@indent
+          \mode_if_vertical:T { \interlinepenalty\@M \noindent }
+          \tl_set:Nn \tmcblthelevel {#4}
+          \tl_set:Nn \tmcblthepage {#6}
+          \str_set:Nn \tmcbltheanchor {#7} 
+          \tl_set:No \tmcblthename { \use_ii:nnn #5 }
+          \tl_set:No \tmcblthetitle { \use_iii:nnn #5 }
+          \tl_set:Nx \tmcbl@leadersep { \fp_to_decimal:N \tmcbl@leadersep }
+          \dim_set_eq:NN \@tempdima \tmcbl@namewidth % for \numberline
+          \null\nobreak % \tmcbl@skipifnz\hskip{-\leftskip}
+          \tmcbl@skipifnz\hskip{-\tmcbl@hang}
+          { \tmcbl@format \tmcbl@hyper 
+            { \tmcbl@name } { \tmcbl@title } { \tmcbl@leader } { \tmcbl@page } }
+          \tmcbl@after }
+      }
+  }
+\cs_new_protected:Npn \tmcbl@skipifnz #1#2
+  { 
+    \str_if_eq:eeF { \skip_eval:n {#2} } { \skip_use:N \c_zero_skip } 
+      { #1 \tex_glueexpr:D #2 \scan_stop: }
+  }
+\cs_new_protected:Npn \tmcbl@name@ 
+  { 
+    \tl_if_empty:NT \tmcblthename \use_none:n 
+      {\numberline{\tmcbl@nameformat\tmcblthename}}
+  }
+\cs_new_protected:Npn \tmcbl@title@ { {\tmcbl@titleformat\tmcblthetitle} }
+\cs_new_protected:Npn \tmcbl@page@
+  {
+    \hbox_to_wd:nn {\tmcbl@pagewidth} 
+      {\hss\tmcbl@pageformat\tmcblthepage\kern-\p@\kern\p@}
+  }
+\cs_new_protected:Npn \tmcbl@leader@
+  {
+    \fp_compare:nNnTF { \tmcbl@leadersep } < { 5000 }
+      {
+        \leaders
+          \hbox{$\m@th\mkern\tmcbl@leadersep mu
+            \hbox{\tmcbl@leadercontent}\mkern\tmcbl@leadersep mu$}
+          \hfill
+      }
+      { \exp_args:NNo \filler[\tmcbl@leaderoptions] }
+  }
+\cs_new_protected:Npn \tmcbl@hyperlink { \cus_ref_target:nn {\tmcbltheanchor} }
+\cs_new_protected:Npn \tmcbl@hyperlinkbox { \cus_ref_target_box:nn {\tmcbltheanchor} }
+\cs_new_protected:Npn \tmcbl@hyper@ #1#2#3#4 % name, title, leader, page
+  {
+    \int_case:nn { \tmcbl@hyperrange }
+      {
+        0 { #1#2#3#4 }
+        1 { \tmcbl@hyperlink{#1}#2#3#4 }
+        2 { #1\tmcbl@hyperlink{#2}#3#4 }
+        3 { \tmcbl@hyperlink{#1#2}#3#4 }
+        4 { #1#2#3\tmcbl@hyperlink{#4} }
+        5 { \tmcbl@hyperlink{#1}#2#3\tmcbl@hyperlink{#4} }
+        6 { #1\tmcbl@hyperlink{#2#3#4} }
+        7 { \tmcbl@hyperlink{#1#2#3#4} }
+      }
+  }
+\DeclareObjectType { templatecbl } { 7 }
+\DeclareTemplateInterface { templatecbl } { by~name } { 7 }
+  {
+    penalty.before : integer ,
+
+    format         : tokenlist ,
+    format.name    : tokenlist ,
+    format.title   : tokenlist ,
+    format.page    : tokenlist ,
+
+    width.name     : length ,
+    width.title    : length ,
+    width.page     : length = \@pnumwidth ,
+    width.line     : length ,
+
+    space.before   : skip ,
+    space.left     : skip ,
+    space.right    : skip ,
+    space.hang     : length = \KeyValue { width.name } ,
+    space.indent   : length = \KeyValue { space.hang } ,
+
+    content.leader : tokenlist = { . } ,
+
+    ignore         : boolean ,
+
+    code           : function{7} = \tmcbl@code@ {#1}{#2}{#3}{#4}{#5}{#6}{#7} ,
+    code.name      : tokenlist   = \tmcbl@name@ ,
+    code.title     : tokenlist   = \tmcbl@title@ ,
+    code.leader    : tokenlist   = \tmcbl@leader@ ,
+    code.page      : tokenlist   = \tmcbl@page@ ,
+    code.hyper     : tokenlist   = \tmcbl@hyper@ {#1}{#2}{#3}{#4} ,
+    code.before    : tokenlist ,
+    code.after     : tokenlist   = \par ,
+
+    name.width     : length      = \KeyValue { width.name } ,
+    name.format    : tokenlist   = \KeyValue { format.name } ,
+    name.code      : tokenlist   = \KeyValue { code.name } ,
+
+    title.width    : length      = \KeyValue { width.title } ,
+    title.format   : tokenlist   = \KeyValue { format.title } ,
+    title.code     : tokenlist   = \KeyValue { code.title } ,
+
+    page.width     : length      = \KeyValue { width.page } ,
+    page.format    : tokenlist   = \KeyValue { format.page } ,
+    page.code      : tokenlist   = \KeyValue { code.page } ,
+
+    leader.sep     : real = 4.5 ,
+    leader.options : tokenlist   = space ,
+    leader.content : tokenlist   = \KeyValue { content.leader } ,
+    leader.code    : tokenlist   = \KeyValue { code.leader } ,
+
+    hyper.range    : commalist   = page ,
+    hyper.code     : tokenlist   = \KeyValue { code.hyper } ,
+  }
+\DeclareTemplateCode { templatecbl } { by~name } { 7 }
+  {
+    penalty.before = \tmcbl@beforepenalty ,
+
+    format         = \tmcbl@format ,
+    format.name    = \tmcbl@nameformat ,
+    format.title   = \tmcbl@titleformat ,
+    format.page    = \tmcbl@pageformat ,
+
+    width.name     = \tmcbl@namewidth ,
+    width.title    = \tmcbl@titlewidth ,
+    width.page     = \tmcbl@pagewidth ,
+    width.line     = \tmcbl@linewidth ,
+
+    space.before   = \tmcbl@beforeskip ,
+    space.left     = \tmcbl@leftskip ,
+    space.right    = \tmcbl@rightskip ,
+    space.hang     = \tmcbl@hang ,
+    space.indent   = \tmcbl@indent ,
+
+    content.leader = \tmcbl@leadercontent ,
+
+    ignore         = \tmcbl@ignore ,
+
+    name.width     = \tmcbl@namewidth ,
+    name.format    = \tmcbl@nameformat ,
+    name.code      = \tmcbl@name ,
+
+    title.width    = \tmcbl@titlewidth ,
+    title.format   = \tmcbl@titleformat ,
+    title.code     = \tmcbl@title ,
+
+    page.width     = \tmcbl@pagewidth ,
+    page.format    = \tmcbl@pageformat ,
+    page.code      = \tmcbl@page ,
+
+    leader.sep     = \tmcbl@leadersep ,
+    leader.options = \tmcbl@leaderoptions ,
+    leader.content = \tmcbl@leadercontent ,
+    leader.code    = \tmcbl@leader ,
+
+    hyper.range    = \tmcbl@hyperrangelist ,
+    hyper.code     = \tmcbl@hyper ,
+
+    code           = \tmcbl@code ,
+    code.name      = \tmcbl@name ,
+    code.title     = \tmcbl@title ,
+    code.leader    = \tmcbl@leader ,
+    code.page      = \tmcbl@page ,
+    code.hyper     = \tmcbl@hyper ,
+    code.before    = \tmcbl@before ,
+    code.after     = \tmcbl@after ,
+  }
+  {
+    \__cus_tmcbl_keys:
+    \AssignTemplateKeys
+    \__cus_tmcbl_fix_function:
+    % type, . count, info, level, list entry, thepage, anchor
+    \tmcbl@code {#1}{#2}{#3}{#4}{#5}{#6}{#7}
+  }
+\cs_new_protected:Npn \__cus_tmcbl_keys: { }
+\cs_new:Npn \__cus_tmcbl_hyper_range:n #1
+  { \cs_if_exist_use:c { __cus_tmcbl_hyper_range_#1: } }
+\cs_new:Npn \__cus_tmcbl_hyper_range_name:  { \int_add:Nn \tmcbl@hyperrange { 1 } }
+\cs_new:Npn \__cus_tmcbl_hyper_range_title: { \int_add:Nn \tmcbl@hyperrange { 2 } }
+\cs_new:Npn \__cus_tmcbl_hyper_range_page:  { \int_add:Nn \tmcbl@hyperrange { 4 } }
+\cs_new:Npn \__cus_tmcbl_hyper_range_none:  { \int_zero:N \tmcbl@hyperrange }
+\cs_new_protected:Npn \__cus_tmcbl_fix_function:
+  {
+    \clist_remove_duplicates:N \tmcbl@hyperrangelist
+    \int_zero:N \tmcbl@hyperrange
+    \clist_map_function:NN \tmcbl@hyperrangelist \__cus_tmcbl_hyper_range:n
+    \exp_args:Nno \use:n { \cs_set_protected:Npn \tmcbl@hyper ##1##2##3##4 }
+      { \tmcbl@hyper }
+  }
+\ExplSyntaxOff
+\AssignSocketPlug{templatecbl}{by name}
+\DeclareInstance{templatecbl}{part}{by name}{
+  space.before = 2.25em plus 1pt,
+  space.right  = \@pnumwidth,
+  space.hang   = 0pt,
+  format       = \large\bfseries,
+  width.name   = 3em,
+  width.page   = 0em,
+  leader.sep   = 5000, % >=5000, no leader
+  penalty.before = -\@highpenalty,
+}
+\DeclareInstance{templatecbl}{chapter}{by name}{
+  space.before = 1em plus 1pt,
+  space.right  = \@pnumwidth,
+  space.hang   = 0pt,
+  format       = \bfseries,
+  width.name   = 1.5em,
+  % width.page   = \@pnumwidth, % default=\@pnumwidth
+  leader.sep   = 5000,
+  penalty.before = -\@highpenalty,
+}
+\DeclareInstance{templatecbl}{section}{by name}{
+  space.before = 0pt plus .2pt,
+  space.left   = 2.3em+1.5em,
+  space.right  = \@tocrmarg,
+  space.hang   = 2.3em,
+  width.name   = 2.3em,
+}
+\DeclareInstance{templatecbl}{subsection}{by name}{
+  space.before = 0pt plus .2pt,
+  space.left   = 3.2em+3.8em,
+  space.right  = \@tocrmarg,
+  space.hang   = 3.2em,
+  width.name   = 3.2em,
+}
+\DeclareInstance{templatecbl}{subsubsection}{by name}{
+  space.before = 0pt plus .2pt,
+  space.left   = 4.1em+7em,
+  space.right  = \@tocrmarg,
+  space.hang   = 4.1em,
+  width.name   = 4.1em,
+}
+\DeclareInstance{templatecbl}{paragraph}{by name}{
+  space.before = 0pt plus .2pt,
+  space.left   = 5em+10em,
+  space.right  = \@tocrmarg,
+  space.hang   = 5em,
+  width.name   = 5em,
+}
+\DeclareInstance{templatecbl}{subparagraph}{by name}{
+  space.before = 0pt plus .2pt,
+  space.left   = 6em+12em,
+  space.right  = \@tocrmarg,
+  space.hang   = 6em,
+  width.name   = 6em,
+}
+\DeclareInstanceCopy{templatecbl}{figure}{chapter}
+\DeclareInstanceCopy{templatecbl}{table}{chapter}
 
 
 %% modify placeins.sty
