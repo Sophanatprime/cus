@@ -20,8 +20,8 @@
 % cus.module.pdfmana.tex, cus.module.space.tex, cus.module.struct.tex,
 % cus.module.util.tex and cusclass.cls .
 \NeedsTeXFormat{LaTeX2e}[2023/06/01]
-\def\cus@d@te{2024/04/03}
-\def\cus@versi@n{0.0.4g}
+\def\cus@d@te{2024/04/11}
+\def\cus@versi@n{0.0.4h}
 \ProvidesExplPackage{cus}{\cus@d@te}{\cus@versi@n}{Chinese User Scheme (CUS) basic file}
 
 \def\CusTeX{C\kern-.12em \raise.0466ex\hbox{u}\kern-.1em\lower .4ex\hbox{S}\kern-.15em\TeX}
@@ -239,10 +239,17 @@
   {
     \tl_set:Nx \l__cus_tmpc_tl 
       { \prop_item:No \g__cus_library_dependency_prop \CurrentFile }
-    \clist_set:No \l__cus_tmpc_tl { \l__cus_tmpc_tl , #1 }
+    \keyval_parse:NNn 
+      \__cus_library_add_dependency_aux:n
+      \__cus_library_add_dependency_aux:nn
+      {#1}
     \clist_remove_duplicates:N \l__cus_tmpc_tl
     \prop_gput:Noo \g__cus_library_dependency_prop \CurrentFile { \l__cus_tmpc_tl }
   }
+\cs_new:Npn \__cus_library_add_dependency_aux:n #1
+  { \clist_put_right:Nn \l__cus_tmpc_tl {#1} }
+\cs_new:Npn \__cus_library_add_dependency_aux:nn #1#2
+  { \clist_put_right:Nn \l__cus_tmpc_tl {#1} }
 \ekeysdeclarecmd \CUSLibraryDelayedUntil { s m }
   {
     \tl_set:Nx \l__cus_tmp_tl { \tl_range:Nnn \CurrentFile { 13 } { -5 } }
@@ -523,6 +530,7 @@
 \keys_define:nn { cus/option }
   {
     library .code:n = \__cus_load_library:n {#1} ,
+    draft .bool_set:N = \l_cus_draft_bool ,
   }
 
 

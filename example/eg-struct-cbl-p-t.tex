@@ -1,0 +1,57 @@
+
+\begin{examcode}[label=eg:standard-toc]{这个例子展示了标准目录的输出结果。}
+\tableofcontents
+% 或 \standardplaincombinedlist{\contentsname}{toc}
+\end{examcode}
+
+
+\begin{examcode}[label=eg:standard-multitoc]{这个例子展示了多栏目录的输出方式。}
+\multicolplaincombinedlist[ragged,outer-sep=0pt]{\contentsname}{toc}
+\end{examcode}
+
+
+\begin{examcode}[label=eg:standard-template-toc]{这个例子展示了标准的模板目录的输出结果。}
+\settocdepth{section}
+\templatetoc
+\end{examcode}
+
+\begin{examcode}{这个例子使用 2 栏目录，移除左侧间距，并在章标题没有编号的情况下，添加引导线，并设置超链接的文字为编号和标题。}
+\makeatletter
+\settocdepth{subsection}
+\templatetoc [
+  * = { space.left=0pt, space.hang=0pt, hyper.range={name,title} },
+  chapter = { 
+    code.leader={\ifx\tmcblthename\empty % 判断是否有编号
+        \def\tmcbl@leadersep{4.5}%
+      \else 
+        \def\tmcbl@leadersep{5001}% 使用 \filler 作为引导线
+      \fi 
+      \tmcbl@leader@} % 默认的引导线代码
+  }
+] [ columns=2 ]
+\makeatother
+\end{examcode}
+
+\begin{examcode}{这个例子把 \tn{section} 按行排列，只显示 \tn{chapter} 和 \tn{section} 的标题。}
+% \usepackage{tabto}
+\makeatletter
+\templatetoc [
+  * = { ignore=true }, show = {chapter,section},
+  section = {
+    code.before=\sbox{\@tempboxa}{\tmcblthetitle}\needhspace{\wd\@tempboxa},
+    code.after=\quad, 
+    code.leader=---, code.page=\tmcblthepage,
+    space.left=0pt, space.right=0pt, space.hang=0pt 
+  },
+  chapter = { code.before=\par, space.before=1pt plus 1pt, 
+    code.leader=\tabto{5cm}, % 使得页码移动到距页面左侧 5 厘米处
+    code.after=\hfill\zkern\par, % 加上 \hfill\kern0pt 使得不会出现 underfull 警告
+    code.name=\ifx\tmcblthename\empty
+        \makebox[1em]{\rule{1ex}{1ex}}\quad
+      \else
+        \tmcbl@name@
+      \fi 
+  },
+]
+\makeatother
+\end{examcode}

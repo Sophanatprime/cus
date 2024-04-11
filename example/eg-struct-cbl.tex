@@ -9,7 +9,7 @@
 \usepackage{xeCJKfntef}
 \edef\UD{\string _}
 \usepackage{xunicode-addon}
-\usepackage[library={ref,box,doc}]{cus}
+\usepackage[library={ref,box,doc={no-index-file}}]{cus}
 \setuplayout{paper=a4,hmargin=1.7cm,top=2cm,bottom=1.5cm,
   hfoffset=0pt,nomarginpar,
   columnsep=35pt,headsep=10pt,footskip=30pt,}
@@ -50,9 +50,11 @@
   HyphenChar     = None]
 \setmathfont{XITS Math}
 \usepackage{array,booktabs,tabularx,makecell,longtable}
+\usepackage{tabto}
 \usepackage{tabularray}
 \usepackage{enumitem}
 \usepackage[colorlinks]{hyperref}
+\usepackage{bookmark}
 \usepackage{nameref,varioref,cleveref}
 \usepackage{pgfornament,pgfornament-han}
 \usepackage[many,listings,minted]{tcolorbox}
@@ -61,6 +63,7 @@
   {examcode}[2][]{comment above* listing, 
   title=代码 \thetcbcounter, enhanced,
   comment={\tcbuselistingtext\par\bigskip #2},
+  bookmark={代码 \thetcbcounter},
   sharp corners=downhill, arc=12pt, skin=bicolor,
   fontupper=\linespread{1}\selectfont, left=6pt,
   colback=blue!1!white, colframe=blue!75!black,colbacklower=white,
@@ -80,6 +83,7 @@
 }
 \fvset{formatcom=\xeCJKVerbAddon}
 \raggedbottom 
+%% 使用 cus-cn.toc 作为目录文件
 \enablecombinedlist[from=cus-cn, write=false]
 \begin{document}
 
@@ -87,11 +91,11 @@
 \author{Longaster}
 \maketitle
 
-\setuptitle{numbering=false}
+\setuptitle{mode=starred}
 \setuptitle[chapter]{beforeskip=3ex plus 2ex minus 1ex, afterskip=2.5ex plus 1ex minus 1ex, pagestyle=fancy}
 
-\input{eg-struct-title-1t9.tex}
+\input{eg-struct-cbl-p-t.tex}
 
-\input{eg-struct-title-10t19.tex}
+\input{eg-struct-cbl-spec.tex}
 
 \end{document}

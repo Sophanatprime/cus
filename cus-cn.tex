@@ -329,11 +329,11 @@
   {\bigskip}{}
 \tocsetstyle{section}{}{}
   {\@dottedtocline{\tocthelevel}{1.5em}{2.3em}{\tocthenumber\enskip\tocthename}
-    {\toclink{\tocthepage}\hspace{\fboxsep}}}
+    {\hss\toclink{\tocthepage}\hspace{\fboxsep}}}
   {}{}
 \tocsetstyle{subsection}{}{}
   {\@dottedtocline{\tocthelevel}{3.8em}{3.2em}{\tocthenumber\enskip\tocthename}
-    {\toclink{\tocthepage}\hspace{\fboxsep}}}
+    {\hss\toclink{\tocthepage}\hspace{\fboxsep}}}
   {}{}
 \makeatother
 \startmulticolumns[ragged,outer-sep=0pt,column-sep=1.5em,heading=\chapter\contentsname]
@@ -2872,6 +2872,7 @@ Unicode 代码点。
 
 当 \tn{contentsname}、\tn{listfigurename}、\tn{listtablename} 为空时，对应的 
 plain 格式目录不会附带章节标题，否则将自动添加一个正常的带序号的\emph{章}标题。
+它们可以通过 \cs{settocdepth} 控制输出的层级。
 
 \begin{function}{\tableofcontents,\listoffigures,\listoftables,\localtableofcontents}
 \begin{syntax}
@@ -2918,6 +2919,7 @@ plain 格式目录不会附带章节标题，否则将自动添加一个正常�
 
 当 \tn{contentsname}、\tn{listfigurename}、\tn{listtablename} 为空时，对应的 
 template 格式目录不会附带章节标题，否则将自动添加一个正常的带序号的\emph{章}标题。
+它们可以通过 \cs{settocdepth} 控制输出的层级。
 
 \begin{function}{\templatetoc,\templatelof,\templatelot}
   \begin{syntax}
@@ -3001,7 +3003,7 @@ template 格式的目录，其对象类型为 \texttt{templatecbl}，可使用 7
   \item[\texttt{space.before}] 如果不是为 \texttt{0pt}，且在垂直模式，则在该目录项之前添加指定的间距；结果保存于 \tn{tmcbl@beforeskip} 寄存器之中；
   \item[\texttt{space.left}] 左侧间距；结果保存于 \tn{tmcbl@leftskip} 寄存器之中；
   \item[\texttt{space.right}] 右侧间距，默认情况下，页码会嵌入到右侧空白之中；结果保存于 \tn{tmcbl@right} 寄存器之中；
-  \item[\texttt{space.hang}] 第一行额外的缩进；结果保存于 \tn{tmcbl@hang} dim 寄存器之中；默认为 \texttt{width.name} 的值；
+  \item[\texttt{space.hang}] 第一行额外的缩进，正值向左侧缩进，负值向右侧缩进；结果保存于 \tn{tmcbl@hang} dim 寄存器之中；默认为 \texttt{width.name} 的值；
   \item[\texttt{space.indent}] 除第一段外，每段首行额外的缩进；结果保存于 \tn{tmcbl@indent} dim 寄存器之中；默认为 \texttt{space.hang} 的值；
   \item[\texttt{penalty.before}] 增加 penalty；结果保存于 \tn{tmcbl@beforepenalty} int 寄存器之中；
   \item[\texttt{format}] 设置标题前的数字（即 \texttt{name}）、标题文字（即 \texttt{title}）、引导线（即 \texttt{leader}）和页码（即 \texttt{page}）的格式；结果保存于 \tn{tmcbl@format} 宏之中；
@@ -3025,15 +3027,15 @@ template 格式的目录，其对象类型为 \texttt{templatecbl}，可使用 7
   \item[\texttt{leader.code}] 同 \texttt{code.leader}；
   \item[\texttt{leader.sep}] 设置引导线的内容的间距；最终结果保存于 \tn{tmcbl@leadersep} 宏之中，默认为 4.5；当大于 5000 时，不使用引导线，而使用 \cs{filler}；
   \item[\texttt{leader.options}] 引导线使用 \cs{filler} 时的选项；结果保存于 \tn{tmcbl@leaderoptions} 宏之中；默认为 \texttt{space}；
-  \item[\texttt{leader.content}] 设置引导线的内容；结果保存于 \tn{tmcbl@leadercontent} 宏之中；默认为西文句点；
-  \item[\texttt{hyper.range}] 设置超链接要包含的内容，可选值为 \texttt{name}、\texttt{title}、\texttt{page} 和 \texttt{none}，可多选；最终结果保存于 \tn{tmcbl@hyperrange} int 寄存器之中，其中 \texttt{name} 将其加 1，\texttt{title} 将其加 2，\texttt{page} 将其加 4；默认为 \texttt{page}；
+  \item[\texttt{leader.content}] 设置引导线的内容；结果保存于 \tn{tmcbl@leadercontent} 宏之中；默认为西文句点 \texttt{.}；
+  \item[\texttt{hyper.range}] 设置超链接要包含的内容，可选值为 \texttt{name}、\texttt{title}、\texttt{page}、\texttt{none} 和 \texttt{all}，可多选；最终结果保存于 \tn{tmcbl@hyperrange} int 寄存器之中，其中 \texttt{name} 将其加 1，\texttt{title} 将其加 2，\texttt{page} 将其加 4；默认为 \texttt{page}；
   \item[\texttt{hyper.code}] 同 \texttt{code.hyper}；
   \item[\texttt{code}] 将该目录层级要执行的代码替换为它，可使用 7 个参数，即目录条目保存的值；将结果保存在 \tn{tmcbl@code} 命令之中；
   \item[\texttt{code.name}] 将 \texttt{name} 执行的代码替换为它，结果保存在 \tn{tmcbl@name} 命令之中；
   \item[\texttt{code.title}] 将 \texttt{title} 执行的代码替换为它，结果保存在 \tn{tmcbl@title} 命令之中；
   \item[\texttt{code.leader}] 将 \texttt{leader} 执行的代码替换为它，结果保存在 \tn{tmcbl@leader} 命令之中；
   \item[\texttt{code.page}] 将 \texttt{page} 执行的代码替换为它，结果保存在 \tn{tmcbl@page} 命令之中；
-  \item[\texttt{code.hyper}] 将添加超链接要执行的代码替换为它，可使用 4 个参数，分别为 \texttt{name}、\texttt{title}、\texttt{hyper} 和 \texttt{page} 要执行的代码，结果保存在 \tn{tmcbl@hyper} 命令之中；
+  \item[\texttt{code.hyper}] 将添加超链接要执行的代码替换为它，可使用 4 个参数，分别为 \texttt{name}、\texttt{title}、\texttt{leader} 和 \texttt{page} 要执行的代码，结果保存在 \tn{tmcbl@hyper} 命令之中；
   \item[\texttt{code.before}] 在目录条目之前执行代码；
   \item[\texttt{code.after}] 在目录条目之后执行代码，默认为 \tn{par}；注意每个目录项不会自动另起一行，依靠它来另起新行。
 \end{description}
@@ -3209,7 +3211,8 @@ template 格式的目录，其对象类型为 \texttt{templatecbl}，可使用 7
 \end{function}
 
 \begin{texnote}
-只能以如下顺序执行上述三个命令：\cs{CUSLibraryDelayedUntil}、\cs{CUSDependency}、
+只能以如下顺序执行上述三个命令：\cs{CUSLibraryDelayedUntil}、
+\cs{CUSDependency}、\linebreak
 \cs{CUSProvideExplLibrary}（或 \cs{CUSProvideLibrary}）。
 在每个库文件中，它们最多只能使用一次，且必须用在库文件开头。
 若要在库文件中间使用它们，则应该将之后的内容拆分至新的库文件中。
@@ -4145,98 +4148,98 @@ template 格式的目录，其对象类型为 \texttt{templatecbl}，可使用 7
 \xampleprint
 \end{xample}
 
-\subsection{\cusmodule{psr}，处理器}
+% \subsection{\cusmodule{psr}，处理器}
 
-有时，一个命令需要根据不同的设置显示不同的效果，但这个命令的执行逻辑已经确定，重新修改这个命令
-不是一个好的做法，因为无法保证对它的修改是正确的。一般可以通过在这些命令中插入钩子（hook）或
-修改这个命令内部真正有效的命令来间接地修改它。后者就是\emph{处理器}的主要思想。
+% 有时，一个命令需要根据不同的设置显示不同的效果，但这个命令的执行逻辑已经确定，重新修改这个命令
+% 不是一个好的做法，因为无法保证对它的修改是正确的。一般可以通过在这些命令中插入钩子（hook）或
+% 修改这个命令内部真正有效的命令来间接地修改它。后者就是\emph{处理器}的主要思想。
 
-处理器是包装过的宏。
+% 处理器是包装过的宏。
 
-一个\emph{处理器}是在某些命令内部发挥作用的接口宏，处理器的\emph{规则}是处理器真正发挥执行
-操作的宏，通过让处理器\emph{遵循}（obey）某个规则来控制处理器以何种方式运行
-（这些规则也是宏）。这样我们只需定义
-一些规则，然后根据需要让处理器遵循某个规则，从而可以达到不同的效果。
+% 一个\emph{处理器}是在某些命令内部发挥作用的接口宏，处理器的\emph{规则}是处理器真正发挥执行
+% 操作的宏，通过让处理器\emph{遵循}（obey）某个规则来控制处理器以何种方式运行
+% （这些规则也是宏）。这样我们只需定义
+% 一些规则，然后根据需要让处理器遵循某个规则，从而可以达到不同的效果。
 
-与使用条件判断相比，具有更一致的接口，可以增加任意个处理方式，并且在同一次展开时不必重复判断。
+% 与使用条件判断相比，具有更一致的接口，可以增加任意个处理方式，并且在同一次展开时不必重复判断。
 
-与直接使用宏相比，调用接口更加一致。
+% 与直接使用宏相比，调用接口更加一致。
 
-\begin{function}{\cus_new_psr:nnn,\cus_set_psr:nnn,\cus_gset_psr:nnn,\cus_use_psr:n}
-  \begin{syntax}
-    \verb|\cus_new_psr:nnn| \marg{处理器} \marg{参数数目} \marg{code}
-    \verb|\cus_use_psr:n|   \marg{处理器}
-  \end{syntax}
-创建、使用处理器。
+% \begin{function}{\cus_new_psr:nnn,\cus_set_psr:nnn,\cus_gset_psr:nnn,\cus_use_psr:n}
+%   \begin{syntax}
+%     \verb|\cus_new_psr:nnn| \marg{处理器} \marg{参数数目} \marg{code}
+%     \verb|\cus_use_psr:n|   \marg{处理器}
+%   \end{syntax}
+% 创建、使用处理器。
 
-每个处理器的参数数目固定。在使用处理器时，其后需有对应数目的参数。
+% 每个处理器的参数数目固定。在使用处理器时，其后需有对应数目的参数。
 
-处理器以其名称唯一识别，不可定义参数数目不同的同名处理器。
-\end{function}
+% 处理器以其名称唯一识别，不可定义参数数目不同的同名处理器。
+% \end{function}
 
-\begin{function}{\cus_new_psrrule:nnn,\cus_set_psrrule:nnn,\cus_gset_psrrule:nnn}
-  \begin{syntax}
-    \verb|\cus_new_psrrule:nnn| \marg{处理器} \marg{规则} \marg{code}
-  \end{syntax}
-创建从属于 \meta{处理器} 的规则 \meta{规则}。该 \meta{规则} 可使用 \meta{处理器}
-预先定义的参数。
-\end{function}
+% \begin{function}{\cus_new_psrrule:nnn,\cus_set_psrrule:nnn,\cus_gset_psrrule:nnn}
+%   \begin{syntax}
+%     \verb|\cus_new_psrrule:nnn| \marg{处理器} \marg{规则} \marg{code}
+%   \end{syntax}
+% 创建从属于 \meta{处理器} 的规则 \meta{规则}。该 \meta{规则} 可使用 \meta{处理器}
+% 预先定义的参数。
+% \end{function}
 
-\begin{function}{\cus_obey_psrrule:nn,\cus_gbey_psrrule:nn}
-  \begin{syntax}
-    \verb|\cus_obey_psrrule:nn| \marg{处理器} \marg{规则}
-  \end{syntax}
-对 \meta{处理器} 局部或全局应用 \meta{规则}。注意，全局应用\emph{不是} \verb|gobey|。
-\end{function}
+% \begin{function}{\cus_obey_psrrule:nn,\cus_gbey_psrrule:nn}
+%   \begin{syntax}
+%     \verb|\cus_obey_psrrule:nn| \marg{处理器} \marg{规则}
+%   \end{syntax}
+% 对 \meta{处理器} 局部或全局应用 \meta{规则}。注意，全局应用\emph{不是} \verb|gobey|。
+% \end{function}
 
-\begin{function}[pTF]{\cus_psr_if_exist:n,\cus_psrrule_if_exist:nn,\cus_psr_if_compatible:nn}
-  \begin{syntax}
-    \verb|\cus_psr_if_exist:nTF| \marg{处理器} \marg{true code} \marg{false code}
-    \verb|\cus_psrrule_if_exist:nTF| \marg{处理器} \marg{规则} \marg{true code} \marg{false code}
-    \verb|\cus_psr_if_compatible:nnTF| \marg{处理器{}_1} \marg{处理器{}_2} \marg{true code} \marg{false code}
-  \end{syntax}
-判断处理器、处理器的规则是否存在。或判断两个处理器是否兼容，当前，两个参数数目一致时视为兼容。
-\end{function}
+% \begin{function}[pTF]{\cus_psr_if_exist:n,\cus_psrrule_if_exist:nn,\cus_psr_if_compatible:nn}
+%   \begin{syntax}
+%     \verb|\cus_psr_if_exist:nTF| \marg{处理器} \marg{true code} \marg{false code}
+%     \verb|\cus_psrrule_if_exist:nTF| \marg{处理器} \marg{规则} \marg{true code} \marg{false code}
+%     \verb|\cus_psr_if_compatible:nnTF| \marg{处理器{}_1} \marg{处理器{}_2} \marg{true code} \marg{false code}
+%   \end{syntax}
+% 判断处理器、处理器的规则是否存在。或判断两个处理器是否兼容，当前，两个参数数目一致时视为兼容。
+% \end{function}
 
-\begin{function}{\cus_exec_psrrule:nn}
-  \begin{syntax}
-    \verb|\cus_exec_psrrule:nn| \marg{处理器} \marg{规则}
-  \end{syntax}
-直接执行 \meta{处理器} 的 \meta{规则}。可用于其它规则中，相当于一个宏。其后需有对应数目的参数。
-\end{function}
+% \begin{function}{\cus_exec_psrrule:nn}
+%   \begin{syntax}
+%     \verb|\cus_exec_psrrule:nn| \marg{处理器} \marg{规则}
+%   \end{syntax}
+% 直接执行 \meta{处理器} 的 \meta{规则}。可用于其它规则中，相当于一个宏。其后需有对应数目的参数。
+% \end{function}
 
-\begin{function}[EXP]{\cus_psr_argument_count:n}
-  \begin{syntax}
-    \verb|\cus_psr_argument_count:n| \marg{处理器}
-  \end{syntax}
-计算处理器可用的参数数目。
-\end{function}
+% \begin{function}[EXP]{\cus_psr_argument_count:n}
+%   \begin{syntax}
+%     \verb|\cus_psr_argument_count:n| \marg{处理器}
+%   \end{syntax}
+% 计算处理器可用的参数数目。
+% \end{function}
 
-\begin{function}{
-  \cus_new_psrrule_eq:nnn,
-  \cus_set_psrrule_eq:nnn,
-  \cus_gset_psrrule_eq:nnn
-}
-  \begin{syntax}
-    \verb|\cus_new_psrrule_eq:nnn| \marg{处理器} \marg{规则{}_1} \marg{规则{}_2}
-  \end{syntax}
-将 \meta{规则{}_1} 设置为与 \meta{规则{}_2} 相等，它们从属于 \marg{处理器}。
-\end{function}
+% \begin{function}{
+%   \cus_new_psrrule_eq:nnn,
+%   \cus_set_psrrule_eq:nnn,
+%   \cus_gset_psrrule_eq:nnn
+% }
+%   \begin{syntax}
+%     \verb|\cus_new_psrrule_eq:nnn| \marg{处理器} \marg{规则{}_1} \marg{规则{}_2}
+%   \end{syntax}
+% 将 \meta{规则{}_1} 设置为与 \meta{规则{}_2} 相等，它们从属于 \marg{处理器}。
+% \end{function}
 
-\begin{function}{
-  \cus_new_psrrule_eq_cs:nnN,
-  \cus_new_psrrule_eq_cs:nnc,
-  \cus_set_psrrule_eq_cs:nnN,
-  \cus_set_psrrule_eq_cs:nnc,
-  \cus_gset_psrrule_eq_cs:nnN,
-  \cus_gset_psrrule_eq_cs:nnc
-}
-  \begin{syntax}
-    \verb|\cus_new_psrrule_eq_cs:nnN| \marg{处理器} \marg{规则} \meta{function}
-  \end{syntax}
-将 \meta{处理器} 的 \meta{规则} 设置为与 \meta{function} 相等。这 \meta{function}
-的参数数必须与 \meta{处理器} 的参数数相等，且必须是非定界的变量（undelimited parameter）。
-\end{function}
+% \begin{function}{
+%   \cus_new_psrrule_eq_cs:nnN,
+%   \cus_new_psrrule_eq_cs:nnc,
+%   \cus_set_psrrule_eq_cs:nnN,
+%   \cus_set_psrrule_eq_cs:nnc,
+%   \cus_gset_psrrule_eq_cs:nnN,
+%   \cus_gset_psrrule_eq_cs:nnc
+% }
+%   \begin{syntax}
+%     \verb|\cus_new_psrrule_eq_cs:nnN| \marg{处理器} \marg{规则} \meta{function}
+%   \end{syntax}
+% 将 \meta{处理器} 的 \meta{规则} 设置为与 \meta{function} 相等。这 \meta{function}
+% 的参数数必须与 \meta{处理器} 的参数数相等，且必须是非定界的变量（undelimited parameter）。
+% \end{function}
 
 
 \section{\cusmodule{box}模块}\label{sec:module-box-prog}
@@ -4660,9 +4663,9 @@ cbl 列表除了 \cs{cus@type@contentsline}、\cs{cus@type@contentsline@}、
 这些宏包的 \veta{level name} 的 \veta{level} 值都是 $1$，即与 \tn{section} 同级。
 可以使用 \csref{addcombinedlisttype} 修改。
 
-\begin{function}{\setplaintocdepth}
+\begin{function}{\settocdepth}
   \begin{syntax}
-    \V\setplaintocdepth \marg{整数或层级名称}
+    \V\settocdepth \marg{整数或层级名称}
   \end{syntax}
 设置 \texttt{tocdepth} 计数器的值。可以用来控制目录显示的层级。
 \end{function}
@@ -5327,6 +5330,7 @@ verbatim 和分段。
 
 当加载本库时，将创建两个索引，名为 \texttt{docusage} 和 \texttt{docchange}，分别记录代码和
 版本历史。使用 \cs{PrintUsages}、\cs{PrintChanges} 分别输出代码索引和版本历史。
+可使用 \opt{no-index-file} 库选项来阻止创建它们。
 
 本库的详细用法可参考本说明文档的源码。
 

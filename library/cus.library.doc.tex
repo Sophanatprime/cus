@@ -4,12 +4,23 @@
   module={index,box},library={logo}}
 \CUSProvideExplLibrary{doc}{\cus@d@te}{\cus@versi@n}{documentation}
 
+\keys_define:nn { cus/doc-options }
+  {
+    no-index-file .bool_set_inverse:N = \l__cus_doc_index_file_bool,
+    no-index-file .initial:n = false,
+  }
+
+\ProcessKeyOptions[cus/doc-options]
+
 \cus_add_pdf_disable:n 
   { 
     \cs_set_eq:NN \cusmodule \use:n 
     \cs_set_eq:NN \cuslibrary \use:n 
   }
 
+
+\bool_if:NT \l__cus_doc_index_file_bool
+  {
 \providecommand* \docusageindexname { Code~Index }
 \providecommand* \docchangeindexname { History }
 
@@ -30,6 +41,7 @@
 ]{docchange}
 \setindexinit[docchange]{\let\theglossary\theindex \let\endtheglossary\endtheindex}
 \def\PrintChanges{\printindex[docchange]}
+  }
 
 \colorlet { cus/color/doc~cs } { red }
 \colorlet { cus/color/doc~env } { red }
@@ -92,7 +104,7 @@
 \bool_new:N \g__cus_doc_cs_break_bool
 \bool_set_true:N \g__cus_doc_cs_break_bool
 \bool_new:N \l__cus_doc_allow_indexing_bool
-\bool_set_true:N \l__cus_doc_allow_indexing_bool
+\bool_set_eq:NN \l__cus_doc_allow_indexing_bool \l__cus_doc_index_file_bool
 \bool_new:N \l__cus_doc_macro_visible_space_bool
 \tl_new:N \l__cus_doc_framed_setting_tl
 \tl_set:Nn \l__cus_doc_framed_setting_tl
