@@ -1539,9 +1539,16 @@
 \cs_new_protected:Npn \tmcbl@code@ #1#2#3#4#5#6#7
   {
     \bool_lazy_and:nnT { !\tmcbl@ignore }
-      { \int_compare_p:nNn \c@tocdepth > {#4} }
+      { \int_compare_p:nNn \c@tocdepth > { #4-1 } }
       {
-        { \tmcbl@before
+        {
+          \tl_set:Nn \tmcblthelevel {#4}
+          \tl_set:Nn \tmcblthepage {#6}
+          \str_set:Nn \tmcbltheanchor {#7} 
+          \tl_set:No \tmcblthename { \use_ii:nnn #5 }
+          \tl_set:No \tmcblthetitle { \use_iii:nnn #5 }
+          \tl_set:Nx \tmcbl@leadersep { \fp_to_decimal:N \tmcbl@leadersep }
+          \tmcbl@before
           \mode_if_vertical:T 
             { \unless\ifnum\tmcbl@beforepenalty=\z@\addpenalty{\tmcbl@beforepenalty}\fi
               \tmcbl@skipifnz\vskip\tmcbl@beforeskip }
@@ -1550,12 +1557,6 @@
           \skip_set:Nn \parfillskip { -\rightskip }
           \dim_set:Nn \parindent \tmcbl@indent
           \mode_if_vertical:T { \interlinepenalty\@M \noindent }
-          \tl_set:Nn \tmcblthelevel {#4}
-          \tl_set:Nn \tmcblthepage {#6}
-          \str_set:Nn \tmcbltheanchor {#7} 
-          \tl_set:No \tmcblthename { \use_ii:nnn #5 }
-          \tl_set:No \tmcblthetitle { \use_iii:nnn #5 }
-          \tl_set:Nx \tmcbl@leadersep { \fp_to_decimal:N \tmcbl@leadersep }
           \dim_set_eq:NN \@tempdima \tmcbl@namewidth % for \numberline
           \null\nobreak % \tmcbl@skipifnz\hskip{-\leftskip}
           \tmcbl@skipifnz\hskip{-\tmcbl@hang}
@@ -1727,7 +1728,8 @@
 \cs_new:Npn \__cus_tmcbl_hyper_range_name:  { \int_add:Nn \tmcbl@hyperrange { 1 } }
 \cs_new:Npn \__cus_tmcbl_hyper_range_title: { \int_add:Nn \tmcbl@hyperrange { 2 } }
 \cs_new:Npn \__cus_tmcbl_hyper_range_page:  { \int_add:Nn \tmcbl@hyperrange { 4 } }
-\cs_new:Npn \__cus_tmcbl_hyper_range_none:  { \int_zero:N \tmcbl@hyperrange }
+\cs_new:Npn \__cus_tmcbl_hyper_range_none:  { \int_set:Nn \tmcbl@hyperrange { 0 } }
+\cs_new:Npn \__cus_tmcbl_hyper_range_all:   { \int_set:Nn \tmcbl@hyperrange { 7 } }
 \cs_new_protected:Npn \__cus_tmcbl_fix_function:
   {
     \clist_remove_duplicates:N \tmcbl@hyperrangelist
@@ -2463,11 +2465,12 @@
       { \exp_args:Nnf \setcounter { secnumdepth } { \cus_heading_level:n { toc-#1 } } }
   }
 \cs_new_protected_nopar:Npn \setsecnumdepth { \setsecnumberdepth }
-\NewDocumentCommand \setplaintocdepth { >{\TrimSpaces} m }
+\NewDocumentCommand \settocdepth { >{\TrimSpaces} m }
   { 
     \cus_if_head_int:nTF {#1} { \setcounter { tocdepth } { \int_eval:n {#1} } }
       { \exp_args:Nnf \setcounter { tocdepth } { \cus_heading_level:n { toc-#1 } } }
   }
+\cs_new_protected:Npn \setplaintocdepth { \settocdepth }
 
 % 判断是不是已经 patch 了
 \cs_if_exist:NF \ctex_cleveref_hook:
