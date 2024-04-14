@@ -1,6 +1,73 @@
 \CUSDependency{ module={util}, package={framedmulticol, varwidth, rotating, lscape, (ROTpdf)pdflscape} }
 \CUSProvideExplModule{box}{\cus@d@te}{\cus@versi@n}{box, breakable box}
 
+\ekeysdeclarecmd \spreadtext { s m }
+  {
+    \tl_set:Nx \__cus_spreadtext_auxii: 
+      { 
+        \bool_if:nT {#1} { \hss }
+        \c_group_end_token 
+        \mode_leave_vertical: \box_use_drop:N \l__cus_tmpa_box 
+      }
+    \bool_if:nTF {#1}
+      { \tex_afterassignment:D \__cus_spreadtext_auxi_hss: }
+      { \tex_afterassignment:D \__cus_spreadtext_auxi: }
+    \tex_setbox:D \l__cus_tmpa_box 
+      \elkernel_hbox:w to \elkernel_dim_expr:w #2 \scan_stop:
+  }
+\cs_new:Npn \__cus_spreadtext_auxi:
+  {
+    \__cus_spreadtext_set_skip:
+    \c_group_begin_token
+    \group_insert_after:N \__cus_spreadtext_auxii:
+  }
+\cs_new:Npn \__cus_spreadtext_auxi_hss:
+  {
+    \__cus_spreadtext_set_skip:
+    \hss
+    \c_group_begin_token
+    \group_insert_after:N \__cus_spreadtext_auxii:
+  }
+\bool_case:nF 
+  {
+    \sys_if_engine_uptex_p:
+      {
+        \cs_new_protected:Npn \__cus_spreadtext_set_skip:
+          {
+            \skip_set:Nn \spaceskip { 0pt plus 1fil }
+            \skip_set:Nn \xspaceskip { 0pt plus 1fil }
+            \skip_set:Nn \kanjiskip { 0pt plus 1fil }
+            \skip_set:Nn \xkanjiskip { 0pt plus 1fil }
+          }
+      }
+    \sys_if_engine_luatex_p:
+      {
+        \cs_new_protected:Npn \__cus_spreadtext_set_skip:
+          {
+            \skip_set:Nn \spaceskip { 0pt plus 1fil }
+            \skip_set:Nn \xspaceskip { 0pt plus 1fil }
+            \ltjsetparameter { kanjiskip=0pt plus 1fil, xkanjiskip=0pt plus 1fil }
+          }
+      }
+    \sys_if_engine_xetex_p:
+      {
+        \cs_new_protected:Npn \__cus_spreadtext_set_skip:
+          {
+            \def\CJKglue{\hskip 0pt plus 1fil\relax}
+            \def\CJKecglue{\hskip 0pt plus 1fil\relax}
+            \skip_set:Nn \spaceskip { 0pt plus 1fil }
+            \skip_set:Nn \xspaceskip { 0pt plus 1fil }
+          }
+      }
+  }
+  { 
+    \cs_new_protected:Npn \__cus_spreadtext_set_skip: 
+      {
+        \skip_set:Nn \spaceskip { 0pt plus 1fil }
+        \skip_set:Nn \xspaceskip { 0pt plus 1fil }
+      }
+  }
+
 \ekeysdeclarecmd\startextrawidth{ @O{} mm }
   {\startmulticolumns[adj,cols=1,outer-sep=0pt,heading=,framed=none,
     adj-inner={-\dimexpr#2+0pt},adj-outer={-\dimexpr#3+0pt},rule-width=0pt,#1]}
@@ -769,7 +836,7 @@
 
 \cs_new:Npn \__cus_align_leaders:nn  #1 { \tex_leaders:D  #1 }
 \cs_new:Npn \__cus_center_leaders:nn #1 { \tex_cleaders:D #1 }
-\cs_new:Npn \__cus_spread_leaders:nn #1 { \tex_xleaders:D #1 }
+\cs_new:Npn \__cus_spreadtext_leaders:nn #1 { \tex_xleaders:D #1 }
 \cs_new:Npn \__cus_kern:n #1 { \tex_kern:D \dim_eval:n {#1} \exp_stop_f: }
 \cs_new:Npn \__cus_leave_vertical:
   { \if_mode_vertical: \exp_after:wN \tex_noindent:D \fi: }

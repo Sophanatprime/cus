@@ -319,20 +319,20 @@
   {}
   {\begingroup\noindent \bfseries\large \fboxrule\z@ 
     \fcolorbox{toccol1}{toccol1}{\zhphantom\color{white}%
-      \tocifnumbered{\fixedwidthtext*{4\ccwd}{\tocthenumber\unskip}}
-        {\fixedwidthtext*{4\ccwd}{\tocthename}}}%
+      \tocifnamed{\fixedwidthtext*{4\ccwd}{\tocthename\unskip}}
+        {\fixedwidthtext*{4\ccwd}{\tocthetitle}}}%
     \toclinkbox{\fcolorbox{toccol2}{toccol2}{\zhphantom
       \fixedwidthtext{\linewidth-4\ccwd-4\fboxsep-1.3em}
-        {\tocifnumbered{\tocthename}{}}%
+        {\tocifnamed{\tocthetitle}{}}%
       \makebox[1.3em][r]{\tocthepage}}}
     \endgroup\par \medskip}
   {\bigskip}{}
 \tocsetstyle{section}{}{}
-  {\@dottedtocline{\tocthelevel}{1.5em}{2.3em}{\tocthenumber\enskip\tocthename}
+  {\@dottedtocline{\tocthelevel}{1.5em}{2.3em}{\tocthename\enskip\tocthetitle}
     {\hss\toclink{\tocthepage}\hspace{\fboxsep}}}
   {}{}
 \tocsetstyle{subsection}{}{}
-  {\@dottedtocline{\tocthelevel}{3.8em}{3.2em}{\tocthenumber\enskip\tocthename}
+  {\@dottedtocline{\tocthelevel}{3.8em}{3.2em}{\tocthename\enskip\tocthetitle}
     {\hss\toclink{\tocthepage}\hspace{\fboxsep}}}
   {}{}
 \makeatother
@@ -1558,6 +1558,28 @@ Unicode 代码点。
 
 \cusmodule{box} 用于提供盒子构造、内容填充等内容。
 
+\begin{function}{\spreadtext}
+  \begin{syntax}
+    \V\spreadtext   \marg{width} \marg{material}
+    \V\spreadtext * \marg{width} \marg{material}
+  \end{syntax}
+在宽 \meta{width} 的盒子中把 \meta{material} 分散排列。
+
+带星号的命令还会在 \meta{material} 两端插入等量的间距。
+
+此命令在 \CusLaTeX 支持的引擎中都有效。
+在 \LuaLaTeX 引擎中，需加载 \pkg{ctex} 或 \pkg{luatexja} 宏包；
+在 \XeLaTeX 引擎中，需加载 \pkg{ctex} 或 \pkg{xeCJK} 宏包；
+在 \upLaTeX 引擎中，无需加载其它宏包。
+\end{function}
+
+\begin{xample}
+\fbox{\spreadtext {5cm}{你好 Hello World 世界}}
+
+\fbox{\spreadtext*{5cm}{你好 Hello World 世界}}
+\stopxamplecode
+\xampleprint
+\end{xample}
 
 \subsection{Framed}
 
@@ -2816,9 +2838,9 @@ Unicode 代码点。
 \verb|mode=nonumber|。
 \end{keyval}
 
-\begin{function}[EXP]{\titleifname}
+\begin{function}[EXP]{\titleifnamed}
   \begin{syntax}
-    \verb|\titleifname| \marg{有名字时的内容} \marg{无名字时的内容}
+    \verb|\titleifnamed| \marg{有名字时的内容} \marg{无名字时的内容}
   \end{syntax}
 根据当前章节有无名字展开得到不同内容（通常是格式命令）。
 \end{function}
@@ -3101,11 +3123,11 @@ template 格式的目录，其对象类型为 \texttt{templatecbl}，可使用 7
     {chapter,section,subsection}
     {\begin{description}}
     {}
-    {\item[\mytoclabel]\tocthename\quad\toclink{\tocthepage}\par}
+    {\item[\mytoclabel]\tocthetitle\quad\toclink{\tocthepage}\par}
     {}
     {\end{description}}
   \+{\newcommand{\mytoclabel}
-      {\tocifnumbered{\tocthenumber}{\rule{1ex}{1ex}}}}
+      {\tocifnamed{\tocthename}{\rule{1ex}{1ex}}}}
 }
 \stopxamplecode
 \xamplecode\medskip
@@ -4795,10 +4817,10 @@ cbl 列表除了 \cs{cus@type@contentsline}、\cs{cus@type@contentsline@}、
 
 在这些参数中可以，定义了如下的命令来辅助制作目录：
 \begin{description}
-  \item[\cmd\tocthenumber] 标题前的数字。例如：“第一章”、“\S~1”；可能为空，可以使用 \cmd{\tocifnumbered} 命令判断；
-  \item[\cmd\tocthename] 标题。例如本章标题：“章节标题和目录”；
+  \item[\cmd\tocthename] 标题前的数字。例如：“第一章”、“\S~1”；可能为空，可以使用 \cmd{\tocifnamed} 命令判断；
+  \item[\cmd\tocthetitle] 标题。例如本章标题：“章节标题和目录”；
   \item[\cmd\tocthepage] 页码。不一定是数字，可以用 \cmd{\tocifpageisnumber} 判断；
-  \item[\cmd\tocifnumbered]\marg{true}\marg{false}，判断该目录条目是否有编号；
+  \item[\cmd\tocifnamed]\marg{true}\marg{false}，判断该目录条目是否有编号；
   \item[\cmd\tocifpageisnumber]\marg{true}\marg{false}，判断页码是否为数字；
   \item[\cmd\toclink]\marg{text}，创建超链接，把 \meta{text} 链接到文档中的对应位置；
   \item[\cmd\toclinkbox]\marg{context}，同上，对于非文字内容也能正确跳转；
@@ -4836,14 +4858,14 @@ cbl 列表除了 \cs{cus@type@contentsline}、\cs{cus@type@contentsline@}、
   {chapter,section}
   {\begin{description}}
   {}
-  {\item[\tocifnumbered{\tocthenumber}{\rule{1ex}{1ex}}]
-    \tocthename\quad\toclink{\tocthepage}\par}
+  {\item[\tocifnamed{\tocthename}{\rule{1ex}{1ex}}]
+    \tocthetitle\quad\toclink{\tocthepage}\par}
   {}
   {\end{description}}
 \tocsetstyle{subsection}
   {\par\begingroup\small\itshape\raggedright【\ }
   {}
-  {\tocthenumber\enskip\tocthename
+  {\tocthename\enskip\tocthetitle
     （\toclink{\tocthepage}）\ifinmiddle{；}{}}
   {}
   {】\par\endgroup\par}
@@ -4865,14 +4887,14 @@ cbl 列表除了 \cs{cus@type@contentsline}、\cs{cus@type@contentsline@}、
   {chapter,section}
   {\begin{description}}
   {}
-  {\item[\tocifnumbered{\tocthenumber}{\rule{1ex}{1ex}}]
-    \tocthename\quad\toclink{\tocthepage}\par}
+  {\item[\tocifnamed{\tocthename}{\rule{1ex}{1ex}}]
+    \tocthetitle\quad\toclink{\tocthepage}\par}
   {}
   {\end{description}}
 \tocsetstyle{subsection}
   {\par\begingroup\small\itshape\raggedright【\ }
   {}
-  {\tocthenumber\enskip\tocthename（\toclink{\tocthepage}）\ifinmiddle{；}{}}
+  {\tocthename\enskip\tocthetitle（\toclink{\tocthepage}）\ifinmiddle{；}{}}
   {}
   {】\par\endgroup\par}
 \specifiedtoc
@@ -4963,7 +4985,7 @@ cbl 列表除了 \cs{cus@type@contentsline}、\cs{cus@type@contentsline@}、
   {\fparbox{\linewidth}[border-color=tocgreen, background-color=tocgreen,
     padding={0pt,\fboxsep}]
     {\bfseries\large\raggedright \hangindent4\ccwd \hangafter1 \color{white}%
-      \strut \tocifnumbered{\tocthenumber\quad\kern-.3em}{}\tocthename
+      \strut \tocifnamed{\tocthename\quad\kern-.3em}{}\tocthetitle
       \breakablefiller[space]\tochyperpage \strut\par}\par }
   {\smallskip}
   {}
@@ -4973,14 +4995,14 @@ cbl 列表除了 \cs{cus@type@contentsline}、\cs{cus@type@contentsline@}、
       \itemindent-\ccwd \listparindent\itemindent
       \topsep\z@ \partopsep\z@ \itemsep\z@ \parsep\z@ \parskip\z@}}
   {\item \begingroup\color{tocgreen}\bfseries}
-  {\tocifnumbered{\tocthenumber\quad}{}\tocthename\breakablefiller[space]%
+  {\tocifnamed{\tocthename\quad}{}\tocthetitle\breakablefiller[space]%
     \makebox[1.5em][r]{\tochyperpage\;}\par }
   {\endgroup}
   {\end{list}}
 \tocsetstyle {subsection,2}
   {}
   {\begingroup\color{black}\bfseries}
-  {\tocifnumbered{\tocthenumber\quad}{}\tocthename\breakablefiller[dotted]%
+  {\tocifnamed{\tocthename\quad}{}\tocthetitle\breakablefiller[dotted]%
     \makebox[1.5em][r]{\tochyperpage\;}\par }
   {\endgroup}
   {}
@@ -5004,7 +5026,7 @@ cbl 列表除了 \cs{cus@type@contentsline}、\cs{cus@type@contentsline@}、
   {\noindent}
   {\fparbox{\linewidth}[border-color=tocgreen, background-color=tocgreen, padding={0pt,\fboxsep}]
     {\hangindent4\ccwd \hangafter1 \color{white}\bfseries\large
-      \strut \tocifnumbered{\tocthenumber\quad\kern-.3em}{}\tocthename
+      \strut \tocifnamed{\tocthename\quad\kern-.3em}{}\tocthetitle
       \breakablefiller[space]\tochyperpage\par}\par }
   {\smallskip}
   {}
@@ -5014,14 +5036,14 @@ cbl 列表除了 \cs{cus@type@contentsline}、\cs{cus@type@contentsline@}、
       \itemindent-\ccwd \listparindent\itemindent
       \topsep\z@ \partopsep\z@ \itemsep\z@ \parsep\z@ \parskip\z@}}
   {\item \begingroup\color{tocgreen}\bfseries}
-  {\tocifnumbered{\tocthenumber\quad}{}\tocthename\breakablefiller[space]%
+  {\tocifnamed{\tocthename\quad}{}\tocthetitle\breakablefiller[space]%
     \makebox[1.5em][r]{\tochyperpage\;}\par }
   {\endgroup}
   {\end{list}}
 \tocsetstyle {subsection,2}
   {}
   {\begingroup\color{black}\bfseries}
-  {\tocifnumbered{\tocthenumber\quad}{}\tocthename\breakablefiller[dotted]%
+  {\tocifnamed{\tocthename\quad}{}\tocthetitle\breakablefiller[dotted]%
     \makebox[1.5em][r]{\tochyperpage\;}\par }
   {\endgroup}
   {}
@@ -5050,15 +5072,15 @@ cbl 列表除了 \cs{cus@type@contentsline}、\cs{cus@type@contentsline@}、
 \begingroup 
 \tocsetstyle {chapter,0}
   {}{\startmulticolumns[ragged,outer-sep=0pt,
-      heading={{\centering\Large\bfseries\tocthename\par}}]}
+      heading={{\centering\Large\bfseries\tocthetitle\par}}]}
   {}
   {\stopmulticolumns}{}
 \tocsetstyle {section,subsection}
   {\begin{description}}
   {}
   {\tocifcomplement{\item[\rule{1ex}{1ex}]\rule{1ex}{1ex}\par}
-    {\item[\tocifnumbered{\tocthenumber}{\rule{1ex}{1ex}}]
-      \tocthename\quad\toclink{\tocthepage}\par}}
+    {\item[\tocifnamed{\tocthename}{\rule{1ex}{1ex}}]
+      \tocthetitle\quad\toclink{\tocthepage}\par}}
   {}
   {\end{description}}
 \localspecifiedtoc(chapter)
@@ -5310,6 +5332,7 @@ verbatim 和分段。
 \pdfTeX
 \plainTeX
 \pTeX
+\pupTeX
 \TeX
 \TEX
 \TeXLive
@@ -6180,6 +6203,11 @@ s_0,s_1,s_2&w_0&g_0&w_1&g_1&w_2\rlap{ (in \texttt{pt})}\\\hline
 \meta{token} 或 \meta{\meta{balanced tokens}} 不能在命令的参数里。
 
 \cs{l_collectn_long_verbatim_bool} 控制是否接受长的 verbatim 文本（包含 \tn{par} 的）。
+
+在 \meta{tokens} 或 \meta{balanced tokens} 中，字母的类别码不能为 1、2、10。
+
+结果 \meta{tl} 包含的字符其类别码有三种，为 10、12、13
+（在 \pupTeX 引擎下，仅 Unicode 编码小于等于 255 的字符有此特性）。
 \end{function}
 
 \begin{function}{\collectn_varwidth:nnw,\collectn_varwidth_end:}
@@ -6781,7 +6809,7 @@ $2^{15}-1=32767$，在 \LuaLaTeX 和 (u)p\LaTeX 中为 $2^{16}-1=65535$。
   \item[\CCS l] \verb|{| 前的内容，如没有 \verb|{| 则出错；
   \item[\CCS u] \texttt u\marg{tokens}，\meta{tokens} 前的内容，\meta{tokens} 会被移除，如没有 \meta{tokens} 则出错；
   \item[\CCE U] \texttt U\marg{tokens_1}\marg{tokens_2}，\meta{tokens_1} 前的内容，移除 \meta{tokens_1} 并留下 \meta{tokens_2}，如没有 \meta{tokens_1} 则出错；
-  \item[\CCS v] 以 verbatim 的形式读取文字；
+  \item[\CCS v] 以 verbatim 的形式读取文字，该参数的类别码均为 12（在 \pupTeX 引擎下，仅 Unicode 编码小于等于 255 的字符有此特性）；
 \end{itemize}
 }
 
@@ -7081,6 +7109,8 @@ $ \ab[\dfrac12] $, $ \ab\Big(\dfrac12) $, $ \ab*|\dfrac12| $, $ \ab? $
 有几个预定义的扫描器：
 \startfullpagewidth<\bodylmargin>
 \begin{description}
+  \item \texttt{norelax}，移除一个 \tn{relax}，在向后寻找这个 \tn{relax} 时\emph{忽略}空格；
+  \item \texttt{norelax!}，移除一个 \tn{relax}，在向后寻找这个 \tn{relax} 时\emph{不忽略}空格；
   \item \texttt ?\meta{preprocessor spec}，参数预处理器。\meta{preprocessor spec} 用法为：
   \begin{itemize}
     \item \marg{ekeys-cmd arg spec}，使用 \meta{ekeys-cmd arg spec} 获取后面的参数，转化为带花括号的标准参数；
