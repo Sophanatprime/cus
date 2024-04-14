@@ -28,7 +28,7 @@
       \fi 
       \tmcbl@leader@} % 默认的引导线代码
   }
-] [ columns=2 ]
+] [ columns=2,ragged,column-sep=30pt,outer-sep=0pt ]
 \makeatother
 \end{examcode}
 
@@ -54,4 +54,154 @@
   },
 ]
 \makeatother
+\end{examcode}
+
+\begin{examcode}{这个例子定义了一个新的 \texttt{templatecbl} socket 的 plug，和一个新的 \texttt{templatecbl} object type 的 template，并用这个模板定义了几个实例。}
+\makeatletter
+\long\def\@secondofthree#1#2#3{#2}
+\long\def\@thirdofthree#1#2#3{#3}
+% type, templatecbl key, multicols key, title, range
+\NewSocketPlug{templatecbl}{by level}{\par \begingroup
+  \edef\tmcblthetype{#1}%
+  % type, . count, info, level, list entry, thepage, anchor
+  \tmcbl@pushdef{\tmcblthetype}{\bgroup
+    \tmcbl@getinfo{##3}%
+    \expandafter\def\expandafter\tmcblthename\expandafter{\@secondofthree##5}%
+    \expandafter\def\expandafter\tmcblthetitle\expandafter{\@thirdofthree##5}%
+    \def\tmcblthelevel{##4}\def\tmcblthepage{##6}\def\tmcbltheanchor{##7}%
+    \ExpandArgs{ee}\UseInstance{templatecbl}{level \tmcblthelevel}
+      {##1}{##2}{##3}{##4}{##5}{##6}{##7}%
+  }{%
+    \egroup
+  }
+  \tmcbl@getrange{\tmcblthetype}{#5}%
+  \SetKeys[cus/templatecbl]{#2}%
+  \multicollocalplaincombinedlist[{columns=1,#3}]
+    {#4}{\tmcblthetype}{\tmcblthemin}{\tmcblthemax}
+  \tmcbl@popdef{\tmcblthetype}%
+  \endgroup \@afterindenttrue
+}
+\DeclareTemplateInterface{templatecbl}{by level}{7}{%
+  penalty.before : integer,
+  width.name     : length,
+  width.page     : length = \@pnumwidth,
+  space.before   : skip,
+  space.left     : skip,
+  space.right    : skip,
+  space.hang     : skip = \KeyValue{width.name},
+  space.indent   : skip = \KeyValue{space.hang},
+  hyper.range    : commalist = page,
+  leader.sep     : real = 4.5,
+  leader.content : tokenlist = {.},
+  leader.options : commalist = space,
+  format         : tokenlist,
+  format.name    : tokenlist,
+  format.title   : tokenlist,
+  format.page    : tokenlist,
+  code           : function{7} = \mytmcbl@code@{#1}{#2}{#3}{#4}{#5}{#6}{#7},
+}
+\DeclareTemplateCode{templatecbl}{by level}{7}{%
+  penalty.before = \tmcbl@beforepenalty,
+  space.before   = \tmcbl@beforeskip,
+  space.left     = \tmcbl@leftskip,
+  space.right    = \tmcbl@rightskip,
+  space.hang     = \tmcbl@hang,
+  space.indent   = \tmcbl@indent,
+  width.name     = \tmcbl@namewidth,
+  width.page     = \tmcbl@pagewidth,
+  hyper.range    = \tmcbl@hyperrangelist,
+  leader.sep     = \tmcbl@leadersep,
+  leader.content = \tmcbl@leadercontent,
+  leader.options = \tmcbl@leaderoptions,
+  format         = \tmcbl@format,
+  format.name    = \tmcbl@nameformat,
+  format.title   = \tmcbl@titleformat,
+  format.page    = \tmcbl@pageformat,
+  code           = \tmcbl@code,
+}{%
+  \edef\tmcbl@leadersep{\fpeval{\tmcbl@leadersep}}% required!
+  \tmcbl@parsehyperrange\tmcbl@hyperrangelist % required
+  \tmcbl@code{#1}{#2}{#3}{#4}{#5}{#6}{#7}%
+}
+\newcommand\mytmcbl@code@[7]{%
+  \ifnum\c@tocdepth>\inteval{#4-1}\relax
+    \expandafter\@firstofone\else\expandafter\@gobble\fi
+  {\ifvmode \ifnum\tmcbl@beforepenalty=\z@\else\addpenalty{\tmcbl@beforepenalty}\fi
+      \tmcbl@skipifnz\vskip\tmcbl@beforeskip 
+    \fi % 如果 space.before 不为零，加上间距
+    \leftskip\tmcbl@leftskip \rightskip\tmcbl@rightskip \parfillskip-\rightskip
+    \parindent\tmcbl@indent
+    \ifvmode \interlinepenalty\@M \noindent \fi
+    \@tempdima\tmcbl@namewidth % for \numberline
+    \null\nobreak \tmcbl@skipifnz\hskip{-\tmcbl@hang}%
+    {\tmcbl@format 
+      \tmcbl@hyper@{\tmcbl@name@}{\tmcbl@title@}{\tmcbl@leader@}{\tmcbl@page@}}%
+  \par}%
+}
+% \part
+\DeclareInstance{templatecbl}{level -1}{by level}{
+  space.before = 2.25em plus 1pt,
+  space.right  = \@pnumwidth,
+  space.hang   = 0pt,
+  format       = \large\bfseries,
+  width.name   = 3em,
+  width.page   = 0em,
+  leader.sep   = 5000, % >=5000, no leader
+  penalty.before = -\@highpenalty,
+}
+% \chapter, figure, table
+\DeclareInstance{templatecbl}{level 0}{by level}{
+  space.before = 1em plus 1pt,
+  space.right  = \@pnumwidth,
+  space.hang   = 0pt,
+  format       = \bfseries,
+  width.name   = 1.5em,
+  % width.page   = \@pnumwidth, % default=\@pnumwidth
+  leader.sep   = 5000,
+  penalty.before = -\@highpenalty,
+}
+% \section
+\DeclareInstance{templatecbl}{level 1}{by level}{
+  space.before = 0pt plus .2pt,
+  space.left   = 2.3em+1.5em,
+  space.right  = \@tocrmarg,
+  space.hang   = 2.3em,
+  width.name   = 2.3em,
+}
+% \subsection
+\DeclareInstance{templatecbl}{level 2}{by level}{
+  space.before = 0pt plus .2pt,
+  space.left   = 3.2em+3.8em,
+  space.right  = \@tocrmarg,
+  space.hang   = 3.2em,
+  width.name   = 3.2em,
+}
+% \subsubsection
+\DeclareInstance{templatecbl}{level 3}{by level}{
+  space.before = 0pt plus .2pt,
+  space.left   = 4.1em+7em,
+  space.right  = \@tocrmarg,
+  space.hang   = 4.1em,
+  width.name   = 4.1em,
+}
+% \paragraph
+\DeclareInstance{templatecbl}{level 4}{by level}{
+  space.before = 0pt plus .2pt,
+  space.left   = 5em+10em,
+  space.right  = \@tocrmarg,
+  space.hang   = 5em,
+  width.name   = 5em,
+}
+% \subparagraph
+\DeclareInstance{templatecbl}{level 5}{by level}{
+  space.before = 0pt plus .2pt,
+  space.left   = 6em+12em,
+  space.right  = \@tocrmarg,
+  space.hang   = 6em,
+  width.name   = 6em,
+}
+\makeatother
+
+\AssignSocketPlug{templatecbl}{by level}
+\templatetoc[][columns=2,ragged,column-sep=20pt,outer-sep=0pt]
 \end{examcode}

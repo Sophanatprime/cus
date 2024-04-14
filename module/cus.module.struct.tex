@@ -692,11 +692,11 @@
             \tl_gset:Nx \tocthenextlevel { \tl_item:Nn \tocthenextentry { 5 } } 
             \cs_gset_eq:NN \tociftailentry \use_ii:nn
           }
-        \tl_gset:No \tocthenumber { \use_ii:nnn ##5 }
-        \tl_gset:No \tocthename { \use_iii:nnn ##5 }
-        \tl_if_empty:NTF \tocthenumber
-          { \cs_gset_eq:NN \tocifnumbered \use_ii:nn }
-          { \cs_gset_eq:NN \tocifnumbered \use_i:nn }
+        \tl_gset:No \tocthename { \use_ii:nnn ##5 }
+        \tl_gset:No \tocthetitle { \use_iii:nnn ##5 }
+        \tl_if_empty:NTF \tocthename
+          { \cs_gset_eq:NN \tocifnamed \use_ii:nn }
+          { \cs_gset_eq:NN \tocifnamed \use_i:nn }
         \tl_gset:Nn \tocthepage {##6}
         \__cus_if_head_int_dec:nTF { \tocthepage }
           { \cs_gset_eq:NN \tocifpageisnumber \use_i:nn }
@@ -857,11 +857,11 @@
                 \cs_gset_eq:NN \tociftailentry \use_i:nn
               }
           }
-        \tl_gset:No \tocthenumber { \use_ii:nnn ##5 }
-        \tl_gset:No \tocthename { \use_iii:nnn ##5 }
-        \tl_if_empty:NTF \tocthenumber 
-          { \cs_gset_eq:NN \tocifnumbered \use_ii:nn }
-          { \cs_gset_eq:NN \tocifnumbered \use_i:nn }
+        \tl_gset:No \tocthename { \use_ii:nnn ##5 }
+        \tl_gset:No \tocthetitle { \use_iii:nnn ##5 }
+        \tl_if_empty:NTF \tocthename 
+          { \cs_gset_eq:NN \tocifnamed \use_ii:nn }
+          { \cs_gset_eq:NN \tocifnamed \use_i:nn }
         \tl_gset:Nn \tocthepage {##6}
         \__cus_if_head_int_dec:nTF { \tocthepage }
           { \cs_gset_eq:NN \tocifpageisnumber \use_i:nn }
@@ -1194,11 +1194,11 @@
     \tl_map_function:nN
       {
         \tocthetype \tocthecount \tocthelevel \tocthepage \toctheanchor 
-        \tocthenumber \tocthename \toctheclass 
+        \tocthename \tocthetitle \toctheclass 
         \toctheinfo \tocretinfo \toctheindex 
         \tocthepreventry \toctheprevlevel \tocthenextentry \tocthenextlevel 
         \toclink \toclinkbox \tocifcomplement 
-        \tociffirst \tocifnumbered \tocifpageisnumber \tocifheadentry \tociftailentry 
+        \tociffirst \tocifnamed \tocifpageisnumber \tocifheadentry \tociftailentry 
         \cus@toc@contentsline 
       }
       \cs_undefine:N
@@ -1431,17 +1431,22 @@
       \str_set:Nx \tmcblthetype {#1}
       \tmcbl@pushdef \tmcblthetype
         {
-          \bgroup \__cus_tmcbl_info:w ##3, \s__cus_mark
+          \bgroup \tmcbl@getinfo{##3} 
+          \tl_set:Nn \tmcblthelevel {##4}
+          \tl_set:Nn \tmcblthepage {##6}
+          \str_set:Nn \tmcbltheanchor {##7} 
+          \tl_set:No \tmcblthename { \use_ii:nnn ##5 }
+          \tl_set:No \tmcblthetitle { \use_iii:nnn ##5 }
           \use:e { \UseInstance { templatecbl } { \tmcbltheclass } } 
             {##1}{##2}{##3}{##4}{##5}{##6}{##7}
         }
         { \egroup }
-      \cus@tmcbl@getrange #5,,\@nil {#1}
+      \tmcbl@getrange{\tmcblthetype}{#5}
       \keys_set:nn { cus/templatecbl } {#2}
       % multicols key, title, type, min, max
       \multicollocalplaincombinedlist [{columns=1,#3}] {#4} 
         {\tmcblthetype} {\tmcblthemin} {\tmcblthemax}
-      \tmcbl@popdef {#1}
+      \tmcbl@popdef\tmcblthetype
     \group_end:
     \@afterindenttrue
   }
@@ -1467,11 +1472,22 @@
             { \msg_error:nnx { cus } { unknown-templatecbl-key } \l_keys_key_str }
         } ,
   }
+\cs_new_protected:Npn \tmcbl@getinfo #1 {  \__cus_tmcbl_info:w #1, \s__cus_mark }
 \cs_new:Npn \__cus_tmcbl_info:w #1, #2 \s__cus_mark
   {
     \str_set:Nx \tmcbltheclass {#1}
     \prop_clear_new:N \tmcbltheinfo
     \clist_map_inline:nn {#2} { \prop_put:Nnn \tmcbltheinfo ##1 }
+  }
+\cs_new_protected:Npn \tmcbl@getrange #1#2
+  { \__cus_tmcbl_get_range:wwn #2,,\s__cus_stop {#1} }
+\cs_new:Npn \__cus_tmcbl_get_range:wwn #1, #2, #3 \s__cus_stop #4
+  {
+    \IfBlankTF{#1}{\def\@tempa{\CurrentTitleLevel}}
+      {\edef\@tempa{\if\relax#1\relax \CurrentTitleLevel \else #1\fi}}
+    \IfBlankTF{#2}{\def\@tempb{}}{\def\@tempb{#2}}%
+    \expanded{\ExpandArgs{e}\getcbllevelrange{#4}{\@tempa}[{\@tempb}]}
+      {\tmcblthemin}{\tmcblthemax}
   }
 \cs_new_protected:Npn \__cus_tmcbl_remove_first_entry:
   {
@@ -1499,14 +1515,6 @@
   { \clist_map_inline:nn {#1} { \EditInstance { templatecbl } {##1} {#2} } }
 \msg_new:nnn { cus } { unknown-templatecbl-key }
   { `#1'~is~neither~a~valid~key~nor~a~instance~for~templatecbl. }
-
-\cs_new:Npn \cus@tmcbl@getrange #1, #2, #3 \@nil #4
-  {
-    \IfBlankTF{#1}{\def\@tempa{\CurrentTitleLevel}}
-      {\edef\@tempa{\if\relax#1\relax \CurrentTitleLevel \else #1\fi}}
-    \IfBlankTF{#2}{\def\@tempb{}}{\def\@tempb{#2}}%
-    \expanded{\getcbllevelrange{#4}{\@tempa}[{\@tempb}]}{\tmcblthemin}{\tmcblthemax}
-  }
 \skip_new:N \tmcbl@beforeskip
 \skip_new:N \tmcbl@leftskip
 \skip_new:N \tmcbl@rightskip
@@ -1541,14 +1549,7 @@
     \bool_lazy_and:nnT { !\tmcbl@ignore }
       { \int_compare_p:nNn \c@tocdepth > { #4-1 } }
       {
-        {
-          \tl_set:Nn \tmcblthelevel {#4}
-          \tl_set:Nn \tmcblthepage {#6}
-          \str_set:Nn \tmcbltheanchor {#7} 
-          \tl_set:No \tmcblthename { \use_ii:nnn #5 }
-          \tl_set:No \tmcblthetitle { \use_iii:nnn #5 }
-          \tl_set:Nx \tmcbl@leadersep { \fp_to_decimal:N \tmcbl@leadersep }
-          \tmcbl@before
+        { \tmcbl@before
           \mode_if_vertical:T 
             { \unless\ifnum\tmcbl@beforepenalty=\z@\addpenalty{\tmcbl@beforepenalty}\fi
               \tmcbl@skipifnz\vskip\tmcbl@beforeskip }
@@ -1558,8 +1559,7 @@
           \dim_set:Nn \parindent \tmcbl@indent
           \mode_if_vertical:T { \interlinepenalty\@M \noindent }
           \dim_set_eq:NN \@tempdima \tmcbl@namewidth % for \numberline
-          \null\nobreak % \tmcbl@skipifnz\hskip{-\leftskip}
-          \tmcbl@skipifnz\hskip{-\tmcbl@hang}
+          \null\nobreak \tmcbl@skipifnz\hskip{-\tmcbl@hang}
           { \tmcbl@format \tmcbl@hyper 
             { \tmcbl@name } { \tmcbl@title } { \tmcbl@leader } { \tmcbl@page } }
           \tmcbl@after }
@@ -1598,14 +1598,14 @@
   {
     \int_case:nn { \tmcbl@hyperrange }
       {
-        0 { #1#2#3#4 }
-        1 { \tmcbl@hyperlink{#1}#2#3#4 }
-        2 { #1\tmcbl@hyperlink{#2}#3#4 }
-        3 { \tmcbl@hyperlink{#1#2}#3#4 }
-        4 { #1#2#3\tmcbl@hyperlink{#4} }
-        5 { \tmcbl@hyperlink{#1}#2#3\tmcbl@hyperlink{#4} }
-        6 { #1\tmcbl@hyperlink{#2#3#4} }
-        7 { \tmcbl@hyperlink{#1#2#3#4} }
+        0 { #1#2#3\nobreak#4 }
+        1 { \tmcbl@hyperlink{#1}#2#3\nobreak#4 }
+        2 { #1\tmcbl@hyperlink{#2}#3\nobreak#4 }
+        3 { \tmcbl@hyperlink{#1#2}#3\nobreak#4 }
+        4 { #1#2#3\nobreak\tmcbl@hyperlink{#4} }
+        5 { \tmcbl@hyperlink{#1}#2#3\nobreak\tmcbl@hyperlink{#4} }
+        6 { #1\tmcbl@hyperlink{#2#3\nobreak#4} }
+        7 { \tmcbl@hyperlink{#1#2#3\nobreak#4} }
       }
   }
 \DeclareObjectType { templatecbl } { 7 }
@@ -1730,11 +1730,16 @@
 \cs_new:Npn \__cus_tmcbl_hyper_range_page:  { \int_add:Nn \tmcbl@hyperrange { 4 } }
 \cs_new:Npn \__cus_tmcbl_hyper_range_none:  { \int_set:Nn \tmcbl@hyperrange { 0 } }
 \cs_new:Npn \__cus_tmcbl_hyper_range_all:   { \int_set:Nn \tmcbl@hyperrange { 7 } }
+\cs_new_protected:Npn \tmcbl@parsehyperrange #1
+  {
+    \clist_remove_duplicates:N #1
+    \int_zero:N \tmcbl@hyperrange
+    \clist_map_function:NN #1 \__cus_tmcbl_hyper_range:n
+  }
 \cs_new_protected:Npn \__cus_tmcbl_fix_function:
   {
-    \clist_remove_duplicates:N \tmcbl@hyperrangelist
-    \int_zero:N \tmcbl@hyperrange
-    \clist_map_function:NN \tmcbl@hyperrangelist \__cus_tmcbl_hyper_range:n
+    \tmcbl@parsehyperrange \tmcbl@hyperrangelist
+    \tl_set:Nx \tmcbl@leadersep { \fp_to_decimal:N \tmcbl@leadersep }
     \exp_args:Nno \use:n { \cs_set_protected:Npn \tmcbl@hyper ##1##2##3##4 }
       { \tmcbl@hyper }
   }
@@ -2142,7 +2147,7 @@
           \cus_gset_next_bookmark_text:n 
             { 
               \legacy_if:nT { BKM@numbered } 
-                { \titleifname { \tl_use:c { titlethe #1 } ~ } { } } ##1 
+                { \titleifnamed { \tl_use:c { titlethe #1 } ~ } { } } ##1 
             } ,
         bookmark-extra.tl_set:c = { title~parameter@#1@bookmark-extra } ,
         break         .tl_set:c = title~parameter@#1@break ,
@@ -2616,9 +2621,9 @@
     \int_set:Nn \tex_interlinepenalty:D { 10000 }
     \tex_noindent:D 
   }
-\cs_new:Npn \titleifname #1#2 {#2}
-\cs_new:Npn \title@ifnametrue { \cs_set_eq:NN \titleifname \use_i:nn }
-\cs_new:Npn \title@ifnamefalse { \cs_set_eq:NN \titleifname \use_ii:nn }
+\cs_new:Npn \titleifnamed #1#2 {#2}
+\cs_new:Npn \title@ifnametrue { \cs_set_eq:NN \titleifnamed \use_i:nn }
+\cs_new:Npn \title@ifnamefalse { \cs_set_eq:NN \titleifnamed \use_ii:nn }
 \cs_new:Npn \titleifmeasuring #1#2 {#2}
 \cs_new:Npn \title@ifmeasuringtrue { \cs_set_eq:NN \titleifmeasuring \use_i:nn }
 \cs_new:Npn \title@ifmeasuringfalse { \cs_set_eq:NN \titleifmeasuring \use_ii:nn }
@@ -2725,7 +2730,7 @@
     \title@heading@format@initial 
     \title@format{%
       \title@headinghang
-        {\titleifname{\title@name\title@aftername}{}}%
+        {\titleifnamed{\title@name\title@aftername}{}}%
       \title@titleformat{#3}%
       \title@aftertitle}\par 
   \endgroup
@@ -2806,7 +2811,7 @@
   \begingroup
     \title@heading@format@initial 
     \title@format{%
-      \title@headinghang{\titleifname{\title@name\title@aftername}{}}%
+      \title@headinghang{\titleifnamed{\title@name\title@aftername}{}}%
       \title@titleformat{#2}%
       \title@aftertitle}\par 
   \endgroup
@@ -3072,8 +3077,8 @@
 
 \ifdefined\if@openright \else\ExpandArgs{c}\newif{if@openright}\@openrightfalse\fi
 \ifdefined\if@mainmatter \else\ExpandArgs{c}\newif{if@mainmatter}\@mainmattertrue\fi
-\def\chaptermark#1{\markboth{\MakeUppercase{\titleifname{\titlethechapter\ }{}#1}}{}}
-\def\sectionmark#1{\markright{\MakeUppercase{\titleifname{\titlethesection\ }{}#1}}}
+\def\chaptermark#1{\markboth{\MakeUppercase{\titleifnamed{\titlethechapter\ }{}#1}}{}}
+\def\sectionmark#1{\markright{\MakeUppercase{\titleifnamed{\titlethesection\ }{}#1}}}
 \definetitle\part[page]{
   name={第,部分},
   number=\Roman{part},
@@ -3083,7 +3088,7 @@
   beforeskip=0pt plus 1fil,
   afterskip=0pt plus 1fil,
   break=\if@openright\cleardoublepage\else\clearpage\fi,
-  tocline=\titleifname{\titlethepart\hspace{1em}}{}#2,
+  tocline=\titleifnamed{\titlethepart\hspace{1em}}{}#2,
 }
 \definetitle\chapter[top]{
   name={第,章},
@@ -3095,11 +3100,11 @@
   afterskip=40pt,
   break=\if@openright\cleardoublepage\else\clearpage\fi,
   afterindent=true,
-  tocline=\titleifname{\protect\numberline{\titlethechapter\hspace{.3em}}}{}#2,
+  tocline=\titleifnamed{\protect\numberline{\titlethechapter\hspace{.3em}}}{}#2,
   mark=\chaptermark,
 }
 \newcommand\titlenumberline[1]%
-  {\titleifname{\protect\numberline{\@nameuse{titlethe#1}}}{}}
+  {\titleifnamed{\protect\numberline{\@nameuse{titlethe#1}}}{}}
 \definetitle\section{
   level=section,
   number=\arabic{section},

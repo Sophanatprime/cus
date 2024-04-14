@@ -44,14 +44,14 @@
 \tocsetstyle{chapter,section}
   {\begin{description}}
   {}
-  {\item[\tocifnumbered{\tocthenumber}{\rule{1ex}{1ex}}]
-    \tocthename\quad\toclink{\tocthepage}\par}
+  {\item[\tocifnamed{\tocthename}{\rule{1ex}{1ex}}]
+    \tocthetitle\quad\toclink{\tocthepage}\par}
   {}
   {\end{description}}
 \tocsetstyle{subsection}
   {\par\begingroup\small\itshape\raggedright【\ }
   {}
-  {\tocthenumber\enskip\tocthename（\toclink{\tocthepage}）\ifinmiddle{；}{}}
+  {\tocthename\enskip\tocthetitle（\toclink{\tocthepage}）\ifinmiddle{；}{}}
   {}
   {】\par\endgroup\par}
 
@@ -76,7 +76,7 @@
       border-color=tocgreen, background-color=tocgreen]
     {\bfseries\large \raggedright \color{white}%
       \hangindent4\ccwd \hangafter1 % 更推荐使用 list 环境或 description 环境 
-      \strut \tocifnumbered{\tocthenumber\unskip\quad}{}\tocthename
+      \strut \tocifnamed{\tocthename\unskip\quad}{}\tocthetitle
       \breakablefiller[space]\tochyperpage \strut\par }\par }
   {\smallskip}
   {}
@@ -86,14 +86,14 @@
       \itemindent-\ccwd \listparindent\itemindent
       \topsep\z@ \partopsep\z@ \itemsep\z@ \parsep\z@ \parskip\z@}}
   {\item \begingroup\color{tocgreen}\bfseries}
-  {\tocifnumbered{\tocthenumber\unskip\quad}{}\tocthename \breakablefiller[space]%
+  {\tocifnamed{\tocthename\unskip\quad}{}\tocthetitle \breakablefiller[space]%
     \rlap{\makebox[2em][r]{\tochyperpage\;}}\par }
   {\endgroup}
   {\end{list}}
 \tocsetstyle {subsection}
   {}
   {\begingroup\color{black}\bfseries}
-  {\tocifnumbered{\tocthenumber\unskip\quad}{}\tocthename \breakablefiller[dotted]%
+  {\tocifnamed{\tocthename\unskip\quad}{}\tocthetitle \breakablefiller[dotted]%
     \rlap{\makebox[2em][r]{\tochyperpage\;}}\par }
   {\endgroup}
   {}
@@ -125,23 +125,23 @@
 \newcommand{\ifhaschild}[2]{\ifnum\tocthelevel<\tocthenextlevel\relax #1\else #2\fi}
 \newcommand{\iftoout}[2]{\ifnum\tocthelevel>\tocthenextlevel\relax #1\else #2\fi}
 \newcommand{\tocpageandnumber}{\,%
-  \lohi{\tocifnumbered{\tocthenumber\unskip}{}}{\toclink{P.~\tocthepage}}}
+  \lohi{\tocifnamed{\tocthename\unskip}{}}{\toclink{P.~\tocthepage}}}
 
 \tocsetstyle{chapter}
   {}
   {（\bgroup\stepcounter{toccolornum}\toccolor{\value{toccolornum}}}
-  {{\bfseries\large \tocthename}\tocpageandnumber \ifhaschild{：}{}}
+  {{\bfseries\large \tocthetitle}\tocpageandnumber \ifhaschild{：}{}}
   {。\egroup）}
   {}
 \tocsetstyle{section}
   {}
   {}
-  {\textnormal{\tocthename}\tocpageandnumber \ifhaschild{：}{}}
+  {\textnormal{\tocthetitle}\tocpageandnumber \ifhaschild{：}{}}
   {\iftoout{}{；}}
   {}
 \tocsetstyle{subsection}
   {}{}
-  {\textit{\tocthename}\tocpageandnumber \ifinmiddle{，}{}}
+  {\textit{\tocthetitle}\tocpageandnumber \ifinmiddle{，}{}}
   {}{}
 
 \specifiedtoc
@@ -164,16 +164,16 @@
       {\bfseries \rule[-4ex]{0pt}{9ex}%
         \fvarbox[c]{7cm}[border-style=none]{%
           \leftskip4\ccwd \hspace*{-4\ccwd}% 在 varwidth 环境中，悬挂缩进需要一点技巧
-          \tocifnumbered{\tocthenumber\unskip\quad}{}\tocthename \par}}}
+          \tocifnamed{\tocthename\unskip\quad}{}\tocthetitle \par}}}
   {}
   {\\\hline\end{longtable}}
 \tocsetstyle{section}
   {}{\\\hline} % 注意 \\ 的位置
-  {\tocthenumber & \tocthename & \toclink{\tocthepage}}
+  {\tocthename & \tocthetitle & \toclink{\tocthepage}}
   {}{}
 \tocsetstyle{subsection}
   {}{\\} % 注意 \\ 的位置
-  { & \tochangfrom{\tocthenumber\unskip\enskip}\tocthename & \toclink{\tocthepage}}
+  { & \tochangfrom{\tocthename\unskip\enskip}\tocthetitle & \toclink{\tocthepage}}
   {}{}
 \specifiedtoc 
 \endgroup
@@ -231,7 +231,7 @@
         border-color=\tocthecolor, background-color=\tocthecolor]
       {\bfseries\Large \raggedright \color{white}%
         \hangindent4\ccwd \hangafter1 % 更推荐使用 list 环境或 description 环境 
-        \strut \tocifnumbered{\tocthenumber\unskip\quad}{}\tocthename
+        \strut \tocifnamed{\tocthename\unskip\quad}{}\tocthetitle
         \breakablefiller[space]\tochyperpage \strut\par }\par}
   {\stopparacol \normalcolseprulecolor \bigskip}
   {\endgroup}
@@ -243,7 +243,7 @@
       \itemindent-3\ccwd \listparindent-\ccwd
       \topsep\z@ \partopsep\z@ \itemsep\z@ \parsep\z@ \parskip\z@}}
   {\item \begingroup\bfseries}
-  {\tocifnumbered{\tocthenumber\unskip\quad}{}\tocthename \breakablefiller[space]%
+  {\tocifnamed{\tocthename\unskip\quad}{}\tocthetitle \breakablefiller[space]%
     \rlap{\makebox[2em][r]{\tochyperpage\;}}\par }
   {\endgroup\par 
 % 这里增加了虚线的内容
@@ -257,7 +257,7 @@
 \tocsetstyle {subsection}
   {}
   {\begingroup}
-  {\tocifnumbered{\tocthenumber\unskip\quad}{}\tocthename \breakablefiller[dotted]%
+  {\tocifnamed{\tocthename\unskip\quad}{}\tocthetitle \breakablefiller[dotted]%
     \rlap{\makebox[2em][r]{\tochyperpage\;}}\par }
   {\endgroup}
   {}
@@ -343,7 +343,7 @@
       border-color=\tocthecolor, background-color=\tocthecolor]
     {\bfseries\Large \raggedright \rightskip2\ccwd plus 1fil \color{white}%
       \hangindent4\ccwd \hangafter1 % 更推荐使用 list 环境或 description 环境 
-      \strut \tocifnumbered{\tocthenumber\unskip\quad}{}\tocthename
+      \strut \tocifnamed{\tocthename\unskip\quad}{}\tocthetitle
       \breakablefiller[space]\rlap{\makebox[2\ccwd][r]{\tochyperpage}} \strut\par }\par}
 
 \newcounter{tochicount2}
@@ -375,14 +375,14 @@
         \itemindent-2\ccwd \listparindent-\ccwd
         \topsep\z@ \partopsep\z@ \itemsep\z@ \parsep\z@ \parskip\z@}}
   {\item \begingroup\bfseries}
-  {\tocifnumbered{\tocthenumber\unskip\quad}{}\tocthename \breakablefiller[space]%
+  {\tocifnamed{\tocthename\unskip\quad}{}\tocthetitle \breakablefiller[space]%
     \rlap{\makebox[2em][r]{\tochyperpage\;}}\par }
   {\endgroup\par}
   {\end{list}\par \stopmulticolumns}
 \tocsetstyle{subsection}
   {}
   {\begingroup}
-  {\tocifnumbered{\tocthenumber\unskip\quad}{}\tocthename \breakablefiller[dotted]%
+  {\tocifnamed{\tocthename\unskip\quad}{}\tocthetitle \breakablefiller[dotted]%
     \rlap{\makebox[2em][r]{\tochyperpage\;}}\par }
   {\endgroup}
   {}
@@ -413,20 +413,20 @@
   {}
   {\begingroup\noindent \bfseries\large \fboxrule\z@ 
     \fcolorbox{toccol1}{toccol1}{\zhphantom\color{white}%
-      \tocifnumbered{\fixedwidthtext*{4\ccwd}{\tocthenumber\unskip}}
-        {\fixedwidthtext*{4\ccwd}{\tocthename}}}%
+      \tocifnamed{\fixedwidthtext*{4\ccwd}{\tocthename\unskip}}
+        {\fixedwidthtext*{4\ccwd}{\tocthetitle}}}%
     \toclinkbox{\fcolorbox{toccol2}{toccol2}{\zhphantom
       \fixedwidthtext{\linewidth-4\ccwd-4\fboxsep-\@pnumwidth}
-        {\tocifnumbered{\tocthename}{}}%
+        {\tocifnamed{\tocthetitle}{}}%
       \makebox[\@pnumwidth][r]{\tocthepage}}}
     \endgroup\par \medskip}
   {\bigskip}{}
 \tocsetstyle{section}{}{}
-  {\@dottedtocline{\tocthelevel}{1.5em}{2.3em}{\tocthenumber\enskip\tocthename}
+  {\@dottedtocline{\tocthelevel}{1.5em}{2.3em}{\tocthename\enskip\tocthetitle}
     {\hss\toclink{\tocthepage}\hspace{\fboxsep}}}
   {}{}
 \tocsetstyle{subsection}{}{}
-  {\@dottedtocline{\tocthelevel}{3.8em}{3.2em}{\tocthenumber\enskip\tocthename}
+  {\@dottedtocline{\tocthelevel}{3.8em}{3.2em}{\tocthename\enskip\tocthetitle}
     {\hss\toclink{\tocthepage}\hspace{\fboxsep}}}
   {}{}
 \renewcommand*{\@pnumwidth}{1.3em}
