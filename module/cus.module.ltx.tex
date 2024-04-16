@@ -126,7 +126,8 @@
     $}}
 
 \NewDocumentCommand\makelapbox{O{}O{c}>{\ReplaceArgumentIfStrEqual{s}{c}{#3}}O{#2}m}
-  {\leavevmode@ifvmode\@nameuse{#3lap}{\makebox[{#1}][{#2}]{#4}}}
+  {\leavevmode@ifvmode\@nameuse{#3lap}{%
+    \IfBlankTF{#1}{\mbox}{\makebox[{#1}][{#2}]}{#4}}}
 \NewDocumentCommand\parlapbox{O{c}O{}O{s}O{c}m+m}
   {\leavevmode@ifvmode\@nameuse{#4lap}{\parbox[{#1}][{#2}][{#3}]{#5}{#6}}}
 
