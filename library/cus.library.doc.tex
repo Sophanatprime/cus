@@ -977,6 +977,8 @@
 \tl_new:N \saved@indexname 
 \tl_new:N \saved@macroname 
 \tl_const:Nn \generalname { General }
+\cs_new_protected:Npn \removegeneralname
+  { \def\generalname{\expandafter \use_none:nn } }
 \cs_set_protected:Npn \changes
   {
     \@bsphack \group_begin: \@sanitize
