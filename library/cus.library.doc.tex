@@ -1769,33 +1769,49 @@
     \bool_lazy_and:nnF
       { \tl_if_empty_p:N \l__cus_doc_date_added_tl }
       { \tl_if_empty_p:N \l__cus_doc_date_updated_tl }
-      { \midrule }
-    \tl_if_empty:NF \l__cus_doc_date_added_tl
       {
-        %\bool_lazy_and:nnTF { \legacy_if_p:n { @twoside } } { \c@page }
-        \legacy_if:nTF { @twoside } { \IfPageOdd \use_i:nn \use_ii:nn } { \use_ii:nn }
-          {
-            \multicolumn { 2 } { @{} l @{} } 
-              { \scriptsize New: \, \l__cus_doc_date_added_tl } \\
-          }
-          {
-            \multicolumn { 2 } { @{} r @{} }
-              { \scriptsize New: \, \l__cus_doc_date_added_tl } \\
-          }
-      }
+        \tl_set:Nn \l__cus_doc_tmpa_tl { \\[-\normalbaselineskip]\midrule }
 
-    \tl_if_empty:NF \l__cus_doc_date_updated_tl
-      {
-        %\bool_lazy_and:nnTF { \legacy_if_p:n { @twoside } } { \c@page }
-        \legacy_if:nTF { @twoside } { \IfPageOdd \use_i:nn \use_ii:nn } { \use_ii:nn }
+        \tl_if_empty:NF \l__cus_doc_date_added_tl
           {
-            \multicolumn { 2 } { @{} l @{} }
-              { \scriptsize Updated: \, \l__cus_doc_date_updated_tl } \\
+            \legacy_if:nTF { @twoside } 
+              { \IfPageOdd \use_i:nn \use_ii:nn } { \use_ii:nn }
+              {
+                \tl_put_right:Nn \l__cus_doc_tmpa_tl
+                  {
+                    \multicolumn { 2 } { @{} l @{} } 
+                      { \scriptsize New: \, \l__cus_doc_date_added_tl } \\
+                  }
+              }
+              {
+                \tl_put_right:Nn \l__cus_doc_tmpa_tl
+                  {
+                    \multicolumn { 2 } { @{} r @{} }
+                      { \scriptsize New: \, \l__cus_doc_date_added_tl } \\
+                  }
+              }
           }
+    
+        \tl_if_empty:NF \l__cus_doc_date_updated_tl
           {
-            \multicolumn { 2 } { @{} r @{} }
-              { \scriptsize Updated: \, \l__cus_doc_date_updated_tl } \\
+            \legacy_if:nTF { @twoside } 
+              { \IfPageOdd \use_i:nn \use_ii:nn } { \use_ii:nn }
+              {
+                \tl_put_right:Nn \l__cus_doc_tmpa_tl
+                  {
+                    \multicolumn { 2 } { @{} l @{} }
+                      { \scriptsize Updated: \, \l__cus_doc_date_updated_tl } \\
+                  }
+              }
+              {
+                \tl_put_right:Nn \l__cus_doc_tmpa_tl
+                  {
+                    \multicolumn { 2 } { @{} r @{} }
+                      { \scriptsize Updated: \, \l__cus_doc_date_updated_tl } \\
+                  }
+              }
           }
+        \l__cus_doc_tmpa_tl
       }
   }
 \dim_new:N \l__cus_doc_syntax_dim
