@@ -1,251 +1,26 @@
 \DocumentMetadata{}
-\documentclass[twoside]{book}
-\PassOptionsToPackage{silent}{xeCJK}
-\usepackage{ctex}
-\usepackage{fontawesome5}
+\documentclass{cusdoc}
 
-\makeatletter
-\@ifundefined{input@path}{\let\input@path\@empty}{}
-\g@addto@macro\input@path{{./module}{./library}{./lt3ekeys}{./cus-doc}{./cus-doc-aux}}
-\makeatother
-\usepackage[library={doc,box,bnf,ref,counter,pgf}]{cus}
-\SetKeys[updatemarks]{multicol}
-\newcommand{\hook}{\cmd[module=hook point,type=hook point]}
-\newcommand{\colna}{\key[module=color name,type=color name]}
-\usepackage{marginnote}
-
-\makeatletter
-\newcommand{\sdanger}[1][1]{\par\medskip\noindent\@@line{\hss\Replicate{#1}{\textdbend}\hss}\par}
-\newcommand{\mdanger}[1][1]{\marginnote{\Replicate{#1}{\textdbend}}}
-\makeatother
-
-\newcommand{\pkgdoc}[1]{\pkg{#1} 宏包文档}
-\newcommand*{\TODO}{\textcolor{red!90!black}{\bfseries[TODO]}}
-\newcommand\UNEXPANDEDRESULT{最终结果使用 \tn{unexpanded} （\cs{exp_not:n}）包裹起来。}
-
-\setuplayout*[balance]{hmargin=1.7cm,top=2.3cm,bottom=2.5cm,
-  hfoffset=0pt,nomarginpar,
-  columnsep=35pt,headsep=10pt,footskip=30pt,}
-\setuplayout[main]{paper=a4,
-  marginparsep=10pt,marginparwidth=15\ccwd,
-  textwidth=35\ccwd,inner=1.7cm,top=2.3cm,bottom=2.5cm,
-  headsep=10pt,footskip=30pt,
-  hfoffset={[OR,EL]168.1pt},%marking,%showframe,
-}
-
-\usepackage{graphicx}
-\setgraphicspath{./cus-doc, ./cus-doc-aux}
-\usepackage{xcolor}
-
-%region math & fonts
-\usepackage{amsmath,amsfonts}
-\usepackage{unicode-math}
-% \setmainfont{texgyrepagella}[
-%   Extension      = .otf,
-%   UprightFont    = *-regular,
-%   BoldFont       = *-bold,
-%   ItalicFont     = *-italic,
-%   BoldItalicFont = *-bolditalic]
-\setmainfont{TeXGyreTermesX}[
-  Extension      = .otf,
-  UprightFont    = *-Regular,
-  BoldFont       = *-Bold,
-  ItalicFont     = *-Italic,
-  BoldItalicFont = *-BoldItalic,
-  SlantedFont    = *-Slanted,
-  BoldSlantedFont= *-BoldSlanted]
-\setsansfont{texgyreheros}[
-  Extension      = .otf,
-  UprightFont    = *-regular,
-  BoldFont       = *-bold,
-  ItalicFont     = *-italic,
-  BoldItalicFont = *-bolditalic]
-\setmonofont{cmun}[
-  Extension      = .otf,
-  UprightFont    = *btl,
-  BoldFont       = *tb,
-  ItalicFont     = *bto,
-  BoldItalicFont = *tx,
-  HyphenChar     = None]
-\setmathfont{texgyrepagella-math.otf}
-%endregion
-
-\usepackage{lineno}
-\usepackage{caption}
-% \expandafter\let\csname caption@ifoddpage\endcsname\IfPageOdd
-\usepackage{floatrow}
-\usepackage{tikz}
-\usetikzlibrary{shadings}
-\usepackage[many]{tcolorbox}
-\usepackage{listings}
-% \usepackage{siunitx}
-\usepackage{adjustbox}
-\usepackage[strict]{changepage}
-\renewcommand{\cplabel}{@}
-\usepackage{array,booktabs,tabularx,makecell}
-\usepackage{tabularray}
-
-\floatsetup{captionskip=5pt,facing=yes}
-
-\ExplSyntaxOn
-\msg_redirect_name:nnn { tabularray } { table-width-too-small } { log }
-\ExplSyntaxOff
-
-\usepackage[colorlinks]{hyperref}
 \hypersetup{pdfauthor={Longaster, \CusTeX},
   pdftitle=\CusTeX 宏集手册,
   pdfcreator={\XeLaTeX} with hyperref and \CusLaTeX}
-\usepackage{nameref,varioref,cleveref}
-
-\usepackage[numbered,open,openlevel=1]{bookmark}
-
-\usepackage{glossaries}
-
-\usepackage{zhlipsum}
-
-\DeclareNewFloatType{example}{fileext=example,name=例}
-
-\newfloatcommand{mtabbox}{table}[\setcaptiontype{table}\captop][\FBwidth]
-
-\enablecombinedlist 
-
 
 \newsavebox\WaterMarkBox
 \sbox{\WaterMarkBox}{\rotatebox{45}{\color{gray!30}\fontsize{100}{0}\sffamily \CusTeX}}
 \background+[./watermark]{\copy\WaterMarkBox}
 
-%region title setting
-\makeatletter
-\@secpenalty=-\@m 
-%% 空 mark 实际上保存为了 \prg_do_nothing:，这里并不直接检测，而利用一个空的 mark
-\NewMarkClass{totalempty}
-\InsertMark{totalempty}{}
-\NewMarkClass{chapter/head}
-\NewMarkClass{section/head}
-\long\def\chaptermark#1{%
-  \InsertMark{chapter/head}{\protect\hyperlink{\@currentHref}{#1}}%
-  \InsertMark{section/head}{}}
-\long\def\sectionmark#1{%
-  \InsertMark{section/head}{\protect\hyperlink{\@currentHref}{#1}}}
-\def\@chaptosec{\;\texttt{>\kern-.1em >}\;}
-\def\@splitrange{\ \texttt{=\kern-.1em =\kern-.2em >}\ }
-\def\head@ifempty#1{\ifthenelse{\equal{#1}{}\OR\equal{#1}{\TopMark{totalempty}}}}
-\def\head@hifeq#1{\IfMarksEqualTF{#1/head}}
-\def\head@ifeq#1#2{\ifthenelse{\equal{#1}{#2}}}
-\def\head@ct{\TopMark{chapter/head}} \def\head@st{\TopMark{section/head}}
-\def\head@cf{\FirstMark{chapter/head}} \def\head@sf{\FirstMark{section/head}}
-\def\head@cl{\LastMark{chapter/head}} \def\head@sl{\LastMark{section/head}}
-\def\head@fc#1{{\bfseries #1}} \def\head@fs#1{{#1}}
-\newcommand\marked@title{%
-  \head@hifeq{chapter}{first}{last}{%
-    \head@ifempty\head@cf{}
-      {\head@ifempty\head@ct
-        {\head@fc\head@cf\head@ifempty\head@sl{}{\@chaptosec
-          \head@ifeq\head@sf\head@sl{\head@fs\head@sf}{\head@fs\head@sf
-            \head@ifempty\head@sl{}{\@splitrange\head@fs\head@sl}}}}
-        {\head@ifeq\head@ct\head@cf
-          {\head@fc\head@ct\head@ifempty\head@sf{}
-            {\@chaptosec\head@ifeq\head@sf\head@sl
-              {\head@fs\head@sf}{\head@fs\head@sf\@chaptosec\head@fs\head@sl}}}
-          {\head@fc\head@ct\head@ifempty\head@st{}{\@chaptosec\head@fs\head@st}\@splitrange
-            \head@fc\head@cl\head@ifempty\head@sl{}{\@chaptosec\head@fs\head@sl}}}}%
-  }{\head@fc\head@cf\@splitrange\head@fc\head@cl}}
-\setuptitle[chapter]{pagestyle=fancy, 
-  fixskip, break=\needspace{100pt}, 
-  beforeskip=30pt, afterskip=25pt, format=\zihao{-2}\bfseries\centering,}
-\setuptitle[section]{fixskip, break=\addpenalty{-5000},
-  name={\texorpdfstring{\S~}{\S}},
-  beforeskip=20pt plus 5pt minus 5pt, afterskip=15pt plus 2pt minus 2pt,
-  format=\zihao{-3}\bfseries\raggedright,}
-\setuptitle[subsection]{fixskip,
-  beforeskip=10pt plus 3pt minus 3pt,
-  afterskip=10pt plus 3pt minus 3pt,
-  format=\zihao{-4}\bfseries\raggedright,}
-
-\providecommand\headlink@warp[1]{#1}
-\setpagestyle{plain}[totalempty]{}
-\setpagestyle*{fancy}[totalempty]{
-  \sethead [ol,er] {\CusTeX 宏集手册}
-  \sethead [or,el] {\headlink@warp\marked@title}
-  % \setfoot [or,el] {\texttt{Longaster@163.com}}
-  \setfoot [ol,er] {第\thepage 页}
-  \setheadrulewidth {1pt}
-}
-\makeatother
-%endregion
-
-\makeatletter
-\protected\def\this@doc@externallink{\raisebox{-.8ex}[0pt][0pt]{\hi{\faIcon{external-link-alt}}}}
-\protected\def\this@doc@linkpage{\raisebox{.8ex}[0pt][0pt]{\lo{P.\labelinfo{page}{\cus@doc@thelabel}}}}
-\protected\def\this@doc@linkinfo{\lohi{\,\rmfamily\this@doc@linkpage}{\,\this@doc@externallink}}
-\def\cus@doc@basic@format{\ifx\cus@doc@thelabel\@empty \cus@doc@thetext
-  \else \hyperref[\cus@doc@thelabel]{\cus@doc@thetext\this@doc@linkinfo}\!\fi}
-\def\cus@doc@cs@format#1{\hypersetup{linkcolor=cus/color/doc cs}\cus@doc@basic@format}
-\let\cus@doc@cmd@format\cus@doc@cs@format
-\let\cus@doc@tn@format\cus@doc@cs@format
-\def\cus@doc@key@format#1{\hypersetup{linkcolor=cus/color/doc key}\cus@doc@basic@format}
-\def\cus@doc@csref@format#1{\cus@doc@basic@format}
-\def\cus@doc@envref@format#1{\cus@doc@basic@format}
-\def\cus@doc@keyref@format#1{\cus@doc@basic@format}
-\setfontface\cus@doc@itfont{texgyrepagella-italic}[Extension=.otf,BoldFont=texgyrepagella-bolditalic]
-\makeatother
-\definecolor{cus/color/doc cs}{RGB}{180,116,107}
-\definecolor{cus/color/doc env}{RGB}{216,156,122}
-\definecolor{cus/color/doc key}{RGB}{138,149,169}
 \newindextype[auto=true,filename=\jobname.idx,heading*={\section}]{\empty}
 \setupindex[\empty,docchange]{auto=false}
 
-
-%region aux env
 \makeatletter
-\lstdefinestyle{xamplestyle}{language={[LaTeX]TeX},
-  basicstyle=\small\linespread{1.1}\ttfamily,
-  aboveskip=\smallskipamount,belowskip=-\medskipamount,
-  % aboveskip={0\p@ \@plus 6\p@}, belowskip={0\p@ \@plus 6\p@},
-  columns=fullflexible, keepspaces=true,
-  breaklines=true, breakatwhitespace=true, 
-  breakindent=0pt, 
-  postbreak={\hb@xt@1.5em{\hss{\transparent{.3}$\hookrightarrow$}\hss}},
-  extendedchars=true, nolol,
-  numberstyle=\tiny,numbersep=8pt,
-  commentstyle=\color{green!55!black}}
-\definebufferpair [ __process_line=standard-not-nest,
-  save-mode=write, write=\jobname.exambuff, blank=space] 
-  \startxamplecode \stopxamplecode {} 
-  {\edef\xamplecode{\noexpand\lstinputlisting[style=xamplestyle,\unexpanded\expandafter{\xampleOPTlst}]{\jobname.exambuff}}%
-    \def\xcaption{\setcaptiontype{example}\caption}%
-    \xample@hango\begin{longfbox}[]\xample@hangi}
-\protected\def\xample@hango{%
-  \par\refstepcounter{example}%
-  \edef\xample@test{\noexpand\ifnum\the\c@example>\c@example 
-    \global\advance\c@example\@ne\noexpand\fi}}
-\protected\def\xample@hangi{%
-  \setbox\z@\hb@xt@\textwidth{\hss{\color{red!80!black}\bfseries 例\theexample}}%
-  \global\advance\c@example -\@ne
-  \vspace*{-\dimexpr\option{/fbox/padding-top}+\parskip}\par
-  \edef\xample@tmp{\vskip-\the\dimexpr\ht\z@+\dp\z@+.3333em+\parskip\relax\par}%
-  \box\z@ \xample@tmp}
-\protected\def\xampleline{\noindent \kern-\dimexpr\option{/fbox/padding-left}\relax
-  \cleaders\hb@xt@.2em{\hss.\hss}\hfill 
-  \kern\dimexpr-\option{/fbox/padding-right}\relax \par}
-\def\xampletext{\par\input{\jobname.exambuff}}
-\def\xampleprint{\xamplecode \xampleline \xampletext}
-\NewDocumentEnvironment {xample} { O{} O{} }
-  {\penalty-1000 \def\xampleOPTlst{#1}%
-    \fboxset{breakable=true,#2}%
-    \expandafter\expandafter\expandafter\startxamplecode
-      \expandafter\string\@firstofone}
-  {\end{longfbox}\xample@test\goodbreak}
 
-\lstdefinelanguage[BNF]{TeX}[common]{TeX}{
-  texcs=[1]{BNFItem}, texcs=[2]{BNFN}, texcs=[3]{BNFT}, 
-  texcs=[4]{BNFI,is}, texcs=[5]{BNFO,alt},
-  moredelim=[s][{\color{blue}}]{<}{>},
-  moredelim=[s][{\color{red!70}}]{"}{"},
-  literate={{:}{{\bfseries\color{green!50!black}:}}1 {::=}{{\bfseries\color{green!50!black}::=}}3 {|}{{\bfseries\color{cyan}\string|}}1},
-  texcsstyle={[1]{\color{purple}}}, texcsstyle={[2]{\color{blue}}}, 
-  texcsstyle={[3]{\color{red!70}}}, texcsstyle={[4]{\bfseries\color{green!50!black}}},
-  texcsstyle={[5]{\bfseries\color{cyan}}}}
+\setpagestyle*{fancy}[totalempty]{
+  \sethead [ol,er] {\CusTeX 宏集手册}
+  \sethead [or,el] {\headlink@warp\marked@title}
+  % \setfoot [or,el] {\texttt{longaster@163.com}}
+  \setfoot [ol,er] {第\thepage 页}
+  \setheadrulewidth {1pt}
+}
 
 \protected\def\normalsize{%
   \@setfontsize \normalsize {10.53937}{12.64725}%
@@ -256,33 +31,18 @@
   \let \@listi \@listI
 }
 \makeatother
-%endregion
-
-\ExplSyntaxOn
-\cs_new:Npn \UseList { \cus_tl_use:nn }
-\cs_new:Npn \UseClist { \clist_use:nn }
-\ExplSyntaxOff
-
-\crefformat{figure}{#2图#1#3}
-\crefformat{table}{#2表#1#3}
-\crefformat{example}{#2例#1#3}
-\crefformat{part}{#2第\zhnumber{#1}部分#3}
-\crefformat{chapter}{#2第\zhnumber{#1}章#3}
-\crefformat{section}{第 #2#1#3 节}
-\crefformat{subsection}{第 #2#1#3 小节}
-
-\setlist{nosep}
-\setlist[itemize,1]{label=\textbullet}
-\setlist[itemize,2]{label=$\smwhtcircle$}
 
 \def\nofuncskip{\par\vskip-\bigskipamount\vskip\parskip\par}
 \def\zhslash{／}
+\newcommand\UNEXPANDEDRESULT{最终结果使用 \tn{unexpanded} （\cs{exp_not:n}）包裹起来。}
 
 \raggedbottom \hfuzz=2.5pt \vfuzz=10pt 
 
 \title{\CusTeX 宏集手册}
 \author{Longaster}
 \date{\zhtoday\quad v\UseName{cus@versi@n}}
+
+\enablecombinedlist 
 
 \begin{document}
 
@@ -295,52 +55,7 @@
 \maketitle
 
 \frontmatter
-\setpagestyle+{fancy.contents}[fancy]{}
-\setuptitle[chapter]{numbering=false,pagestyle=}
-\renewcommand{\contentsname}{总目录}
-{% \tableofcontents[ragged,outer-sep=0pt,sep=1.5em,2]
-\makeatletter
-\ekeysdeclarecmd\fixedwidthtext{smm}{\leavevmode@ifvmode
-  \setbox\z@\hbox{{#3}}%
-  \ifdim\dimeval{#2}>\wd\z@ 
-    \hbox to\dimeval{#2}{%
-      \IfBooleanTF{#1}{\xeCJKsetup{CJKglue=\hskip 0pt plus 1fill\relax,
-        CJKecglue=\hskip 0pt plus 1fill\relax}%
-        \spaceskip 0pt plus 1fill\relax 
-        \CJKglue #3\CJKglue}{#3\hfill}}%
-  \else
-    \resizebox{\dimeval{#2}}{\height}{#3}%
-  \fi}
-\definecolor{toccol1}{HTML}{006DAA}
-\definecolor{toccol2}{HTML}{C4D4E3}
-\newcommand*{\zhphantom}{\vphantom{好hig}}
-
-\tocsetstyle{chapter}{}
-  {}
-  {\begingroup\noindent \bfseries\large \fboxrule\z@ 
-    \fcolorbox{toccol1}{toccol1}{\zhphantom\color{white}%
-      \tocifnamed{\fixedwidthtext*{4\ccwd}{\tocthename\unskip}}
-        {\fixedwidthtext*{4\ccwd}{\tocthetitle}}}%
-    \toclinkbox{\fcolorbox{toccol2}{toccol2}{\zhphantom
-      \fixedwidthtext{\linewidth-4\ccwd-4\fboxsep-1.3em}
-        {\tocifnamed{\tocthetitle}{}}%
-      \makebox[1.3em][r]{\tocthepage}}}
-    \endgroup\par \medskip}
-  {\bigskip}{}
-\tocsetstyle{section}{}{}
-  {\@dottedtocline{\tocthelevel}{1.5em}{2.3em}{\tocthename\enskip\tocthetitle}
-    {\hss\toclink{\tocthepage}\hspace{\fboxsep}}}
-  {}{}
-\tocsetstyle{subsection}{}{}
-  {\@dottedtocline{\tocthelevel}{3.8em}{3.2em}{\tocthename\enskip\tocthetitle}
-    {\hss\toclink{\tocthepage}\hspace{\fboxsep}}}
-  {}{}
-\makeatother
-\startmulticolumns[ragged,outer-sep=0pt,column-sep=1.5em,heading=\chapter\contentsname]
-\specifiedtoc 
-\stopmulticolumns
-}
-
+\cusdoctoc
 
 \mainmatter
 \setuplayout{preset=main}
@@ -457,18 +172,36 @@ Logo。输出 \CusTeX，\CusLaTeX。
 
 \begin{function}{\makelapbox,\parlapbox}
   \begin{syntax}
-    \V\makelapbox \marg{material}
-    \V\makelapbox \oarg{width} \oarg{pos} \marg{material}
-    \V\makelapbox \oarg{width} \oarg{pos} \oarg{lap to} \marg{material}
-    \V\parlapbox  \marg{width} \marg{material}
-    \V\parlapbox  \oarg{pos} \oarg{height} \oarg{inner-pos} \marg{width} \marg{material}
-    \V\parlapbox  \oarg{pos} \oarg{height} \oarg{inner-pos} \oarg{lap to} \marg{width} \marg{material}
+    \V\makelapbox \marg{text}
+    \V\makelapbox \oarg{width} \oarg{pos} \marg{text}
+    \V\makelapbox \oarg{width} \oarg{pos} \oarg{lap to} \marg{text}
+    \V\parlapbox  \marg{width} \marg{text}
+    \V\parlapbox  \oarg{pos} \oarg{height} \oarg{inner-pos} \marg{width} \marg{text}
+    \V\parlapbox  \oarg{pos} \oarg{height} \oarg{inner-pos} \oarg{lap to} \marg{width} \marg{text}
   \end{syntax}
-\cs{makelapbox} 的用法和 \tn{makebox} 一样，但是会把它向 \meta{lap to} 侧重叠，
-\meta{lap to} 默认值和 \oarg{pos} 一样。
-\cs{parlapbox} 的用法和 \tn{parbox} 一样，但是会把它向 \meta{lap to} 侧重叠，
-\meta{lap to} 默认值为 \texttt{c}。
+
+\cs{makelapbox} 的用法和 \tn{makebox} 一样，但是会把它向 \meta{lap to} 侧重叠。
+若给出了 \meta{width} 或它不为空，则先把 \meta{text} 放在宽为 \meta{width} 的盒子中。
+\meta{pos} 可选值为 \texttt{l}、\texttt{c}、\texttt{r}，
+分别表示把 \meta{text} 放在盒子的左边、中间、右边，默认值为 \texttt{c}。
+\meta{lap to} 的可选值为 \texttt{l}、\texttt{r}、\texttt{c}，
+分别表示把 \meta{text}（如果有 \meta{width}，则是把宽为 \meta{width} 的盒子）嵌入
+到左、右的文字中或一半嵌入到左边一半嵌入到右边，\meta{lap to} 的默认值为 \meta{pos} 的值。
+
+\cs{parlapbox} 的用法和 \tn{parbox} 一样，但是会把它向 \meta{lap to} 侧重叠。
+\meta{pos} 指定基线的位置，可选值为 \texttt{t}、\texttt{c}、\texttt{b}，
+分别表示第一行文字的基线位置、文字的中间以及末行文字的基线。的默认值为 \texttt{c}。
+若给出 \texttt{height}，则把文字放在高度为 \texttt{height} 的盒子中，
+根据 \meta{inner-pos} 来决定文字的垂直位置，可选值为 \texttt{t}、\texttt{c}、\texttt{b}。
 \end{function}
+
+\begin{xample}
+这里\makelapbox{是}文字。
+这里\makelapbox[][l]{是}文字。
+这里\makelapbox[][r]{是}文字。
+\stopxamplecode
+\xampleprint
+\end{xample}
 
 \begin{function}[rEXP]{\numberfixedwidth,\numerzerofill}
   \begin{syntax}
@@ -487,14 +220,14 @@ Logo。输出 \CusTeX，\CusLaTeX。
 \ExplSyntaxOn
 \numberfixedwidth { 6 } { 0 } { \int_to_Hex:n } { 42 } \quad 
 \numberfixedwidth { 6 } { 0 } { \int_to_Hex:n } { `好 } \quad 
-\numberzerofill { 5 } { 12478 }
+\numberzerofill { 6 } { 12478 }
 \ExplSyntaxOff
 \stopxamplecode
 \xampleprint
 \end{xample}
 
 \begin{function}{\zkern}
-相当于 \verb|\kern\z@|。
+相当于 \verb|\kern 0pt\relax|。
 \end{function}
 
 \begin{function}[type=environment]{enumlist,enumlist*}
@@ -550,7 +283,6 @@ Logo。输出 \CusTeX，\CusLaTeX。
 \begin{function}{\InputIfGraphicsExists}
   \begin{syntax}
     \V\InputIfGraphicsExists * \oarg{key-val list} \marg{file}
-    \V\InputIfGraphicsExists * \oarg{llx,lly} \oarg{urx,ury} \marg{file}
   \end{syntax}
 如果图片存在时使用图片，否则什么也不做。
 
@@ -3230,18 +2962,9 @@ template 格式的目录，其对象类型为 \texttt{templatecbl}，可使用 7
   \verb|\CUSDependency| \marg{key-val}
 \end{syntax}
 处理库依赖。
+
+若用在主文件中，所需的依赖会立刻被加载。用在库文件中，依赖可能会延迟加载。
 \end{function}
-
-\begin{texnote}
-只能以如下顺序执行上述三个命令：\cs{CUSLibraryDelayedUntil}、
-\cs{CUSDependency}、\linebreak
-\cs{CUSProvideExplLibrary}（或 \cs{CUSProvideLibrary}）。
-在每个库文件中，它们最多只能使用一次，且必须用在库文件开头。
-若要在库文件中间使用它们，则应该将之后的内容拆分至新的库文件中。
-
-一个库文件可能会被使用多次，但在 \cs{CUSProvideExplLibrary}（或 \cs{CUSProvideLibrary}） 
-之后的内容只会执行一次。
-\end{texnote}
 
 \begin{keyval}[path=dependency]{package,module,library,disable}
 \begin{syntax}
@@ -3252,6 +2975,16 @@ template 格式的目录，其对象类型为 \texttt{templatecbl}，可使用 7
 \end{syntax}
 \cs{CUSDependency} 可用的键值选项。
 \end{keyval}
+
+\begin{texnote}
+只能以如下顺序执行上述三个命令：\cs{CUSLibraryDelayedUntil}、\linebreak
+\cs{CUSDependency}、\cs{CUSProvideExplLibrary}（或 \cs{CUSProvideLibrary}）。
+在每个库文件中，它们最多只能使用一次，且必须用在库文件开头。
+若要在库文件中间使用它们，则应该将之后的内容拆分至新的库文件中。
+
+一个库文件可能会被使用多次，但在 \cs{CUSProvideExplLibrary}（或 \cs{CUSProvideLibrary}） 
+之后的内容只会执行一次。
+\end{texnote}
 
 \begin{function}[module=cus]{\CUSLoadLibrary,\CUSPassOptionsToLibrary}
 \begin{syntax}
@@ -4076,13 +3809,16 @@ template 格式的目录，其对象类型为 \texttt{templatecbl}，可使用 7
 \xampleprint
 \end{xample}
 
-\begin{function}[EXP]{\cus_act_case_true:nnnn,\cus_act_case_false:nnnn}
+\begin{function}[EXP]{\cus_act_case:nnnn,
+  \cus_act_case_true:nnnn,\cus_act_case_false:nnnn}
   \begin{syntax}
     \V*|\cus_act_case_true:nnnn| \marg{tl} \marg{processor list} \marg{fallback tokens} \marg{act args}
   \end{syntax}
 \meta{processor list} 中奇数项为判断函数，偶数项为对应的处理代码，如果判断为真（或为假），
 则使用对应的处理代码，如果 \meta{processor list} 中的判断函数都判断为假（或都为真），则使用 
 \meta{fallback tokens}。偶数项的处理代码可以使用 \meta{act args} 作为参数。
+
+\cs{cus_act_case:nnnn} 是 \cs{cus_act_case_true:nnnn} 的另一个名字。
 \end{function}
 
 \begin{xample}
@@ -4419,7 +4155,7 @@ template 格式的目录，其对象类型为 \texttt{templatecbl}，可使用 7
   \item \meta{cbl count} 为本条目在存储着所有目录项的那个列表中的位置；
   \item \meta{info} 为一个列表，它标记着这个目录项的某些信息，第一项一般为这个目录项层级的名称，其余的项形如 \marg{property}\marg{value}。在 \cs{chapter} 中为 \texttt{chapter}，在 figure 中，为 \texttt{figure}；
   \item \meta{level} 为这个目录项的层级，是一个整数；
-  \item \meta{list entry} 为这个目录项的值，通常包含着标题或 caption；
+  \item \meta{list entry} 为这个目录项的值，通常包含着标题或 caption；若有编号，则为 \tn{numberline}\marg{name}\marg{title}，\meta{name} 是编号，\meta{title} 是标题；若目录项没有编号，则为 \tn{nonumberline}\texttt{\{\}}\marg{title}；若目录项的值中有 \tn{hspace}，则第一个未用花括号包裹的 \tn{hspace} 总是位于 \meta{name} 中；
   \item \meta{thepage} 为目录项所在页的 \tn{thepage}；
   \item \meta{anchor} 为目录项原位置的锚点。仅在 \pkg{hyperref} 宏包加载时有效。可作为 \tn{hyperlink} 命令的第一个参数。
 \end{itemize}
@@ -4485,7 +4221,7 @@ cbl 列表除了 \cs{cus@type@contentsline}、\cs{cus@type@contentsline@}、
 \clist_item:cn { \l_tmpa_tl } { \CurrentTocDefaultLevelCount + 1 }
 \ExplSyntaxOff
 \stopxamplecode
-\xampleprint。表示本章节的所有目录项为 toc 类型的目录中的第 28 -- 40 项。
+\xampleprint。表示本章节的所有目录项为 toc 类型的目录中的第 32 -- 45 项。
 \end{xample}
 
 以下代码输出本章目录。
@@ -5447,7 +5183,7 @@ verbatim 和分段。
   ~~... 
   \verb|\end|\{function\}
 \end{syntax}
-显示函数说明。\meta{functions clist} 可以是宏或者环境名。
+显示函数说明。\meta{functions clist} 可以是宏或者环境名，不可包含多余的空格以及注释符。
 \end{function}
 
 \begin{function}[type=environment]{keyval}
@@ -5456,7 +5192,7 @@ verbatim 和分段。
   ~~... 
   \verb|\end|\{keyval\}
 \end{syntax}
-显示键值选项的说明。\meta{keys clist} 为键列表。
+显示键值选项的说明。\meta{keys clist} 为键列表，不可包含多余的空格以及注释符。
 \end{function}
 
 \begin{function}[type=environment]{syntax}
@@ -5487,7 +5223,8 @@ verbatim 和分段。
 \end{itemize}
 
 \begin{texnote}
-  \verb|#| 在本环境中的类别码被设置为 12（other）。
+  \verb|#| 在本环境中的类别码被设置为 12（other），
+  \texttt{\string<\string|\string(\~{}\&} 的类别码为 13（active）。
 \end{texnote}
 
 \envreflist{function,keyval,syntax} 环境均可使用 \cs{V} 命令，它和 \cs{Verbati\-mize} 
@@ -6207,7 +5944,8 @@ s_0,s_1,s_2&w_0&g_0&w_1&g_1&w_2\rlap{ (in \texttt{pt})}\\\hline
 在 \meta{tokens} 或 \meta{balanced tokens} 中，字母的类别码不能为 1、2、10。
 
 结果 \meta{tl} 包含的字符其类别码有三种，为 10、12、13
-（在 \pupTeX 引擎下，仅 Unicode 编码小于等于 255 的字符有此特性）。
+（在 \pupTeX 引擎下，仅 Unicode 编码小于等于 255 的字符有此特性），
+且 \texttt{\^{}\^{}M} 的类别码为 13。
 \end{function}
 
 \begin{function}{\collectn_varwidth:nnw,\collectn_varwidth_end:}
@@ -6303,7 +6041,7 @@ s_0,s_1,s_2&w_0&g_0&w_1&g_1&w_2\rlap{ (in \texttt{pt})}\\\hline
 \xampleprint 
 \end{xample}
 
-\begin{function}{\collectn_width:Nnnw,\collect_minipage:Nnnw,\collect_varwidth:Nnnw}
+\begin{function}{\collectn_width:Nnnw,\collectn_minipage:Nnnw,\collectn_varwidth:Nnnw}
   \begin{syntax}
     \V*|\collectn_width:Nnnw| \meta{box} \marg{code} \marg{width} \meta{material}
   \end{syntax}
@@ -6809,7 +6547,7 @@ $2^{15}-1=32767$，在 \LuaLaTeX 和 (u)p\LaTeX 中为 $2^{16}-1=65535$。
   \item[\CCS l] \verb|{| 前的内容，如没有 \verb|{| 则出错；
   \item[\CCS u] \texttt u\marg{tokens}，\meta{tokens} 前的内容，\meta{tokens} 会被移除，如没有 \meta{tokens} 则出错；
   \item[\CCE U] \texttt U\marg{tokens_1}\marg{tokens_2}，\meta{tokens_1} 前的内容，移除 \meta{tokens_1} 并留下 \meta{tokens_2}，如没有 \meta{tokens_1} 则出错；
-  \item[\CCS v] 以 verbatim 的形式读取文字，该参数的类别码均为 12（在 \pupTeX 引擎下，仅 Unicode 编码小于等于 255 的字符有此特性）；
+  \item[\CCS v] 以 verbatim 的形式读取文字，该参数所含字符的类别码的可能值为 10、12、13（在 \pupTeX 引擎下，仅 Unicode 编码小于等于 255 的字符有此特性）；且 \texttt{\^{}\^{}M} 的类别码为 13；
 \end{itemize}
 }
 

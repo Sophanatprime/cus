@@ -397,11 +397,7 @@
 \ekeysdeclarecmd\fixedwidthtext{smm}{\leavevmode@ifvmode
   \setbox\z@\hbox{{#3}}%
   \ifdim\dimeval{#2}>\wd\z@ 
-    \hbox to\dimeval{#2}{%
-      \IfBooleanTF{#1}{\xeCJKsetup{CJKglue=\hskip 0pt plus 1fill\relax,
-        CJKecglue=\hskip 0pt plus 1fill\relax}%
-        \spaceskip 0pt plus 1fill\relax 
-        \CJKglue #3\CJKglue}{#3\hfill}}%
+    \hbox to\dimeval{#2}{\IfBooleanTF{#1}{\spreadtext*{#2}{#3}}{#3\hfill}}%
   \else
     \resizebox{\dimeval{#2}}{\height}{#3}%
   \fi}
