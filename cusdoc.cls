@@ -149,13 +149,6 @@
 
 \providecommand\headlink@warp[1]{#1}
 \setpagestyle{plain}[totalempty]{}
-\setpagestyle*{fancy}[totalempty]{
-  \sethead [ol,er] {\CusTeX 宏集手册}
-  \sethead [or,el] {\headlink@warp\marked@title}
-  % \setfoot [or,el] {\texttt{Longaster@163.com}}
-  \setfoot [ol,er] {第\thepage 页}
-  \setheadrulewidth {1pt}
-}
 %endregion
 
 \@secpenalty-\@m 

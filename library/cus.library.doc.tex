@@ -19,11 +19,12 @@
   }
 
 
-\bool_if:NT \l__cus_doc_index_file_bool
-  {
 \providecommand* \docusageindexname { Code~Index }
 \providecommand* \docchangeindexname { History }
-
+\protected\def\PrintUsages{}
+\protected\def\PrintChanges{}
+\bool_if:NT \l__cus_doc_index_file_bool
+  {
 \newindextype[filename=\jobname.docusage.idx, output=\jobname.docusage.ind,
   exec={makeindex~-s~gind.ist~-o~\jobname.docusage.ind~\jobname.docusage.idx},
   title={代码索引}, heading*={\section}, auto=true, 
@@ -903,6 +904,8 @@
           { MMMMI - \thepage }
       }
   }
+\bool_if:NF \l__cus_doc_index_file_bool
+  { \cs_set_protected:Npn \__cus_doc_index_page_hc:nn #1#2 { } }
 \group_begin:
 \char_set_active_eq:NN - \scan_stop:
 \tl_const:Nx \c__cus_doc_active_minus_tl { \char_generate:nn { `- } { 13 } }
@@ -1008,6 +1011,8 @@
       }
     \@tempa \group_end: \@esphack
   }
+\bool_if:NF \l__cus_doc_index_file_bool
+  { \cs_set_protected:Npn \__cus_doc_ltx_changes:nnn #1#2#3 { \group_end: \@esphack } }
 \cs_set_protected:Npn \changes@ #1#2
   {
     \__cus_doc_save_version_date:nn {#1} {#2}

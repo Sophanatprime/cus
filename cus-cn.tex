@@ -13,6 +13,15 @@
 \setupindex[\empty,docchange]{auto=false}
 
 \makeatletter
+
+\setpagestyle*{fancy}[totalempty]{
+  \sethead [ol,er] {\CusTeX 宏集手册}
+  \sethead [or,el] {\headlink@warp\marked@title}
+  % \setfoot [or,el] {\texttt{longaster@163.com}}
+  \setfoot [ol,er] {第\thepage 页}
+  \setheadrulewidth {1pt}
+}
+
 \protected\def\normalsize{%
   \@setfontsize \normalsize {10.53937}{12.64725}%
   \abovedisplayskip 1\p@ \@plus 4\p@ \@minus 2\p@ 
@@ -274,7 +283,6 @@ Logo。输出 \CusTeX，\CusLaTeX。
 \begin{function}{\InputIfGraphicsExists}
   \begin{syntax}
     \V\InputIfGraphicsExists * \oarg{key-val list} \marg{file}
-    \V\InputIfGraphicsExists * \oarg{llx,lly} \oarg{urx,ury} \marg{file}
   \end{syntax}
 如果图片存在时使用图片，否则什么也不做。
 
@@ -3801,13 +3809,16 @@ template 格式的目录，其对象类型为 \texttt{templatecbl}，可使用 7
 \xampleprint
 \end{xample}
 
-\begin{function}[EXP]{\cus_act_case_true:nnnn,\cus_act_case_false:nnnn}
+\begin{function}[EXP]{\cus_act_case:nnnn,
+  \cus_act_case_true:nnnn,\cus_act_case_false:nnnn}
   \begin{syntax}
     \V*|\cus_act_case_true:nnnn| \marg{tl} \marg{processor list} \marg{fallback tokens} \marg{act args}
   \end{syntax}
 \meta{processor list} 中奇数项为判断函数，偶数项为对应的处理代码，如果判断为真（或为假），
 则使用对应的处理代码，如果 \meta{processor list} 中的判断函数都判断为假（或都为真），则使用 
 \meta{fallback tokens}。偶数项的处理代码可以使用 \meta{act args} 作为参数。
+
+\cs{cus_act_case:nnnn} 是 \cs{cus_act_case_true:nnnn} 的另一个名字。
 \end{function}
 
 \begin{xample}
@@ -6030,7 +6041,7 @@ s_0,s_1,s_2&w_0&g_0&w_1&g_1&w_2\rlap{ (in \texttt{pt})}\\\hline
 \xampleprint 
 \end{xample}
 
-\begin{function}{\collectn_width:Nnnw,\collect_minipage:Nnnw,\collect_varwidth:Nnnw}
+\begin{function}{\collectn_width:Nnnw,\collectn_minipage:Nnnw,\collectn_varwidth:Nnnw}
   \begin{syntax}
     \V*|\collectn_width:Nnnw| \meta{box} \marg{code} \marg{width} \meta{material}
   \end{syntax}
