@@ -1,6 +1,7 @@
 \CUSProvideModule{ltx}{\cus@d@te}{\cus@versi@n}{wrapping of LaTeX2e kernel}
 
 \ExplSyntaxOn
+\cs_if_free:NT \csstring { \cs_new_eq:NN \csstring \cs_to_str:N }
 \cs_new_eq:NN \cus@letcs \cs_set_eq:Nc 
 \cs_new_eq:NN \Replicate \prg_replicate:nn
 \cs_new_protected:Npn \__cus_cmd_set_argument:n { \tl_set:Nn \ProcessedArgument }

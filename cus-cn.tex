@@ -142,9 +142,41 @@ Logo。输出 \CusTeX，\CusLaTeX。
 带 \verb|*| 的可使用一个参数，它代表键传入的值。
 \end{function}
 
+例如，若要为 \envref{Framed} 新增键选项，则可以使用此命令。
+\begin{xample}
+\colorlet{frame color}{black}
+\colorlet{fill color}{white}
+\cussetstyle*[frame]{frame color}{\colorlet{frame color}{#1}}
+\cussetstyle*[frame]{fill color}{\colorlet{fill color}{#1}}
+\cussetstyle[frame]{color frame}{%
+  frame={\setlength{\fboxsep}{#1\cusframesep}%
+    \setlength{\fboxrule}{#1\cusframerule}%
+    \fcolorbox{frame color}{fill color}}%
+}
+\begin{Framed}[frame color=blue, fill color=blue!20, color frame=2]
+  \zhlipsum[1]
+\end{Framed}
+\stopxamplecode
+\xamplecode\medskip
+\end{xample}
+
+
 \section{\cusmodule{ltx}模块}
 
 \cusmodule{ltx} 模块，本模块封装或提供一些 \LaTeXe 的接口。
+
+\begin{function}[EXP]{\csstring}
+  \begin{syntax}
+    \V\csstring \meta{cs}
+  \end{syntax}
+提取控制序列 \meta{cs} 的名字。
+\end{function}
+
+\begin{xample}
+\ttfamily \csstring\CusTeX \quad \csstring\|
+\stopxamplecode
+\xampleprint
+\end{xample}
 
 \begin{function}[EXP]{\Replicate}
 \begin{syntax}
@@ -182,17 +214,17 @@ Logo。输出 \CusTeX，\CusLaTeX。
 
 \cs{makelapbox} 的用法和 \tn{makebox} 一样，但是会把它向 \meta{lap to} 侧重叠。
 若给出了 \meta{width} 或它不为空，则先把 \meta{text} 放在宽为 \meta{width} 的盒子中。
-\meta{pos} 可选值为 \texttt{l}、\texttt{c}、\texttt{r}，
+\meta{pos} 可选值为 \UseList{lcr}[\texttt]{、}，
 分别表示把 \meta{text} 放在盒子的左边、中间、右边，默认值为 \texttt{c}。
-\meta{lap to} 的可选值为 \texttt{l}、\texttt{r}、\texttt{c}，
+\meta{lap to} 的可选值为 \UseList{lcr}[\texttt]{、}，
 分别表示把 \meta{text}（如果有 \meta{width}，则是把宽为 \meta{width} 的盒子）嵌入
 到左、右的文字中或一半嵌入到左边一半嵌入到右边，\meta{lap to} 的默认值为 \meta{pos} 的值。
 
 \cs{parlapbox} 的用法和 \tn{parbox} 一样，但是会把它向 \meta{lap to} 侧重叠。
-\meta{pos} 指定基线的位置，可选值为 \texttt{t}、\texttt{c}、\texttt{b}，
+\meta{pos} 指定基线的位置，可选值为 \UseList{tcb}[\texttt]{、}，
 分别表示第一行文字的基线位置、文字的中间以及末行文字的基线。的默认值为 \texttt{c}。
 若给出 \texttt{height}，则把文字放在高度为 \texttt{height} 的盒子中，
-根据 \meta{inner-pos} 来决定文字的垂直位置，可选值为 \texttt{t}、\texttt{c}、\texttt{b}。
+根据 \meta{inner-pos} 来决定文字的垂直位置，可选值为 \UseList{tcb}[\texttt]{、}。
 \end{function}
 
 \begin{xample}
@@ -1219,12 +1251,13 @@ Unicode 代码点。
   \end{syntax}
 设置页眉页脚的内容。
 
-\meta{位置} 为 \texttt{O}、\texttt{E}， \texttt{L}、\texttt{C}、\texttt{R}，\texttt{H}、\texttt{F} 此三类的组合。
+\meta{位置} 为 \texttt{O}、\texttt{E}， \texttt{L}、\texttt{C}、\texttt{R}，
+\texttt{H}、\texttt{F} 此三类的组合。
 这七个个值分别代表奇偶、左中右、页眉页脚。不区分大小写。
 
 如某一类未给出，则视为该类的全部值都给出。但 \cs{sethead}、\cs{setfoot} 分别为 \texttt{H}、\texttt{F}。
 
-例如，在 \cs{sethead} 中，\verb|L| 代表 \verb|OLF,ELF|。
+例如，在 \cs{sethead} 中，\verb|L| 代表 \verb|OLH,ELH|。
 
 它们可以直接用在导言区和正文中，将修改本页及其后页面的页眉页脚。但最好用于 
 \cs{setpagestyle} 命令中，统一设置页眉页脚。
@@ -1309,6 +1342,39 @@ Unicode 代码点。
 \fbox{\spreadtext {5cm}{你好 Hello World 世界}}
 
 \fbox{\spreadtext*{5cm}{你好 Hello World 世界}}
+\stopxamplecode
+\xampleprint
+\end{xample}
+
+\begin{function}{\useinfiniteskip}
+  \begin{syntax}
+    \V\useinfiniteskip \marg{fil dimen}
+  \end{syntax}
+把单词或 CJK 文字之间的距离设置为无限可伸长的间距，它比 \cs{spreadtext} 更为底层。
+
+\meta{fil dimen} 为 \veta{factor}\texttt{fil} 或 \veta{factor}\texttt{fill}
+或 \veta{factor}\texttt{filll}。\veta{factor} 为一个实数。
+对于 \texttt{fil}、\texttt{fill}、\texttt{filll}，它们的阶数依次增加，
+在同一个盒子中，高阶优先生效，低阶的无效。若阶数相同，则间距的长度由 \veta{factor} 控制，
+在同一个盒子中相同的 \veta{factor} 保证间距相等。
+
+它应当在一个组中使用。
+\end{function}
+
+\begin{xample}
+\parbox{8\ccwd}{\useinfiniteskip{1fil}%
+  \rightskip0pt plus 1fil \parfillskip-\rightskip
+  测试一下哦哈哈哈 ac b 哦哈}
+\stopxamplecode
+\xampleprint
+\end{xample}
+
+\begin{xample}
+\fbox{\makebox[10cm][s]{%
+  {\useinfiniteskip{1fil}梅川库子}%
+  \hspace{0pt plus 3fil}%
+  {\useinfiniteskip{1.5fil}先生}}%
+}
 \stopxamplecode
 \xampleprint
 \end{xample}
@@ -2959,11 +3025,12 @@ template 格式的目录，其对象类型为 \texttt{templatecbl}，可使用 7
 
 \begin{function}[module=cus]{\CUSDependency}
 \begin{syntax}
-  \verb|\CUSDependency| \marg{key-val}
+  \verb|\CUSDependency|   \marg{key-val}
+  \verb|\CUSDependency| * \marg{key-val}
 \end{syntax}
 处理库依赖。
 
-若用在主文件中，所需的依赖会立刻被加载。用在库文件中，依赖可能会延迟加载。
+若用在主文件中或使用带星号的版本，所需的依赖会立刻被加载。用在库文件中，依赖可能会延迟加载。
 \end{function}
 
 \begin{keyval}[path=dependency]{package,module,library,disable}
@@ -3205,7 +3272,7 @@ template 格式的目录，其对象类型为 \texttt{templatecbl}，可使用 7
     \V*|\cus_new_label_now:nnnnnn| \marg{label} \marg{ref data} \marg{thepage} 
     ~~~~\marg{current label name} \marg{anchor} \marg{extra}
   \end{syntax}
-定义一个新的 \meta{label}。
+写入一个 \meta{label}。
 
 \meta{label}、\meta{thepage}、\meta{current label name}、\meta{anchor} 总是立即展开。
 
@@ -6393,7 +6460,9 @@ s_0,s_1,s_2&w_0&g_0&w_1&g_1&w_2\rlap{ (in \texttt{pt})}\\\hline
 此命令定义的命令均为使用长参数。即它们定义的命令总是 \tn{protected}\tn{long}。
 \end{function}
 
-目前，在向后寻找可选参数时，会忽略空格，但未来可能会修改为不忽略空格，因此不宜在可选参数前加入空格（但必需参数 \texttt{m}、\texttt{r}、\texttt{R} 总忽略空格）。如 \verb*|\foo {a} [o]| 应写为 \verb|\foo {a}[o]|，假定 \veta{arg spec} 为 \texttt{mo}。
+目前，在向后寻找可选参数时，会忽略空格，但未来可能会修改为不忽略空格，因此不宜在可选参数前
+加上空格（但必需参数 \UseList{mrR}[\texttt]{、} 总忽略空格）。
+如 \verb*|\foo {a} [o]| 应写为 \verb|\foo {a}[o]|，假定 \veta{arg spec} 为 \texttt{mo}。
 
 在定义 \veta{ekeys-cmd} 时，若设置 \cs{l_ekeys_cmd_defaults_bool} 为真，
 则可选参数的默认值可以引用其它实参（称为“执行可选参数默认值引用替换”），
@@ -6625,7 +6694,7 @@ $\veta{integer}>\veta{n}$ 或 $\veta{integer}<0$ 则使用 \meta{else}。
 \xampleprint 
 \end{xample}
 
-\texttt t、\texttt T、\texttt w、\texttt W 的每对的第二个还能为空或空格。
+\UseList{tTwW}[\texttt]{、} 的每对的第二个还能为空或空格。
 例如 \verb|w{ _{} ^{} }| 相当于 \verb|e{_^}|，例如支持 \verb|w{ [] () _{} ^{} :{ } }|。
 但第一个不能为空或空格，如不支持 \verb|w{ {}_ }|。
 
@@ -6656,23 +6725,20 @@ $\veta{integer}>\veta{n}$ 或 $\veta{integer}<0$ 则使用 \meta{else}。
 为 \cs{ekeysdeclarecmd} 增加了几个前缀：
 \begin{itemize}
   \item[\texttt\#] 将其后的那个参数类型标记为需要特殊处理（如果可以的话），使用此前缀能（大大）提高 \veta{ekeys-cmd} 的执行速度，但有轻微的副作用（一般很难发生，详见后文）；支持
-    \texttt T、\texttt p、\texttt P、\texttt u、\texttt U、
-    \texttt e、\texttt E、\texttt w、\texttt W；
+    \UseList{TpPuUeEwW}[\texttt]{、}；
   \item[\texttt @] 将其后的那个参数类型标记为需要嵌套（如果可以的话）；
   \item[\texttt\&] 将其后的那个参数类型标记为保留等价的原始输入；支持 
-    \texttt r、\texttt R、\texttt o、\texttt O、\texttt d、\texttt D，
-    \texttt s、\texttt t，\texttt p，
+    \UseList{rRoOdD}[\texttt]{、}，\UseList{stp}[\texttt]{、}，
     \texttt k，\texttt t、\texttt T，\texttt g、\texttt G，
-    \texttt e、\texttt E、\texttt w、\texttt W；
+    \UseList{eEwE}[\texttt]{、}；
 \end{itemize}
 
 在使用 \texttt\# 前缀时，参数在其定界符为控制序列的时候，定义和使用 \veta{ekeys-cmd} 时 
 \tn{escapechar} 的值必须为相同的正数。如，当定义 \cs[no-index]{foo} 时 \tn{escapechar}
 为 \texttt\textbackslash，则使用 \cs[no-index]{foo} 时也必须为 \texttt\textbackslash。
-受影响的参数类型为 {\ttfamily\UseList{tTpPeEwW}{\textrm，}}。
+受影响的参数类型为 \UseList{tTpPeEwW}[\texttt]{、}。
 
-使用 \texttt t、\texttt T、\texttt e、\texttt E、\texttt w、\texttt W 时，
-设置 \texttt\& 将自动设置 \texttt\#。
+使用 \UseList{tTeEwW}[\texttt]{、} 时，设置 \texttt\& 将自动设置 \texttt\#。
 
 对于 \texttt s、\texttt t 和 \texttt k 参数，使用 \texttt\& 前缀，
 在检测到存在此 \meta{token}（或 \meta{keyword}）时，
@@ -6709,7 +6775,7 @@ $ \ab[\dfrac12] $, $ \ab\Big(\dfrac12) $, $ \ab*|\dfrac12| $, $ \ab? $
 \end{xample}
 
 执行效率从慢到块大致如下：
-无 \texttt\# 且为 \texttt{tTwW} 的 \veta{ekeys-cmd} $<$
+无 \texttt\# 且为 \UseList{tTwW}[\texttt]{、} 的 \veta{ekeys-cmd} $<$
 无 \texttt\# 且有 \texttt @ 的 \veta{ekeys-cmd} $<$
 \veta{document command} $<$
 带 \texttt\# 和 \texttt @ 的 \veta{ekeys-cmd} $<$ 
@@ -6757,7 +6823,7 @@ $ \ab[\dfrac12] $, $ \ab\Big(\dfrac12) $, $ \ab*|\dfrac12| $, $ \ab? $
 如 \verb|b{*}|、\verb|b[3cm]|、\verb|w{3cm}|、\verb|w[c]{3cm}| 可以，
 \verb|b{[3cm]}|、\verb|b{[3cm][l]}|、\verb|w{[c]{3cm}}| 不可以。
 
-前 5 个类型，即 \texttt i、\texttt d、\texttt s、\texttt m、\texttt t，的实参
+前 5 个类型，即 \UseList{idsmt}[\texttt]{、}，的实参
 可以作为 \LaTeXiii 函数的 \texttt{V} 变体的参数。
 
 \meta{allocated collect spec} 是一个已经分配的寄存器加上 \meta{collect spec}，若 
