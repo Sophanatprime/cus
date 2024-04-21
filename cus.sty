@@ -20,8 +20,8 @@
 % cus.module.pdfmana.tex, cus.module.space.tex, cus.module.struct.tex,
 % cus.module.util.tex and cusclass.cls .
 \NeedsTeXFormat{LaTeX2e}[2023/06/01]
-\def\cus@d@te{2024/04/17}
-\def\cus@versi@n{0.0.5a}
+\def\cus@d@te{2024/04/21}
+\def\cus@versi@n{0.0.5b}
 \ProvidesExplPackage{cus}{\cus@d@te}{\cus@versi@n}{Chinese User Scheme (CUS) basic file}
 
 \def\CusTeX{C\kern-.12em \raise.0466ex\hbox{u}\kern-.1em\lower .4ex\hbox{S}\kern-.15em\TeX}
@@ -353,9 +353,10 @@
   }
 \bool_new:N \l__cus_load_library_dependency_bool
 %% fmt (fmt version), engine, package, library of package, class, module, library
-\cs_new_protected_nopar:Npn \CUSDependency 
+\ekeysdeclarecmd \CUSDependency { s }
   {
-    \bool_set:Nn \l__cus_load_library_dependency_bool { \tl_if_empty_p:N \CurrentFile }
+    \bool_set:Nn \l__cus_load_library_dependency_bool 
+      { \bool_lazy_or_p:nn {#1} { \tl_if_empty_p:N \CurrentFile } }
     \keys_set:nn { cus/dependency } 
   }
 %%TODO:

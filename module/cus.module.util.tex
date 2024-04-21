@@ -815,7 +815,7 @@
             \tl_if_blank:oTF { \use_none:n #1 }
               { \__cus_tl_use_aux:nnn #1 { } { } }
               {
-                \tl_if_blank:nTF { \use_none:nn #1 }
+                \tl_if_blank:oTF { \use_none:nn #1 }
                   { \__cus_tl_use_aux:nnn #1 {#2} }
                   { \__cus_tl_use_aux:nnnn {#3} #1 \s__cus_mark \s__cus_stop {#4} }
               }
