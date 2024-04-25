@@ -131,8 +131,8 @@
     \dim_set:Nn \l__cus_tmpa_dim {#2}
     \dim_set:Nn \l__cus_tmpb_dim {#3}
     \cs_new_nopar:cpx { Gm@ #1 paper } ##1
-      {
-        \if_dim:w \l__cus_tmpa_dim > \l__cus_tmpb_dim 2 \else: 1 \fi:
+      { % 1=landscape, 2=portrait
+        \if_dim:w \l__cus_tmpa_dim > \l__cus_tmpb_dim 1 \else: 2 \fi:
         \exp_not:N \Gm@setsize {##1}
         (
         \dim_to_decimal_in_unit:nn { \l__cus_tmpa_dim } { 1mm }
@@ -315,6 +315,7 @@
     \tl_gset:Nn \g__cus_paperheight_tl { #4#5 }
     \if_int_odd:w 0 #1 \exp_stop_f:
       \tl_gset:Nn \g__cus_paperorientation_tl { landscape }
+      \tl_log:N\g__cus_paperorientation_tl
     \else: \tl_gset:Nn \g__cus_paperorientation_tl { portrait }
     \fi:
   }
