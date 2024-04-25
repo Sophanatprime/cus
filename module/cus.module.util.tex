@@ -806,6 +806,25 @@
 \__cus_tmp:w { toks    } { \toks   }
 \__cus_tmp:w { char    } { \char"  }
 
+\NewExpandableDocumentCommand \UseList { +O{} +m +O{#4} +m }
+  {
+    \tl_if_empty:nTF {#1}
+      { \cus_tl_use:nnnn {#2} {#3} {#4} {#3} }
+      {
+        \exp_args:Ne \cus_tl_use:nnnn
+          { \tl_map_tokens:nn {#2} { \__cusdoc_tl_use_aux:nn {#1} } } {#3} {#4} {#3}
+      }
+  }
+\NewExpandableDocumentCommand \UseClist { +O{} +m +O{#4} +m }
+  {
+    \tl_if_empty:nTF {#1}
+      { \clist_use:nnnn {#2} {#3} {#4} {#3} }
+      {
+        \exp_args:Ne \cus_tl_use:nnnn
+          { \clist_map_tokens:nn {#2} { \__cusdoc_tl_use_aux:nn {#1} } } {#3} {#4} {#3}
+      }
+  }
+\cs_new:Npn \__cusdoc_tl_use_aux:nn #1#2 { { \exp_not:n { #1{#2} } } }
 \cs_new:Npn \cus_tl_use:nnnn #1#2#3#4
   { 
     \__cus_unexpanded:w \__cus_expanded:w 

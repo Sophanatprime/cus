@@ -251,26 +251,6 @@
 
 \msg_redirect_name:nnn { tabularray } { table-width-too-small } { log }
 
-\NewExpandableDocumentCommand \UseList { +O{} +m +O{} +m }
-  {
-    \tl_if_empty:nTF {#3}
-      { \cus_tl_use:nn {#2} {#4} }
-      {
-        \exp_args:Ne \cus_tl_use:nn
-          { \tl_map_tokens:nn {#2} { \__cusdoc_tl_use_aux:nn {#3} } } {#4}
-      }
-  }
-\NewExpandableDocumentCommand \UseClist { +O{} +m +O{} +m }
-  {
-    \tl_if_empty:nTF {#3}
-      { \clist_use:nn {#2} {#4} }
-      {
-        \exp_args:Ne \cus_tl_use:nn
-          { \clist_map_tokens:nn {#2} { \__cusdoc_tl_use_aux:nn {#3} } } {#4}
-      }
-  }
-\cs_new:Npn \__cusdoc_tl_use_aux:nn #1#2 { { \exp_not:n { #1{#2} } } }
-
 
 \tl_const:Nn \cusdoctoc
   {
