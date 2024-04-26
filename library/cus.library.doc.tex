@@ -977,7 +977,7 @@
     \def\dotfil{\leaders\hbox to.6em{\hss .\hss}\hskip\z@ plus 1fill\kern\z@}
     \def\pfill{\unskip~\dotfill\penalty500\strut\nobreak\dotfil~\ignorespaces}
   }
-\prop_new:N \g__cus_doc_version_date_prop
+\prop_new_linked:N \g__cus_doc_version_date_prop
 \tl_new:N \saved@indexname 
 \tl_new:N \saved@macroname 
 \tl_const:Nn \generalname { General }
@@ -1021,7 +1021,8 @@
   { \cs_set_protected:Npn \__cus_doc_ltx_changes:nnn #1#2#3 { \group_end: \@esphack } }
 \cs_set_protected:Npn \changes@ #1#2
   {
-    \__cus_doc_save_version_date:nn {#1} {#2}
+    \exp_args:Nne \__cus_doc_save_version_date:nn 
+      {#1} { \__cus_date_normalize:n {#2} }
     \tl_if_empty:nTF {#1}
       { \__cus_doc_ltx_changes:nnn }
       { \__cus_doc_version_zfill:wnnn #1 \q_stop }
