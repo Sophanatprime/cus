@@ -124,7 +124,7 @@
   \tmcbl@code{#1}{#2}{#3}{#4}{#5}{#6}{#7}%
 }
 \newcommand\mytmcbl@code@[7]{%
-  \ifnum\c@tocdepth>\inteval{#4-1}\relax
+  \ifnum\c@tocdepth>\interval{#4-1}\relax
     \expandafter\@firstofone\else\expandafter\@gobble\fi
   {\ifvmode \ifnum\tmcbl@beforepenalty=\z@\else\addpenalty{\tmcbl@beforepenalty}\fi
       \tmcbl@skipifnz\vskip\tmcbl@beforeskip 
