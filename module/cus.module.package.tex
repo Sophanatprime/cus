@@ -92,9 +92,9 @@
   {
     \cs_set:Npn \< { \s_stop before               \s_stop }
     \cs_set:Npn \> { \s_stop after                \s_stop }
-    \cs_set:Npn \! { \s_stop imcompatible-warning \s_stop }
-    \cs_set:Npn \x { \s_stop imcompatible-error   \s_stop }
-    \cs_set:Npn \~ { \s_stop imcompatible-ignore  \s_stop }
+    \cs_set:Npn \! { \s_stop incompatible-warning \s_stop }
+    \cs_set:Npn \x { \s_stop incompatible-error   \s_stop }
+    \cs_set:Npn \~ { \s_stop incompatible-ignore  \s_stop }
     \cs_set:Npn \= { \s_stop voids                \s_stop }
     \cs_set:Npn \? { \s_stop unrelated            \s_stop }
     \cs_set:Npn \& { \s_stop require              \s_stop }
@@ -112,15 +112,15 @@
 \cs_new_eq:cN { __cus_package_rule_<_gset:nn } \__cus_package_rule_before_gset:nn
 \cs_new_protected:Npn \__cus_package_rule_after_gset:nn #1#2 { }
 \cs_new_eq:cN { __cus_package_rule_>_gset:nn } \__cus_package_rule_after_gset:nn
-\cs_new_protected:cpn { __cus_package_rule_ imcompatible-warning _gset:nn } #1#2 { }
+\cs_new_protected:cpn { __cus_package_rule_ incompatible-warning _gset:nn } #1#2 { }
 \cs_new_eq:cc { __cus_package_rule_!_gset:nn }
-  { __cus_package_rule_ imcompatible-warning _gset:nn } 
-\cs_new_protected:cpn { __cus_package_rule_ imcompatible-error _gset:nn } #1#2 { }
+  { __cus_package_rule_ incompatible-warning _gset:nn } 
+\cs_new_protected:cpn { __cus_package_rule_ incompatible-error _gset:nn } #1#2 { }
 \cs_new_eq:cc { __cus_package_rule_x_gset:nn }
-  { __cus_package_rule_ imcompatible-error _gset:nn } 
-\cs_new_protected:cpn { __cus_package_rule_ imcompatible-ignore _gset:nn } #1#2 { }
+  { __cus_package_rule_ incompatible-error _gset:nn } 
+\cs_new_protected:cpn { __cus_package_rule_ incompatible-ignore _gset:nn } #1#2 { }
 \cs_new_eq:cc { __cus_package_rule_ \c_tilde_str _gset:nn }
-  { __cus_package_rule_ imcompatible-ignore _gset:nn } 
+  { __cus_package_rule_ incompatible-ignore _gset:nn } 
 \cs_new_protected:Npn \__cus_package_rule_voids_gset:nn #1#2 { }
 \cs_new_eq:cN { __cus_package_rule_=_gset:nn } \__cus_package_rule_voids_gset:nn
 \cs_new_protected:Npn \__cus_package_rule_unrelated_gset:nn #1#2 { }
@@ -134,9 +134,9 @@
 
 
 \int_const:Nn \c__cus_package_rule_unrelated_int { 0 }
-\int_const:Nn \c__cus_package_rule_xW_int { 1 } % imcompatible-warning
-\int_const:Nn \c__cus_package_rule_xE_int { 2 } % imcompatible-error
-\int_const:Nn \c__cus_package_rule_xI_int { 3 } % imcompatible-ignore
+\int_const:Nn \c__cus_package_rule_xW_int { 1 } % incompatible-warning
+\int_const:Nn \c__cus_package_rule_xE_int { 2 } % incompatible-error
+\int_const:Nn \c__cus_package_rule_xI_int { 3 } % incompatible-ignore
 \int_const:Nn \c__cus_package_rule_voids_int { 4 }
 \int_const:Nn \c__cus_package_rule_require_int { 5 }
 \int_const:Nn \c__cus_package_rule_call_int { 6 }
@@ -186,9 +186,9 @@
 
 <  before                 1在2之前加载
 >  after                  1在2之后加载
-!  imcompatible-warning   1与2不兼容，警告，如果某一个加载了则后一个不加载，可以为空
-x  imcompatible-error     1与2不兼容，报错，如果某一个加载了则后一个不加载，可以为空
-~  imcompatible-ignore    1与2不兼容，忽略，如果某一个加载了则后一个不加载，可以为空
+!  incompatible-warning   1与2不兼容，警告，如果某一个加载了则后一个不加载，可以为空
+x  incompatible-error     1与2不兼容，报错，如果某一个加载了则后一个不加载，可以为空
+~  incompatible-ignore    1与2不兼容，忽略，如果某一个加载了则后一个不加载，可以为空
 =  voids / overwrite      如果要加载2，则替换为1
 ?  unrelated              不相关或未定义
 &  require                1加载时在它之前加载2

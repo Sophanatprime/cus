@@ -327,7 +327,7 @@
           % update frame measurement to use \__cus_box_frame_first:n or \__cus_box_frame_middle:n 
           \__cus_box_frame_measure:N #3
           \vbox_set:Nn #1
-            {% simulate frame and flexiblity of the page:
+            {% simulate frame and flexibility of the page:
               \tex_vskip:D \l__cus_box_ht_dim \@plus\tex_pagestretch:D \@minus0.8\tex_pageshrink:D 
               \tex_kern:D 137sp \tex_kern:D -137sp \tex_penalty:D -30 ~
               \vbox_unpack_drop:N #1
