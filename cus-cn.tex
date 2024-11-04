@@ -2438,7 +2438,7 @@ Unicode 代码点。
 
 \subsection{格式}
 
-和 \CTeX 宏集一样，\CusTeX 也提供了 \opt{numberformat}，\opt{nameformat}，\opt{titleformat}，\opt{format} 这几个选项用来控制章节标题的格式。它们的作用范围如\cref{fig:heading-format} 所示。
+和 \CTeX 宏集一样，\CusTeX 也提供了提供了 \opt{numberformat}，\opt{nameformat}，\opt{titleformat}，\opt{format} 这几个选项用来控制章节标题的格式。它们的作用范围如\cref{fig:heading-format} 所示。
 
 % from ctex.dtx
 \begin{figure}[htb]
@@ -5059,7 +5059,7 @@ verbatim 和分段。
 \texttt{tikz}。可以在 \meta{code} 中使用 \TikZ 绘图代码，坐标原点为纸张\emph{左下角}。
 并预先定义了几个 node，它们只能在 \cs{foreground} 和 \cs{background} 命令中使用：
 \begin{itemize}
-  \item[\texttt{page}] 该 node 占满整个纸张，四角为纸张四角；
+  \item[\texttt{page|paper}] 该 node 占满整个纸张，四角为纸张四角；
   \item[\texttt{layout}] 该 node 占满整个 layout，四角为 layout 四角；
   \item[\texttt{text}] 该 node 占满整个正文区域，四角为正文的四角；
   \item[\texttt{margin}] 该 node 占满整个旁注区域，四角为旁注四角；
@@ -5226,8 +5226,6 @@ verbatim 和分段。
 \end{keyval}
 
 \opt{no-index} 控制是否写入索引文件。\opt{do-index} 与 \opt{no-index} 相反。
-
-当在 \envreflist{function,keyval,syntax} 环境中时，不写入索引文件。
 
 \opt{space} 控制是否将空格替换为 \tn{textvisiblespace}。
 

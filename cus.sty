@@ -19,9 +19,9 @@
 % cus.module.index.tex, cus.module.layout.tex, cus.module.notes.tex,
 % cus.module.pdfmana.tex, cus.module.space.tex, cus.module.struct.tex,
 % cus.module.util.tex and cusclass.cls .
-\NeedsTeXFormat{LaTeX2e}[2023/06/01]
-\def\cus@d@te{2024/04/25}
-\def\cus@versi@n{0.0.5c}
+\NeedsTeXFormat{LaTeX2e}[2024/11/01]
+\def\cus@d@te{2024/11/04}
+\def\cus@versi@n{0.0.5d}
 \ProvidesExplPackage{cus}{\cus@d@te}{\cus@versi@n}{Chinese User Scheme (CUS) basic file}
 
 \def\CusTeX{C\kern-.12em \raise.0466ex\hbox{u}\kern-.1em\lower .4ex\hbox{S}\kern-.15em\TeX}
@@ -60,6 +60,8 @@
 \int_const:Nn \c__cus_fifteen_int { 15 }
 \int_const:Nn \c__cus_sixteen_int { 16 }
 
+\tl_const:Nx \c__cus_other_space_tl { \char_generate:nn { 32 } { 12 } }
+
 \cs_if_free:NT \token_if_cs_word:NTF 
   {
     \prg_new_conditional:Npnn \token_if_cs_word:N #1 { p, T, F, TF }
@@ -84,6 +86,65 @@
         \fi:
       }
     \cs_new:Npn \__token_if_control_word_aux:w #1 \fi: { \prg_return_false: }
+  }
+\cs_if_free:NT \int_div_floor:nn
+  {
+    \cs_new:Npn \__int_div_floor:NwNw #1#2; #3#4;
+      {
+        \if_meaning:w 0 #1
+          0
+        \else:
+          ( #1#2 - ( \if_meaning:w - #3 - \fi: #3#4 - 1 ) / 2 )
+        \fi:
+        / #3#4
+      }
+    \cs_new:Npn \int_div_floor:nn #1#2
+      {
+        \int_value:w \__int_eval:w
+          \exp_after:wN \__int_div_floor:NwNw
+          \int_value:w \__int_eval:w #1 \exp_after:wN ;
+          \int_value:w \__int_eval:w #2 ;
+        \__int_eval_end:
+      }
+  }
+\cs_if_free:NT \int_div_ceil:nn
+  {
+    \cs_new:Npn \__int_div_ceil:NwNw #1#2; #3#4;
+      {
+        \if_meaning:w 0 #1
+          0
+        \else:
+          ( #1#2 + ( \if_meaning:w - #3 - \fi: #3#4 - 1 ) / 2 )
+        \fi:
+        / #3#4
+      }
+    \cs_new:Npn \int_div_ceil:nn #1#2
+      {
+        \int_value:w \__int_eval:w
+          \exp_after:wN \__int_div_ceil:NwNw
+          \int_value:w \__int_eval:w #1 \exp_after:wN ;
+          \int_value:w \__int_eval:w #2 ;
+        \__int_eval_end:
+      }
+  }
+\cs_if_free:NT \int_mod_abs:nn
+  {
+    \cs_new:Npn \int_mod_abs:nn #1#2
+      {
+        \int_value:w \__int_eval:w \exp_after:wN \__int_mod_abs:ww
+          \int_value:w \__int_eval:w #1 \exp_after:wN ;
+          \int_value:w \__int_eval:w #2 ;
+        \__int_eval_end:
+      }
+    \cs_new:Npn \__int_mod_abs:ww #1#2; #3;
+      { 
+        \if_meaning:w - #1
+          - #1#2 +
+        \else:
+          #1#2 -
+        \fi:
+        ( \__int_div_truncate:NwNw #1#2 ; #3 ; ) * #3
+      }
   }
 \cs_if_free:NT \text_mdfive_hash:n 
   {
@@ -116,8 +177,15 @@
 \scan_new:N \s__cus_stop
 \scan_new:N \s__cus_nil
 \quark_new:N \q__cus_mark
+\elkernel_quark_new_conditional:Nn \__cus_quark_if_mark:N { TF }
+\elkernel_quark_new_conditional:Nn \__cus_quark_if_mark:n { TF }
+\cs_new:Npn \__cus_use_none_delimit_by_q_mark:w #1 \q__cus_mark { }
 \quark_new:N \q__cus_stop
+\elkernel_quark_new_conditional:Nn \__cus_quark_if_stop:N { TF }
+\elkernel_quark_new_conditional:Nn \__cus_quark_if_stop:n { TF }
+\cs_new:Npn \__cus_use_none_delimit_by_q_stop:w #1 \q__cus_stop { }
 \quark_new:N \q__cus_nil
+\cs_new:Npn \__cus_use_none_delimit_by_q_nil:w #1 \q__cus_nil { }
 \int_new:N \l__cus_tmpa_int
 \int_new:N \l__cus_tmpb_int
 \int_new:N \l__cus_tmpc_int

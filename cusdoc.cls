@@ -51,7 +51,7 @@
   UprightFont    = *btl,
   BoldFont       = *tb,
   ItalicFont     = *bto,
-  BoldItalicFont = *tx,
+  BoldItalicFont = *st,
   HyphenChar     = None]
 \setmathfont{texgyrepagella-math.otf}
 %endregion
@@ -106,7 +106,9 @@
 
 \RequirePackage{hyperref}
 \hypersetup{colorlinks}
-\RequirePackage{nameref,varioref,cleveref}
+\RequirePackage{nameref,varioref}
+\ExpandArgs{c}\let{ver@listings.sty}\@undefined % emergency fix for cleveref
+\RequirePackage{cleveref}
 \RequirePackage[numbered,open,openlevel=1]{bookmark}
 \RequirePackage{glossaries}
 \RequirePackage{zhlipsum}

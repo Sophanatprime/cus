@@ -55,9 +55,14 @@
   \noexpand\@namedef{pgf@sh@pi@#1}{\@nameuse{pgf@sh@pi@current page}}%
   \noexpand\@namedef{pgf@sh@np@#1}}
 \def\cus@pgf@initpagenode{\cus@pgf@initbfnodes@{page}{%
-  \def\southwest{\pgfpointorigin}%
-  \def\northeast{\pgfpoint{\paperwidth}{\paperheight}}%
-}}
+    \def\southwest{\pgfpointorigin}%
+    \def\northeast{\pgfpoint{\paperwidth}{\paperheight}}%
+  }%
+  \cus@pgf@initbfnodes@{paper}{%
+    \def\southwest{\pgfpointorigin}%
+    \def\northeast{\pgfpoint{\paperwidth}{\paperheight}}%
+  }%
+}
 \def\cus@pgf@initlayoutnode{\cus@pgf@initbfnodes@{layout}{%
   \def\southwest{\pgfpoint{\layoutloffset}{\the\layoutboffset}}%
   \def\northeast{\pgfpoint{\layoutloffset+\layoutwidth}{\paperheight-\layouttoffset}}%

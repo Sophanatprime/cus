@@ -189,8 +189,6 @@
     ':'~hence~it~is~not~clear~where~to~add~'_p'~or~'TF'.~
     Please~follow~expl3~naming~conventions.
   }
-\msg_new:nnn { cus } { date-format }
-  { The~date~'#1'~should~be~given~in~YYYY-MM-DD~format. }
 \msg_new:nnn { cus } { future-date }
   { The~added/updated~date~'#2'~of~'#1'~is~in~the~future. }
 \msg_new:nnn { cus } { syntax-nested-function }
@@ -977,7 +975,7 @@
     \def\dotfil{\leaders\hbox to.6em{\hss .\hss}\hskip\z@ plus 1fill\kern\z@}
     \def\pfill{\unskip~\dotfill\penalty500\strut\nobreak\dotfil~\ignorespaces}
   }
-\prop_new:N \g__cus_doc_version_date_prop
+\prop_new_linked:N \g__cus_doc_version_date_prop
 \tl_new:N \saved@indexname 
 \tl_new:N \saved@macroname 
 \tl_const:Nn \generalname { General }
@@ -1021,7 +1019,8 @@
   { \cs_set_protected:Npn \__cus_doc_ltx_changes:nnn #1#2#3 { \group_end: \@esphack } }
 \cs_set_protected:Npn \changes@ #1#2
   {
-    \__cus_doc_save_version_date:nn {#1} {#2}
+    \exp_args:Nne \__cus_doc_save_version_date:nn 
+      {#1} { \__cus_date_normalize:n {#2} }
     \tl_if_empty:nTF {#1}
       { \__cus_doc_ltx_changes:nnn }
       { \__cus_doc_version_zfill:wnnn #1 \q_stop }
@@ -1184,9 +1183,9 @@
     \seq_put_right:Nn #1 {#3}
   }
 \prg_new_conditional:Npnn \__cus_doc_date_compare:nNn #1#2#3 { TF , T , F , p }
-  { \__cus_doc_date_compare_aux:w #1--- \q_mark #2 #3--- \q_stop }
+  { \__cus_doc_date_compare_aux:w #1/// \q_mark #2 #3/// \q_stop }
 \cs_new:Npn \__cus_doc_date_compare_aux:w
-    #1 - #2 - #3 - #4 \q_mark #5 #6 - #7 - #8 - #9 \q_stop
+    #1 / #2 / #3 / #4 \q_mark #5 #6 / #7 / #8 / #9 \q_stop
   {
     \__cus_doc_date_compare_aux:nnnNnnn
       { \tl_if_empty:nTF {#1} { 0 } {#1} }
@@ -1339,20 +1338,12 @@
     %lineno .meta:n = { syntax-lineno = {#1} } ,
   }
 \cs_new_protected:Npn \__cus_doc_date_set:Nn #1#2
-  {
-    \tl_set:Nn #1 {#2}
-    \regex_replace_once:nnNF
-      { \A(\d\d\d\d)[-/](\d\d?)[-/](\d\d?)\Z } { \1-\2-\3 } #1
-      {
-        \msg_error:nnn { cus } { date-format } {#2}
-        \tl_set:Nn #1 { 1970-01-01 }
-      }
-  }
+  { \tl_set:Nx #1 { \__cus_date_normalize:n {#2} } }
 \cs_new_protected:Npn \__cus_doc_date_set_past:Nn #1#2
   {
     \__cus_doc_date_set:Nn #1 {#2}
     \exp_args:No \__cus_doc_date_compare:nNnT
-      {#1} > { \c_sys_year_int - \c_sys_month_int - \c_sys_day_int }
+      {#1} > { \c_sys_year_int / \c_sys_month_int / \c_sys_day_int }
       {
         \msg_error:nnxx { cus } { future-date }
           { \tl_to_str:N \l__cus_doc_macro_argument_tl }
@@ -1505,6 +1496,7 @@
   {
     \par
     \dim_set:Nn \prevdepth { \box_dp:N \l__cus_doc_descr_coffin }
+    \g__cus_doc_fn_tl \tl_gclear:N \g__cus_doc_fn_tl
     \goodbreak % \allowbreak
   }
 \cs_new_protected:Npn \__cus_doc_function_init:
@@ -1547,6 +1539,7 @@
       \cus_box_start:nn { width=\textwidth, doc~description~style }
         { \dim_sub:Nn \tex_hsize:D { \width } \__cus_box_init: }
       \cs_set_eq:NN \V \Verbatimize
+      \cs_set_eq:NN \footnote \__cus_doc_fn_footnote:n
       \noindent \ignorespaces
   }
 \cs_new_protected:Npn \__cus_doc_function_descr_stop:
@@ -1946,24 +1939,31 @@
       }
       { \initialval }
       { }
-    %\token_if_macro:NTF \l_peek_token
-    %  {
-    %    \token_case_meaning:NnF \l_peek_token
-    %      { 
-    %        \__cus_doc_shorthand_align: { \exp_after:wN \forbiddenval \use_none:n }
-    %        \nobreakspace               { \exp_after:wN \initemptyval \use_none:n }
-    %      } 
-    %      { \initialval }
-    %  }
-    %  {
-    %    \exp_args:NNo \token_case_charcode:NnF \l_peek_token 
-    %      {
-    %        \c_hash_str { \exp_after:wN \automaticval \use_none:n }
-    %        *                { \exp_after:wN \repinitval \use_none:n } 
-    %        !                { \exp_after:wN \resetval \use_none:n } 
-    %      }
-    %      { \initialval }
-    %  }
+  }
+\providecommand \Hy@footnote@currentHref {}
+\prop_new:N \g__cus_doc_fnmark_prop
+\tl_new:N \g__cus_doc_fn_tl
+\cs_new_protected:Npn \__cus_doc_fn_store:
+  {
+    \prop_gput:Nee \g__cus_doc_fnmark_prop { fn \int_use:N \c@footnote }
+      { { \Hy@footnote@currentHref } { \int_use:N \c@footnote } }
+  }
+\cs_new_protected:Npn \__cus_doc_fn_restore:n #1
+  {
+    \prop_get:NnN \g__cus_doc_fnmark_prop { fn#1 } \l__cus_doc_tmpa_tl
+    \tl_set:Nx \Hy@footnote@currentHref
+      { \exp_last_unbraced:No \use_i:nn { \l__cus_doc_tmpa_tl } }
+    \setcounter{footnote}{ \exp_last_unbraced:No \use_ii:nn { \l__cus_doc_tmpa_tl } }
+  }
+\cs_new_protected:Npn \__cus_doc_fn_footnote:n #1
+  {
+    \footnotemark
+    \__cus_doc_fn_store:
+    \tl_gput_right:Nx \g__cus_doc_fn_tl
+      {
+        \__cus_doc_fn_restore:n { \int_use:N \c@footnote }
+        { \exp_not:n { \footnotetext {#1} } }
+      }
   }
 
 \ExplSyntaxOff
