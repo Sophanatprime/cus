@@ -1496,6 +1496,7 @@
   {
     \par
     \dim_set:Nn \prevdepth { \box_dp:N \l__cus_doc_descr_coffin }
+    \g__cus_doc_fn_tl \tl_gclear:N \g__cus_doc_fn_tl
     \goodbreak % \allowbreak
   }
 \cs_new_protected:Npn \__cus_doc_function_init:
@@ -1538,6 +1539,7 @@
       \cus_box_start:nn { width=\textwidth, doc~description~style }
         { \dim_sub:Nn \tex_hsize:D { \width } \__cus_box_init: }
       \cs_set_eq:NN \V \Verbatimize
+      \cs_set_eq:NN \footnote \__cus_doc_fn_footnote:n
       \noindent \ignorespaces
   }
 \cs_new_protected:Npn \__cus_doc_function_descr_stop:
@@ -1937,24 +1939,31 @@
       }
       { \initialval }
       { }
-    %\token_if_macro:NTF \l_peek_token
-    %  {
-    %    \token_case_meaning:NnF \l_peek_token
-    %      { 
-    %        \__cus_doc_shorthand_align: { \exp_after:wN \forbiddenval \use_none:n }
-    %        \nobreakspace               { \exp_after:wN \initemptyval \use_none:n }
-    %      } 
-    %      { \initialval }
-    %  }
-    %  {
-    %    \exp_args:NNo \token_case_charcode:NnF \l_peek_token 
-    %      {
-    %        \c_hash_str { \exp_after:wN \automaticval \use_none:n }
-    %        *                { \exp_after:wN \repinitval \use_none:n } 
-    %        !                { \exp_after:wN \resetval \use_none:n } 
-    %      }
-    %      { \initialval }
-    %  }
+  }
+\providecommand \Hy@footnote@currentHref {}
+\prop_new:N \g__cus_doc_fnmark_prop
+\tl_new:N \g__cus_doc_fn_tl
+\cs_new_protected:Npn \__cus_doc_fn_store:
+  {
+    \prop_gput:Nee \g__cus_doc_fnmark_prop { fn \int_use:N \c@footnote }
+      { { \Hy@footnote@currentHref } { \int_use:N \c@footnote } }
+  }
+\cs_new_protected:Npn \__cus_doc_fn_restore:n #1
+  {
+    \prop_get:NnN \g__cus_doc_fnmark_prop { fn#1 } \l__cus_doc_tmpa_tl
+    \tl_set:Nx \Hy@footnote@currentHref
+      { \exp_last_unbraced:No \use_i:nn { \l__cus_doc_tmpa_tl } }
+    \setcounter{footnote}{ \exp_last_unbraced:No \use_ii:nn { \l__cus_doc_tmpa_tl } }
+  }
+\cs_new_protected:Npn \__cus_doc_fn_footnote:n #1
+  {
+    \footnotemark
+    \__cus_doc_fn_store:
+    \tl_gput_right:Nx \g__cus_doc_fn_tl
+      {
+        \__cus_doc_fn_restore:n { \int_use:N \c@footnote }
+        { \exp_not:n { \footnotetext {#1} } }
+      }
   }
 
 \ExplSyntaxOff

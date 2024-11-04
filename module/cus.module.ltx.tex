@@ -120,9 +120,9 @@
   {
     \elkernel_exp:w
       {
-        \int_value:w 0#1 /
-        \if_int_compare:w 0#2 < \c__cus_ten_int 0 \fi: \int_value:w 0#2 /
-        \if_int_compare:w 0#3 < \c__cus_ten_int 0 \fi: \int_value:w 0#3
+        \int_eval:n {#1+0} /
+        \if_int_compare:w \int_eval:n {#2+0} < \c__cus_ten_int 0 \fi: \int_eval:n {#2+0} /
+        \if_int_compare:w \int_eval:n {#3+0} < \c__cus_ten_int 0 \fi: \int_eval:n {#3+0}
       }
   }
 \ExplSyntaxOff

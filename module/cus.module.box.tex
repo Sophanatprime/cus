@@ -213,10 +213,6 @@
     \par \mode_if_inner:F { \goodbreak }
     \nointerlineskip 
     \group_begin:
-    \cs_set:Npn \footnotemark 
-      { \msg_warning:nn { cus } { box-footnote } \__cus_use_none_o:w }
-    \cs_set:Npn \footnotetext 
-      { \msg_warning:nn { cus } { box-footnote } \__cus_use_none_om:w }
     \cs_set:Npn \footnote 
       { \msg_warning:nn { cus } { box-footnote } \__cus_use_none_om:w }
     \if_dim:w \l__cus_box_width_dim = \c_max_dim
