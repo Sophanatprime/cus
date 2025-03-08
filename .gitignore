@@ -47,8 +47,4 @@
 *.png 
 *.jpeg
 *.jpg
-example*
-updatemarks/*
-lt3ekeys/tex/*
-lt3ekeys/doc/*
 git-repo*

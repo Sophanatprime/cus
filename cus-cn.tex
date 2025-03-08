@@ -2209,93 +2209,6 @@ Unicode 代码点。
 \end{function}
 
 
-\section{索引，\cusmodule{index}模块}
-
-\CusTeX 提供了添加多个索引的方法。并且能够自动编译索引文件。
-
-目前暂未提供 \pkg{splitidx} 宏包的功能，也不与其兼容。
-
-应该与 \pkg{glossaries} 宏包兼容。
-
-\begin{function}{\newindextype,\setupindex}
-  \begin{syntax}
-    \verb|\newindextype| \oarg{index keys} \marg{index type}
-    \verb|\setupindex|   \oarg{index type list} \marg{index keys}
-  \end{syntax}
-\cs{newindextype} 创建一个新的索引 \meta{index type}。
-\cs{setupindex} 配置 \meta{index type list}。
-\meta{index type} 可以使用 \tn{empty} 作为名称，此时它的名称为空。
-\end{function}
-
-\begin{function}{\makeindex}
-  \begin{syntax}
-    \verb|\makeindex|
-    \verb|\makeindex| \oarg{index keys}
-    \verb|\makeindex| \oarg{index keys} \oarg{index type}
-  \end{syntax}
-\LaTeX 原有的接口。默认创建名称为空的索引。
-\end{function}
-
-\meta{index keys} 不同于 \CusTeX 中其它的键值选项，仅具有类似的接口。
-
-\begin{itemize}[nosep]
-  \item \texttt{filename}：索引文件名，一般以 \texttt{idx} 结尾，如果未设置，则为：
-  \\\tn{jobname}\texttt{@}\meta{index type}\texttt{.idx}；
-  \item \texttt{output}：编译后的索引文件，一般以 \texttt{ind} 结尾，如果未设置，则将
-  \texttt{filename} 的后缀修改为 \texttt{ind} 作为输出文件名；
-  \item \texttt{name}：如果设置，则应与 \meta{index type} 一致；
-  \item \texttt{title}：索引的标题，如 \tn{indexname}；
-  \item \texttt{program}：编译索引的可执行程序；如 \texttt{makeindex}、\texttt{makeglossaries}；
-  \item \texttt{options}：编译索引时的选项，索引文件名和输出文件名将自动添加；
-  \item \texttt{exec}：终端中实际编译索引执行的代码，如果未设置，则组合 \texttt{program} 及 \texttt{options}；
-  \item \texttt{auto}；布尔值，是否自动编译索引文件；
-  \item \texttt{multi}：多栏选项（\meta{multicolumns key-val}）；
-  % \item \texttt{heading}：标题层级；
-  \item \texttt{heading*}：标题命令，如 \verb|\chapter[numbering=false]|；
-  \item \texttt{init}：索引开头的初始化设置；索引文件不存在时不会执行；
-  \item \texttt{prologue}：索引开头的文字；索引文件不存在时不会输出。
-\end{itemize}
-
-\smallskip 
-\begin{xample}
-\newindextype[
-  filename=\jobname.docusage.idx, 
-  output=\jobname.docusage.ind,
-  exec={makeindex -s gind.ist -o \jobname.docusage.ind \jobname.docusage.idx},
-  title={代码索引}, heading*={\section}, 
-  multi={2, ragged, sep=1em, outer-sep=0pt},
-  auto=true
-]{docusage}
-\stopxamplecode
-\xamplecode
-\medskip 
-\end{xample}
-
-\begin{function}{\setindexinit,\setindexprologue}
-  \begin{syntax}
-    \verb|\setindexinit| \marg{code}
-    \verb|\setindexinit| \oarg{index type} \marg{code}
-    \verb|\setindexprologue| \marg{content}
-    \verb|\setindexprologue| \oarg{index type} \marg{content}
-  \end{syntax}
-设置索引开头的初始化设置、设置索引开头的文字。只要使用了 \cs{printindex}，当索引不存在时它们也会执行或输出。
-
-默认设置名称为空的索引。
-
-在初始化代码中还可以重定义索引环境 \env{theindex}。
-\end{function}
-
-\begin{function}{\index,\printindex}
-  \begin{syntax}
-    \verb|\index| \marg{index item}
-    \verb|\index| \oarg{index type} \marg{index item}
-    \verb|\printindex|
-    \verb|\printindex| \oarg{index keys}
-  \end{syntax}
-\cs{index} 添加索引项 \meta{index item} 到索引 \meta{index type} 中，默认添加到名称为空的索引中；\cs{printindex} 输出索引，以 \texttt{name} 键标识要输出的索引，否则输出名称为空的索引。\meta{index keys} 为前述的键。
-\end{function}
-
-
 \section{文档结构，\cusmodule{struct}模块}
 
 \cusmodule{struct} 模块提供了创建目录和章节标题的方法。参考了 \pkg{titlesec}，
@@ -5038,6 +4951,93 @@ cbl 列表除了 \cs{cus@type@contentsline}、\cs{cus@type@contentsline@}、
 
 \chapter{库的文档接口}
 
+\section{索引，\cuslibrary{index}库}
+
+\CusTeX 提供了添加多个索引的方法。并且能够自动编译索引文件。
+
+目前暂未提供 \pkg{splitidx} 宏包的功能，也不与其兼容。
+
+应该与 \pkg{glossaries} 宏包兼容。
+
+\begin{function}{\newindextype,\setupindex}
+  \begin{syntax}
+    \verb|\newindextype| \oarg{index keys} \marg{index type}
+    \verb|\setupindex|   \oarg{index type list} \marg{index keys}
+  \end{syntax}
+\cs{newindextype} 创建一个新的索引 \meta{index type}。
+\cs{setupindex} 配置 \meta{index type list}。
+\meta{index type} 可以使用 \tn{empty} 作为名称，此时它的名称为空。
+\end{function}
+
+\begin{function}{\makeindex}
+  \begin{syntax}
+    \verb|\makeindex|
+    \verb|\makeindex| \oarg{index keys}
+    \verb|\makeindex| \oarg{index keys} \oarg{index type}
+  \end{syntax}
+\LaTeX 原有的接口。默认创建名称为空的索引。
+\end{function}
+
+\meta{index keys} 不同于 \CusTeX 中其它的键值选项，仅具有类似的接口。
+
+\begin{itemize}[nosep]
+  \item \texttt{filename}：索引文件名，一般以 \texttt{idx} 结尾，如果未设置，则为：
+  \\\tn{jobname}\texttt{@}\meta{index type}\texttt{.idx}；
+  \item \texttt{output}：编译后的索引文件，一般以 \texttt{ind} 结尾，如果未设置，则将
+  \texttt{filename} 的后缀修改为 \texttt{ind} 作为输出文件名；
+  \item \texttt{name}：如果设置，则应与 \meta{index type} 一致；
+  \item \texttt{title}：索引的标题，如 \tn{indexname}；
+  \item \texttt{program}：编译索引的可执行程序；如 \texttt{makeindex}、\texttt{makeglossaries}；
+  \item \texttt{options}：编译索引时的选项，索引文件名和输出文件名将自动添加；
+  \item \texttt{exec}：终端中实际编译索引执行的代码，如果未设置，则组合 \texttt{program} 及 \texttt{options}；
+  \item \texttt{auto}；布尔值，是否自动编译索引文件；
+  \item \texttt{multi}：多栏选项（\meta{multicolumns key-val}）；
+  % \item \texttt{heading}：标题层级；
+  \item \texttt{heading*}：标题命令，如 \verb|\chapter[numbering=false]|；
+  \item \texttt{init}：索引开头的初始化设置；索引文件不存在时不会执行；
+  \item \texttt{prologue}：索引开头的文字；索引文件不存在时不会输出。
+\end{itemize}
+
+\smallskip 
+\begin{xample}
+\newindextype[
+  filename=\jobname.docusage.idx, 
+  output=\jobname.docusage.ind,
+  exec={makeindex -s gind.ist -o \jobname.docusage.ind \jobname.docusage.idx},
+  title={代码索引}, heading*={\section}, 
+  multi={2, ragged, sep=1em, outer-sep=0pt},
+  auto=true
+]{docusage}
+\stopxamplecode
+\xamplecode
+\medskip 
+\end{xample}
+
+\begin{function}{\setindexinit,\setindexprologue}
+  \begin{syntax}
+    \verb|\setindexinit| \marg{code}
+    \verb|\setindexinit| \oarg{index type} \marg{code}
+    \verb|\setindexprologue| \marg{content}
+    \verb|\setindexprologue| \oarg{index type} \marg{content}
+  \end{syntax}
+设置索引开头的初始化设置、设置索引开头的文字。只要使用了 \cs{printindex}，当索引不存在时它们也会执行或输出。
+
+默认设置名称为空的索引。
+
+在初始化代码中还可以重定义索引环境 \env{theindex}。
+\end{function}
+
+\begin{function}{\index,\printindex}
+  \begin{syntax}
+    \verb|\index| \marg{index item}
+    \verb|\index| \oarg{index type} \marg{index item}
+    \verb|\printindex|
+    \verb|\printindex| \oarg{index keys}
+  \end{syntax}
+\cs{index} 添加索引项 \meta{index item} 到索引 \meta{index type} 中，默认添加到名称为空的索引中；\cs{printindex} 输出索引，以 \texttt{name} 键标识要输出的索引，否则输出名称为空的索引。\meta{index keys} 为前述的键。
+\end{function}
+
+
 \section{\cuslibrary{pgf}库}
 
 \cuslibrary{pgf} 库使用 \pkg{pgf} 宏集的功能，定义了一些命令。
@@ -7433,14 +7433,6 @@ $ \foo<a|b> $\quad $ \foo\displaystyle<\sum|\prod> $.
 \CHToI{latex}{\tn{c@page}};
 \CHToI{geometry}{\tn{Gm@layoutwidth}, \tn{Gm@layoutheight}};
 
-\section{\CHFrom{module.index}}
-\CHToM{latex}{\tn{@indexfile}};
-\CHToA{latex}{\tn[no-index]{@indexfile..}};
-\CHToI{latex}{\tn{@idxitem}};
-\CHToM{latex}{\tn{index}, \tn{makeindex}, \tn{printindex}};
-\CHToI{latex}{\tn{@bsphack}, \tn{@sanitize}, \tn{@wrindex}};
-\CHToI{latex}{\tn{@input@}};
-
 \section{\CHFrom{module.struct}}
 \CHToI{latex}{\tn{@input}, \tn{@writefile}, \tn{@auxout}};
 \CHToI{latex}{\tn{@auxout},\tn{tf@toc}};
@@ -7478,6 +7470,14 @@ $ \foo<a|b> $\quad $ \foo\displaystyle<\sum|\prod> $.
 \CHToI{latex}{\tn{@secpenalty}};
 
 % \section{\CHFrom{module.notes}}
+
+\section{\CHFrom{library.index}}
+\CHToM{latex}{\tn{@indexfile}};
+\CHToA{latex}{\tn[no-index]{@indexfile..}};
+\CHToI{latex}{\tn{@idxitem}};
+\CHToM{latex}{\tn{index}, \tn{makeindex}, \tn{printindex}};
+\CHToI{latex}{\tn{@bsphack}, \tn{@sanitize}, \tn{@wrindex}};
+\CHToI{latex}{\tn{@input@}};
 
 \section{\CHFrom{library.box}}
 \CHToA{latex}{\tn{@tempdimd}};
