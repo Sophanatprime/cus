@@ -1675,13 +1675,13 @@
   }
 \cs_new_protected:Npn \__cus_doc_typeset_keyval_block:nN #1#2
   {
-    %\__cus_doc_function_index:x 
+    %\__cus_doc_function_index:e 
     %  {
     %    \quark_if_no_value:NF \l__cus_doc_key_path_tl
     %      { \l__cus_doc_key_path_tl / } #1
     %  }
     \__cus_doc_function_index:n {#1}
-    \__cus_doc_function_label:xN 
+    \__cus_doc_function_label:eN 
       {
         \quark_if_no_value:NF \l__cus_doc_key_path_tl
           { \l__cus_doc_key_path_tl / } #1
@@ -1692,9 +1692,9 @@
   }
 \cs_new_protected:Npn \__cus_doc_typeset_function_block:nN #1#2
   {
-    \__cus_doc_function_index:x
+    \__cus_doc_function_index:e
       { #1 \bool_if:NT #2 { \tl_to_str:n {TF} } }
-    \__cus_doc_function_label:xN {#1} #2
+    \__cus_doc_function_label:eN {#1} #2
     #1
     \bool_if:NT #2 { \__cus_doc_typeset_TF: }
     \__cus_doc_typeset_expandability:
@@ -1708,7 +1708,7 @@
     \seq_gput_right:Nn \g_doc_functions_seq {#1}
     \__cus_doc_special_index:nn {#1} { usage }
   }
-\cs_generate_variant:Nn \__cus_doc_function_index:n { x }
+\cs_generate_variant:Nn \__cus_doc_function_index:n { e }
 \cs_new_protected:Npn \__cus_doc_typeset_expandability:
   {
     &
@@ -1772,7 +1772,7 @@
         \exp_args:No \label { \l__cus_doc_tmpa_tl }
       }
   }
-\cs_generate_variant:Nn \__cus_doc_function_label:nN { x }
+\cs_generate_variant:Nn \__cus_doc_function_label:nN { e }
 \cs_new:Npn \__cus_doc_typeset_dates:
   {
     \bool_lazy_and:nnF

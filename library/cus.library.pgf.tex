@@ -69,7 +69,7 @@
 }}
 \def\cus@pgf@ifodd{\ifcase\if@twoside\ifodd\c@page 0 \else 1 \fi\else 0 \fi
   \expandafter\@firstoftwo\else\expandafter\@secondoftwo\fi}
-\def\cus@pgf@hfO#1#2{(\@nameuse{f@nch@O@\cus@pgf@ifodd oe#1#2}+0pt)}
+\def\cus@pgf@hfO#1#2{(\@nameuse{f@nch@offset@\cus@pgf@ifodd oe#1#2}+0pt)}
 \def\cus@pgf@margin{\cus@pgf@ifodd\oddsidemargin\evensidemargin}
 \def\cus@pgf@textleft{(1in+\hoffset+\cus@pgf@margin)}
 \def\cus@pgf@texttop{(1in+\voffset+\topmargin+\headheight+\headsep)}

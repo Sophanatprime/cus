@@ -405,9 +405,9 @@
       \vb@xt@\z@{%
         \vskip\topmargin
         \ifodd\count\z@
-          \let\@templeftskip\f@nch@O@olh \let\@temprightskip\f@nch@O@orh
+          \let\@templeftskip\f@nch@offset@olh \let\@temprightskip\f@nch@offset@orh
         \else
-          \let\@templeftskip\f@nch@O@elh \let\@temprightskip\f@nch@O@erh
+          \let\@templeftskip\f@nch@offset@elh \let\@temprightskip\f@nch@offset@erh
         \fi
         \dim_set:Nn \@tempdima { \textwidth + \@templeftskip + \@temprightskip }
         \vbox_to_zero:n { \cus_color_select:n {blue!50} \vss \hbox_to_wd:nn \textwidth { \hskip-\@templeftskip \vrule\@height\z@ \@width\@tempdima \@depth\headheight \hskip-\@temprightskip \hss } }
@@ -464,9 +464,9 @@
           }
         \fi
         \ifodd\count\z@
-          \let\@templeftskip\f@nch@O@olf \let\@temprightskip\f@nch@O@orf
+          \let\@templeftskip\f@nch@offset@olf \let\@temprightskip\f@nch@offset@orf
         \else
-          \let\@templeftskip\f@nch@O@elf \let\@temprightskip\f@nch@O@erf
+          \let\@templeftskip\f@nch@offset@elf \let\@temprightskip\f@nch@offset@erf
         \fi
         \dim_set:Nn \@tempdima { \textwidth + \@templeftskip + \@temprightskip }
         \vbox:n { \hbox_to_wd:nn \textwidth { \cus_color_select:n {blue!50} \hskip-\@templeftskip \vrule\@height\footskip \@width\@tempdima \@depth\z@ \hskip-\@temprightskip \hss } }
@@ -488,29 +488,24 @@
     {\global\@specialpagetrue\xdef\@specialstyle{#1}}}
 \ctex_patch_cmd:Nnn \@outputpage { \if@specialpage } 
   { \if@specialpage \let\@currpagestyle\@specialstyle }
-\ekeysdeclarecmd \setpagestyle { l m O{f@nch@fancyproto} m }
+\ekeysdeclarecmd \setpagestyle { p{*.+!} s m O{f@nch@fancyproto} m }
   {
+    \legacy_if_set:nn { f@nch@pagestyle@star }
+      { \bool_lazy_or_p:nn {#2} { \int_compare_p:nNn {#1} > { 3 } } }
     \bool_lazy_or:nnTF 
-      { \str_if_eq_p:ee { \c_tilde_str } { \exp_not:n {#3} } }
-      { \str_if_eq_p:ee {#2} {#3} }
-      { \f@nch@pagestyle {#2} [f@nch@fancyproto] } 
-      { \f@nch@pagestyle {#2} [#3] } {#4}
-    \str_case:nn {#1}
+      { \str_if_eq_p:ee { \c_tilde_str } { \exp_not:n {#4} } }
+      { \str_if_eq_p:ee {#3} {#4} }
+      { \f@nch@pagestyle {#3} [f@nch@fancyproto] } 
+      { \f@nch@pagestyle {#3} [#4] } {#5}
+    \NumberCase {#1}
       {
-        { * } { \usepagestyle{#2} }
-        { . } { \usethispagestyle{#2} }
-        { + } { \usepagestyle{#2} \usethispagestyle{#2} }
-      }
+        { } % None
+        { \usepagestyle{#3} }
+        { \usethispagestyle{#3} }
+        { \usepagestyle{#3} \usethispagestyle{#3} }
+      } { } % unvaliable
   }
-\cs_new_protected_nopar:Npn \copypagestyle #1#2 
-  { 
-    \cs_if_exist:cTF { ps@#2 }
-      { 
-        \cs_set_eq:cc { ps@#1 } { ps@#2 } 
-        \cs_set_eq:cc { f@nch@ps@#1-is-fancyhdr } { f@nch@ps@#2-is-fancyhdr }
-      }
-      { \undefinedpagestyle{#2} }
-  }
+\cs_new_protected_nopar:Npn \copypagestyle { \fancypagestyleassign }
 \cs_new_protected_nopar:Npn \usepagestyle { \pagestyle }
 \cs_new_protected_nopar:Npn \usethispagestyle { \thispagestyle }
 \cs_new_protected_nopar:Npn \sethead { \fancyhead }
@@ -548,11 +543,20 @@
     \f@nch@def \f@nch@olf { } \f@nch@def \f@nch@ocf { } \f@nch@def \f@nch@orf { }
     \f@nch@def \f@nch@elf { } \f@nch@def \f@nch@ecf { } \f@nch@def \f@nch@erf { }
   }
+\cs_set_nopar:cpn { ps@totalempty* }
+  {
+    \ps@totalempty
+    \f@nch@offset@olh\z@skip \f@nch@offset@orh\z@skip
+    \f@nch@offset@elh\z@skip \f@nch@offset@erh\z@skip
+    \f@nch@offset@olf\z@skip \f@nch@offset@orf\z@skip
+    \f@nch@offset@elf\z@skip \f@nch@offset@erf\z@skip
+  }
 \tl_set_eq:cN { f@nch@ps@totalempty-is-fancyhdr } \c_empty_tl
+\tl_set_eq:cN { f@nch@ps@totalempty*-is-fancyhdr } \c_empty_tl
 \cs_set:Npn \iftopfloat 
-  { \if_meaning:w \topfloat \@empty \exp_after:wN \use_ii:nn \else: \use_i:nn \fi: }
+  { \if_meaning:w \f@nch@topfloat \@empty \exp_after:wN \use_ii:nn \else: \use_i:nn \fi: }
 \cs_set:Npn \ifbotfloat 
-  { \if_meaning:w \botfloat \@empty \exp_after:wN \use_ii:nn \else: \use_i:nn \fi: }
+  { \if_meaning:w \f@nch@botfloat \@empty \exp_after:wN \use_ii:nn \else: \use_i:nn \fi: }
 \cs_set:Npn \iffloatpage 
   { \if@fcolmade \exp_after:wN \use_i:nn \else: \use_ii:nn \fi: }
 \cs_set:Npn \iffootnote 

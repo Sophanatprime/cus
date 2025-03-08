@@ -925,7 +925,7 @@
 \int_new:N \l__cus_cbl_search_min_int
 \int_new:N \l__cus_cbl_search_max_int
 \cs_new_protected:Npn \__cus_specified_cbl_search:n #1
-  { \msg_error:nn {cus} {} } %!!TODO:
+  { \msg_error:nn {cus} { ? } } %!!TODO:
 \cs_new_protected:Npn \__cus_specified_cbl_search_basic:nnn #1#2#3
   {
     \int_set:Nn \l__cus_tmpa_int {#3}
@@ -2438,7 +2438,7 @@
       { \__cus_title_mode_case_end:nw {#3} }
       { \__cus_title_mode_case:nw {#1} }
   }
-\cs_new:Npn \__cus_title_mode_case_end:nw #1#2#3 \s__str_mark #4#5 \s__str_stop
+\cs_new:Npn \__cus_title_mode_case_end:nw #1#2#3 \s__cus_mark #4#5 \s__cus_stop
   { \exp_end: #1 #4 }
 \NewDocumentCommand \cus_assign_heading_name:nn
   { m > { \SplitArgument { 1 } { , } } +m }
@@ -2476,37 +2476,6 @@
       { \exp_args:Nnf \setcounter { tocdepth } { \cus_heading_level:n { toc-#1 } } }
   }
 \cs_new_protected:Npn \setplaintocdepth { \settocdepth }
-
-% 判断是不是已经 patch 了
-\cs_if_exist:NF \ctex_cleveref_hook:
-  {
-    \cs_new_protected:Npn \ctex_cleveref_hook:
-      {
-        \@ifpackageloaded { hyperref }
-          {
-            \@ifpackagewith { hyperref } { implicit = false }
-              { }
-              { \__ctex_cleveref_hook_aux:N \H@refstepcounter }
-          }
-          {
-            \__ctex_cleveref_hook_aux:N \refstepcounter@noarg
-            \__ctex_cleveref_hook_aux:N \refstepcounter@optarg
-          }
-      }
-    \cs_new_protected:Npn \__ctex_cleveref_hook_aux:N #1
-      {
-        \ctex_patch_cmd_all:NnnnTF #1
-          {
-            \ExplSyntaxOff
-            \char_set_catcode_letter:n { 64 }
-          }
-          { \endcsname \csname the }
-          { \expandafter \endcsname \csname the }
-          { }
-          { \ctex_patch_failure:N #1 }
-      }
-    \cus_pkg_code:nnn { cleveref } { } { \ctex_cleveref_hook: }
-  }
 
 \msg_new:nnn { cus } { document-reset-value } { Cannot~set~#1~after~preamble. }
 
@@ -3173,12 +3142,16 @@
 
 \ExplSyntaxOn
 
+\hook_new:n { frontmatter }
+\hook_new:n { mainmatter }
+\hook_new:n { backmatter }
 \DeclareDocumentCommand \frontmatter { O{} } 
   {
     \cleardoublepage
     \@mainmatterfalse 
     \setuptitle[0]{mode=nonumber}
     \pagenumbering{roman}
+    \hook_use_once:n { frontmatter }
   }
 \DeclareDocumentCommand \mainmatter { O{} } 
   {
@@ -3186,6 +3159,7 @@
     \@mainmattertrue 
     \setuptitle[0]{mode=normal}
     \pagenumbering{arabic}
+    \hook_use_once:n { mainmatter }
   }
 \DeclareDocumentCommand \backmatter { O{} } 
   {
@@ -3196,4 +3170,5 @@
     \fi
     \@mainmatterfalse
     \setuptitle[0]{mode=nonumber}
+    \hook_use_once:n { backmatter }
   }
