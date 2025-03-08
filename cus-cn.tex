@@ -1,5 +1,36 @@
 \DocumentMetadata{}
 \documentclass{cusdoc}
+\usepackage{texhigh}
+\ExplSyntaxOn\makeatletter
+\sys_if_shell_unrestricted:T
+  {
+    \THSetClassCS[]{cus}{\mbox{\THcolor{blue!80!black}\bfseries
+      \transparent{0.7}\texhigh@underline{\transparent{1}#1#2}}}
+    \texhighsetclassfallback{cs}{cus.l}{cus, latex}
+    \texhighsetclassfallback{cs}{cus.r}{cus, latex}
+    \texhighsetclassfallback{cs}{cus.more}{cus, latex}
+    \texhighsetclassfallback{cs}{ekeys}{cus, latex}
+    \texhighsetclassfallback{cs}{fmulticol}{cus, latex}
+    \cs_if_exist:NTF \xeCJKsetup
+      {
+        \THSaveStyle{xamplestyle}{
+          \SetKeys[texhigh/high]{config-file+=cus-cn-texhigh.cfg,
+            font=\xeCJKsetup{CJKecglue={\hskip 0pt plus 0.08\baselineskip}}\normalfont\ttfamily\small}
+        }
+      }
+      {
+        \THSaveStyle{xamplestyle}{
+          \SetKeys[texhigh/high]{config-file+=cus-cn-texhigh.cfg, font=\normalfont\ttfamily\small}
+        }
+      }
+    \RenewDocumentCommand{\xamplecodefile}{+m+m+m}
+      {
+        \IfBlankTF{#2}
+          {\texhighfile[{#1}]{#3}\par\vskip-5pt plus 1pt minus 1pt\relax}
+          {\lstinputlisting[#1,#2]{#3}}
+      }
+  }
+\makeatother\ExplSyntaxOff
 
 \hypersetup{pdfauthor={Longaster, \CusTeX},
   pdftitle=\CusTeX 宏集手册,
@@ -665,6 +696,46 @@ Unicode 代码点。
 \end{function}
 
 
+\section{\cusmodule{space}模块}
+
+\cusmodule{space} 模块提供与空吧间距有关的接口。
+
+\begin{function}{\needspace,\Needspace,\NeedspaceTF}
+  \begin{syntax}
+    \V\needspace   \marg{dim expr}
+    \V\Needspace   \marg{dim expr}
+    \V\Needspace * \marg{dim expr}
+    \V\NeedspaceTF \marg{dim expr} \marg{true code} \marg{false code}
+    \V\NeedspaceTF*\marg{dim expr} \marg{true code} \marg{false code}
+  \end{syntax}
+判断当前页的版心是否至少留有 \meta{dim expr} 的垂直空白。
+\cs{needspace} 为粗略估算，
+\cs{Needspace} 和 \cs{NeedspaceTF} 则是要求必须至少留有 \meta{dim expr} 的空白。
+\cs{NeedspaceTF} 会在需要分页（或已经是新的一页）时使用 \meta{truec code}，
+反之则使用 \meta{false code}。
+
+带星号的 \cs{Needspace} 和 \cs{NeedspaceTF} 会使得 \tn{flushbuttom} 生效。
+
+它们只在主垂直列中有效。
+\end{function}
+
+\begin{function}{\needhspace}
+  \begin{syntax}
+    \V\needhspace \marg{dim expr}
+  \end{syntax}
+要求当前行至少留有 \meta{dim expr} 的间距，为粗略估算。若要严格的值，可参考 \pkg{tab} 宏包。
+
+只在垂直模式中有效。
+\end{function}
+
+\begin{function}{\breakablevspace,\breakablehspace}
+  \begin{syntax}
+    \V\breakablevspace \marg{skip expr}
+  \end{syntax}
+留下 \meta{skip expr} 的垂直或水平空白，为粗略值，可断行和分页。
+\end{function}
+
+
 \section[float-barrier=on]{页面布局，\cusmodule{layout}模块}
 
 \cusmodule{layout} 提供页面布局的相关接口。
@@ -1248,7 +1319,7 @@ Unicode 代码点。
   \end{syntax}
 \cs{usepagestyle} 页眉页脚的样式 \meta{pagestyle}。\cs{usethispagestyle} 设置本页的样式。
 
-有一个预定义的样式 \texttt{totalempty}，它将页眉页脚设置为空，并将页眉页脚横线的厚度设为 \texttt{0pt}。
+有预定义的样式 \texttt{totalempty} 以及 \texttt{totalempty*}，它将页眉页脚设置为空，并将页眉页脚横线的厚度设为 \texttt{0pt}，后者还会把页眉页脚的额外伸长设置为 \texttt{0pt}。
 \end{function}
 
 \begin{function}[EXP]{\@currpagestyle, \@specialstyle}
@@ -1262,6 +1333,7 @@ Unicode 代码点。
     \verb|\setpagestyle| * \marg{pagestyle_1} \oarg{pagestyle_2} \marg{code}
     \verb|\setpagestyle| . \marg{pagestyle_1} \oarg{pagestyle_2} \marg{code}
     \verb|\setpagestyle| + \marg{pagestyle_1} \oarg{pagestyle_2} \marg{code}
+    \verb|\setpagestyle| ! \marg{pagestyle_1} \oarg{pagestyle_2} \marg{code}
     \V\copypagestyle  \marg{pagestyle_1} \marg{pagestyle_2}
   \end{syntax}
 设置样式 \marg{pagestyle}，或基于样式 \meta{pagestyle_2} 设置 \meta{pagestyle_1}。
@@ -1271,6 +1343,7 @@ Unicode 代码点。
 带 \verb|*| 的，还会立刻使用该样式，但不会修改 \cs{usethispagestyle} 所设置的样式。
 带 \verb|.| 的，修改 \cs{usethispagestyle} 所设置的样式。
 带 \verb|+| 的，相当于同时使用 \cs{usepagestyle} 和 \cs{usethispagestyle}。
+带 \verb|!| 的，等同于 \cs{fancypagestyle}\texttt{*}。
 
 \cs{copypagestyle} 把样式 \meta{pagestyle_2} 复制给 \meta{pagestyle_1}。
 \end{function}
@@ -2133,93 +2206,6 @@ Unicode 代码点。
     \verb|\removeforeground| \oarg{hook label}
   \end{syntax}
 移除前景或背景。
-\end{function}
-
-
-\section{索引，\cusmodule{index}模块}
-
-\CusTeX 提供了添加多个索引的方法。并且能够自动编译索引文件。
-
-目前暂未提供 \pkg{splitidx} 宏包的功能，也不与其兼容。
-
-应该与 \pkg{glossaries} 宏包兼容。
-
-\begin{function}{\newindextype,\setupindex}
-  \begin{syntax}
-    \verb|\newindextype| \oarg{index keys} \marg{index type}
-    \verb|\setupindex|   \oarg{index type list} \marg{index keys}
-  \end{syntax}
-\cs{newindextype} 创建一个新的索引 \meta{index type}。
-\cs{setupindex} 配置 \meta{index type list}。
-\meta{index type} 可以使用 \tn{empty} 作为名称，此时它的名称为空。
-\end{function}
-
-\begin{function}{\makeindex}
-  \begin{syntax}
-    \verb|\makeindex|
-    \verb|\makeindex| \oarg{index keys}
-    \verb|\makeindex| \oarg{index keys} \oarg{index type}
-  \end{syntax}
-\LaTeX 原有的接口。默认创建名称为空的索引。
-\end{function}
-
-\meta{index keys} 不同于 \CusTeX 中其它的键值选项，仅具有类似的接口。
-
-\begin{itemize}[nosep]
-  \item \texttt{filename}：索引文件名，一般以 \texttt{idx} 结尾，如果未设置，则为：
-  \\\tn{jobname}\texttt{@}\meta{index type}\texttt{.idx}；
-  \item \texttt{output}：编译后的索引文件，一般以 \texttt{ind} 结尾，如果未设置，则将
-  \texttt{filename} 的后缀修改为 \texttt{ind} 作为输出文件名；
-  \item \texttt{name}：如果设置，则应与 \meta{index type} 一致；
-  \item \texttt{title}：索引的标题，如 \tn{indexname}；
-  \item \texttt{program}：编译索引的可执行程序；如 \texttt{makeindex}、\texttt{makeglossaries}；
-  \item \texttt{options}：编译索引时的选项，索引文件名和输出文件名将自动添加；
-  \item \texttt{exec}：终端中实际编译索引执行的代码，如果未设置，则组合 \texttt{program} 及 \texttt{options}；
-  \item \texttt{auto}；布尔值，是否自动编译索引文件；
-  \item \texttt{multi}：多栏选项（\meta{multicolumns key-val}）；
-  % \item \texttt{heading}：标题层级；
-  \item \texttt{heading*}：标题命令，如 \verb|\chapter[numbering=false]|；
-  \item \texttt{init}：索引开头的初始化设置；索引文件不存在时不会执行；
-  \item \texttt{prologue}：索引开头的文字；索引文件不存在时不会输出。
-\end{itemize}
-
-\smallskip 
-\begin{xample}
-\newindextype[
-  filename=\jobname.docusage.idx, 
-  output=\jobname.docusage.ind,
-  exec={makeindex -s gind.ist -o \jobname.docusage.ind \jobname.docusage.idx},
-  title={代码索引}, heading*={\section}, 
-  multi={2, ragged, sep=1em, outer-sep=0pt},
-  auto=true
-]{docusage}
-\stopxamplecode
-\xamplecode
-\medskip 
-\end{xample}
-
-\begin{function}{\setindexinit,\setindexprologue}
-  \begin{syntax}
-    \verb|\setindexinit| \marg{code}
-    \verb|\setindexinit| \oarg{index type} \marg{code}
-    \verb|\setindexprologue| \marg{content}
-    \verb|\setindexprologue| \oarg{index type} \marg{content}
-  \end{syntax}
-设置索引开头的初始化设置、设置索引开头的文字。只要使用了 \cs{printindex}，当索引不存在时它们也会执行或输出。
-
-默认设置名称为空的索引。
-
-在初始化代码中还可以重定义索引环境 \env{theindex}。
-\end{function}
-
-\begin{function}{\index,\printindex}
-  \begin{syntax}
-    \verb|\index| \marg{index item}
-    \verb|\index| \oarg{index type} \marg{index item}
-    \verb|\printindex|
-    \verb|\printindex| \oarg{index keys}
-  \end{syntax}
-\cs{index} 添加索引项 \meta{index item} 到索引 \meta{index type} 中，默认添加到名称为空的索引中；\cs{printindex} 输出索引，以 \texttt{name} 键标识要输出的索引，否则输出名称为空的索引。\meta{index keys} 为前述的键。
 \end{function}
 
 
@@ -4965,6 +4951,93 @@ cbl 列表除了 \cs{cus@type@contentsline}、\cs{cus@type@contentsline@}、
 
 \chapter{库的文档接口}
 
+\section{索引，\cuslibrary{index}库}
+
+\CusTeX 提供了添加多个索引的方法。并且能够自动编译索引文件。
+
+目前暂未提供 \pkg{splitidx} 宏包的功能，也不与其兼容。
+
+应该与 \pkg{glossaries} 宏包兼容。
+
+\begin{function}{\newindextype,\setupindex}
+  \begin{syntax}
+    \verb|\newindextype| \oarg{index keys} \marg{index type}
+    \verb|\setupindex|   \oarg{index type list} \marg{index keys}
+  \end{syntax}
+\cs{newindextype} 创建一个新的索引 \meta{index type}。
+\cs{setupindex} 配置 \meta{index type list}。
+\meta{index type} 可以使用 \tn{empty} 作为名称，此时它的名称为空。
+\end{function}
+
+\begin{function}{\makeindex}
+  \begin{syntax}
+    \verb|\makeindex|
+    \verb|\makeindex| \oarg{index keys}
+    \verb|\makeindex| \oarg{index keys} \oarg{index type}
+  \end{syntax}
+\LaTeX 原有的接口。默认创建名称为空的索引。
+\end{function}
+
+\meta{index keys} 不同于 \CusTeX 中其它的键值选项，仅具有类似的接口。
+
+\begin{itemize}[nosep]
+  \item \texttt{filename}：索引文件名，一般以 \texttt{idx} 结尾，如果未设置，则为：
+  \\\tn{jobname}\texttt{@}\meta{index type}\texttt{.idx}；
+  \item \texttt{output}：编译后的索引文件，一般以 \texttt{ind} 结尾，如果未设置，则将
+  \texttt{filename} 的后缀修改为 \texttt{ind} 作为输出文件名；
+  \item \texttt{name}：如果设置，则应与 \meta{index type} 一致；
+  \item \texttt{title}：索引的标题，如 \tn{indexname}；
+  \item \texttt{program}：编译索引的可执行程序；如 \texttt{makeindex}、\texttt{makeglossaries}；
+  \item \texttt{options}：编译索引时的选项，索引文件名和输出文件名将自动添加；
+  \item \texttt{exec}：终端中实际编译索引执行的代码，如果未设置，则组合 \texttt{program} 及 \texttt{options}；
+  \item \texttt{auto}；布尔值，是否自动编译索引文件；
+  \item \texttt{multi}：多栏选项（\meta{multicolumns key-val}）；
+  % \item \texttt{heading}：标题层级；
+  \item \texttt{heading*}：标题命令，如 \verb|\chapter[numbering=false]|；
+  \item \texttt{init}：索引开头的初始化设置；索引文件不存在时不会执行；
+  \item \texttt{prologue}：索引开头的文字；索引文件不存在时不会输出。
+\end{itemize}
+
+\smallskip 
+\begin{xample}
+\newindextype[
+  filename=\jobname.docusage.idx, 
+  output=\jobname.docusage.ind,
+  exec={makeindex -s gind.ist -o \jobname.docusage.ind \jobname.docusage.idx},
+  title={代码索引}, heading*={\section}, 
+  multi={2, ragged, sep=1em, outer-sep=0pt},
+  auto=true
+]{docusage}
+\stopxamplecode
+\xamplecode
+\medskip 
+\end{xample}
+
+\begin{function}{\setindexinit,\setindexprologue}
+  \begin{syntax}
+    \verb|\setindexinit| \marg{code}
+    \verb|\setindexinit| \oarg{index type} \marg{code}
+    \verb|\setindexprologue| \marg{content}
+    \verb|\setindexprologue| \oarg{index type} \marg{content}
+  \end{syntax}
+设置索引开头的初始化设置、设置索引开头的文字。只要使用了 \cs{printindex}，当索引不存在时它们也会执行或输出。
+
+默认设置名称为空的索引。
+
+在初始化代码中还可以重定义索引环境 \env{theindex}。
+\end{function}
+
+\begin{function}{\index,\printindex}
+  \begin{syntax}
+    \verb|\index| \marg{index item}
+    \verb|\index| \oarg{index type} \marg{index item}
+    \verb|\printindex|
+    \verb|\printindex| \oarg{index keys}
+  \end{syntax}
+\cs{index} 添加索引项 \meta{index item} 到索引 \meta{index type} 中，默认添加到名称为空的索引中；\cs{printindex} 输出索引，以 \texttt{name} 键标识要输出的索引，否则输出名称为空的索引。\meta{index keys} 为前述的键。
+\end{function}
+
+
 \section{\cuslibrary{pgf}库}
 
 \cuslibrary{pgf} 库使用 \pkg{pgf} 宏集的功能，定义了一些命令。
@@ -7327,16 +7400,16 @@ $ \foo<a|b> $\quad $ \foo\displaystyle<\sum|\prod> $.
 \CHToA{geometry}{\tn[no-index]{Gm@..paper}};
 \CHToI{geometry}{\tn{Gm@setsize}};
 \CHToI{geometry}{\tn{Gm@changelayout}};
-\CHToI{fancyhdr}{\tn{f@nch@O@olh}, \tn{f@nch@O@orh}, \tn{f@nch@O@elh}, \tn{f@nch@O@erh}};
-\CHToI{fancyhdr}{\tn{f@nch@O@olf}, \tn{f@nch@O@orf}, \tn{f@nch@O@elf}, \tn{f@nch@O@erf}};
+\CHToI{fancyhdr}{\tn{f@nch@offset@olh}, \tn{f@nch@offset@orh}, \tn{f@nch@offset@elh}, \tn{f@nch@offset@erh}};
+\CHToI{fancyhdr}{\tn{f@nch@offset@olf}, \tn{f@nch@offset@orf}, \tn{f@nch@offset@elf}, \tn{f@nch@offset@erf}};
 \CHToM{latex}{\tn{pagestyle}, \tn{thispagestyle}}
 \CHToP{latex}{\tn{@outputpage}}
 \CHToI{latex}{\tn{ps@\meta{pagestyle}}, \tn{is@specialpage}, \tn{@specialstyle}}
-\CHToI{fancyhdr}{\tn{f@nch@pagestyle}};
+\CHToI{fancyhdr}{\tn{iff@nch@pagestyle@star}};
+\CHToI{fancyhdr}{\tn{f@nch@pagestyle}, \tn{iff@nch@footnote}, \tn{f@nch@topfloat}, \tn{f@nch@topfloat}};
 \CHToI{fancyhdr}{\tn{f@nch@headinit}, \tn{f@nch@footinit}};
 \CHToI{fancyhdr}{\tn{ps@f@nch@fancyproto}, \tn{f@nch@def}, \tn{f@nch@ps@\meta{pagestyle}-is-fancyhdr}};
 \CHToI{latex}{\tn{if@fcolmade}};
-\CHToI{fancyhdr}{\tn{iff@nch@footnote}};
 
 
 \section{\CHFrom{module.box}}
@@ -7359,14 +7432,6 @@ $ \foo<a|b> $\quad $ \foo\displaystyle<\sum|\prod> $.
 \section{\CHFrom{module.bgfg}}
 \CHToI{latex}{\tn{c@page}};
 \CHToI{geometry}{\tn{Gm@layoutwidth}, \tn{Gm@layoutheight}};
-
-\section{\CHFrom{module.index}}
-\CHToM{latex}{\tn{@indexfile}};
-\CHToA{latex}{\tn[no-index]{@indexfile..}};
-\CHToI{latex}{\tn{@idxitem}};
-\CHToM{latex}{\tn{index}, \tn{makeindex}, \tn{printindex}};
-\CHToI{latex}{\tn{@bsphack}, \tn{@sanitize}, \tn{@wrindex}};
-\CHToI{latex}{\tn{@input@}};
 
 \section{\CHFrom{module.struct}}
 \CHToI{latex}{\tn{@input}, \tn{@writefile}, \tn{@auxout}};
@@ -7406,6 +7471,14 @@ $ \foo<a|b> $\quad $ \foo\displaystyle<\sum|\prod> $.
 
 % \section{\CHFrom{module.notes}}
 
+\section{\CHFrom{library.index}}
+\CHToM{latex}{\tn{@indexfile}};
+\CHToA{latex}{\tn[no-index]{@indexfile..}};
+\CHToI{latex}{\tn{@idxitem}};
+\CHToM{latex}{\tn{index}, \tn{makeindex}, \tn{printindex}};
+\CHToI{latex}{\tn{@bsphack}, \tn{@sanitize}, \tn{@wrindex}};
+\CHToI{latex}{\tn{@input@}};
+
 \section{\CHFrom{library.box}}
 \CHToA{latex}{\tn{@tempdimd}};
 \CHToA{longfbox}{\texttt{/longfbox/math}, \texttt{/longfbox/highlight math}};
@@ -7429,8 +7502,8 @@ $ \foo<a|b> $\quad $ \foo\displaystyle<\sum|\prod> $.
 \section{\CHFrom{library.pgf}}
 \CHToI{pgf}{\tn{pgf@declareimage}};
 \CHToI{tikz}{\tn{tikz@finish}, \tn{tikz@path@do@at@end}};
-\CHToI{fancyhdr}{\tn{f@nch@O@olh}, \tn{f@nch@O@orh}, \tn{f@nch@O@elh}, \tn{f@nch@O@erh}};
-\CHToI{fancyhdr}{\tn{f@nch@O@olf}, \tn{f@nch@O@orf}, \tn{f@nch@O@elf}, \tn{f@nch@O@erf}};
+\CHToI{fancyhdr}{\tn{f@nch@offset@olh}, \tn{f@nch@offset@orh}, \tn{f@nch@offset@elh}, \tn{f@nch@offset@erh}};
+\CHToI{fancyhdr}{\tn{f@nch@offset@olf}, \tn{f@nch@offset@orf}, \tn{f@nch@offset@elf}, \tn{f@nch@offset@erf}};
 
 \section{\CHFrom{library.tcb}}
 \CHToI{tcolorbox}{\tn{kvtcb@boxsep}};

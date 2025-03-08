@@ -9,6 +9,7 @@
 \usepackage{xeCJKfntef}
 \edef\UD{\string _}
 \usepackage{xunicode-addon}
+\usepackage{minted2}
 \usepackage[library={ref,box,doc={no-index-file}}]{cus}
 \setuplayout{paper=a4,hmargin=1.7cm,top=2cm,bottom=1.5cm,
   hfoffset=0pt,nomarginpar,
@@ -57,7 +58,28 @@
 \usepackage{bookmark}
 \usepackage{nameref,varioref,cleveref}
 \usepackage{pgfornament,pgfornament-han}
-\usepackage[many,listings,minted]{tcolorbox}
+\usepackage[many,listings]{tcolorbox}
+\usepackage{texhigh}
+\makeatletter
+\ifnum\shellescape=1 \@EA\@firstoftwo\else \@EA\@secondoftwo\fi
+  {
+    \THSetClassCS[]{cus}{\mbox{\THcolor{blue!80!black}\bfseries\texhigh@underline{#1#2}}}
+    \texhighsetclassfallback{cs}{cus.l}{cus, latex}
+    \texhighsetclassfallback{cs}{cus.r}{cus, latex}
+    \texhighsetclassfallback{cs}{cus.more}{cus, latex}
+    \texhighsetclassfallback{cs}{ekeys}{cus, latex}
+    \texhighsetclassfallback{cs}{fmulticol}{cus, latex}
+    \tcbset{eg listing/.style={listing engine=texhigh,
+      texhigh options={config-file+=eg.texhigh.cfg,
+        font=\xeCJKsetup{CJKecglue={\hskip 0pt plus 0.08\baselineskip}}\normalfont\ttfamily}}}
+  }
+  {
+    \tcbuselibrary{minted}
+    \tcbset{eg listing/.style={listing engine=minted, minted style=colorful,
+      minted language=tex,
+      minted options={tabsize=2,fontsize=\normalsize,autogobble,mathescape},}}
+  }
+\makeatother
 \newcounter{example}
 \newtcblisting[use counter=example, number format=\arabic, crefname={代码}{代码}]
   {examcode}[2][]{comment above* listing, 
@@ -75,9 +97,7 @@
   coltitle=blue!90!black, fonttitle=\bfseries,
   % listing options={style=tcblatex, basicstyle=\normalsize\ttfamily},
   before skip=\medskipamount, after=\newpage, 
-  listing engine=minted,minted style=colorful,
-  minted language=tex,
-  minted options={tabsize=2,fontsize=\normalsize,autogobble,mathescape},
+  eg listing,
   breakable,
   #1
 }

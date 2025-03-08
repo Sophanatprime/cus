@@ -6,21 +6,35 @@
     
   }
 
+\ekeysdeclarecmd \NeedspaceTF { s m }
+  {
+    \par \penalty-100\begingroup
+    \setlength{\dimen@}{\dimexpr#2}
+    \dimen@ii\pagegoal \advance\dimen@ii-\pagetotal
+    \ifdim \dimen@>\dimen@ii
+      \bool_lazy_and:nnT {!#1} { \dim_compare_p:nNn { \dimen@ii } > { \z@ } } { \vfil }
+      \penalty-\@M
+    \fi\endgroup
+    \bool_lazy_or:nnTF
+      { \dim_compare_p:nNn { \pagegoal } = { \c_max_dim} }
+      { \int_compare_p:nNn { \lastpenalty } < { -9999 } } % -\@M = -10000
+  }
+
 \protected\def\needhspace#1{
   \leavevmode
   \begingroup
-  \setlength\dimen@{\dimexpr#1}%
-  \hskip\z@\@plus\dimen@
-  \penalty -100\hskip\z@\@plus -\dimen@
-  \hskip\dimen@
+  \setlength\skip@{\glueexpr#1}%
+  \hskip\z@\@plus\skip@
+  \penalty -100\hskip\z@\@plus -\skip@
+  \hskip\skip@
   \penalty 9999
-  \hskip -\dimen@
+  \hskip -\skip@
   \hskip\z@skip
   \endgroup}
 
 \protected\def\breakablevspace#1{%
   \begingroup
-  \@tempskipa\dimexpr#1\relax \@tempskipb\@tempskipa
+  \@tempskipa\glueexpr#1\relax \@tempskipb\@tempskipa
   \divide\@tempskipa\sixt@@n
   \ifdim\@tempskipa>\baselineskip 
     \@tempskipa.5\baselineskip plus.1\baselineskip minus.1\baselineskip\fi 
@@ -32,7 +46,7 @@
 \protected\def\breakablehspace#1{%
   \ifvmode\else
     \begingroup\leavevmode
-    \@tempskipa\dimexpr#1\relax \@tempskipb\@tempskipa
+    \@tempskipa\glueexpr#1\relax \@tempskipb\@tempskipa
     \divide\@tempskipa\sixt@@n 
     \ifdim\@tempskipa>.5em \@tempskipa .5em plus.1em minus.1em\fi 
     \loop

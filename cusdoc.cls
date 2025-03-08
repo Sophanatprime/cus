@@ -206,6 +206,7 @@
 
 
 %region xample env
+\NewDocumentCommand\xamplecodefile{+m+m+m}{\lstinputlisting[#1,#2]{#3}}
 \DeclareNewFloatType{example}{fileext=example,name=例}
 \lstdefinestyle{xamplestyle}{language={[LaTeX]TeX},
   basicstyle=\small\linespread{1.1}\ttfamily,
@@ -221,8 +222,11 @@
 \definebufferpair [ __process_line=standard-not-nest,
   save-mode=write, write=\jobname.exambuff, blank=space] 
   \startxamplecode \stopxamplecode {} 
-  {\edef\xamplecode{\noexpand\lstinputlisting
-    [style=xamplestyle,\unexpanded\expandafter{\xampleOPTlst}]{\jobname.exambuff}}%
+  {\edef\xamplecode{%
+    \noexpand\xamplecodefile
+      {style=xamplestyle}
+      {\unexpanded\expandafter{\xampleOPTlst}}
+      {\jobname.exambuff}}%
     \def\xcaption{\setcaptiontype{example}\caption}%
     \xample@hango\begin{longfbox}[]\xample@hangi}
 \protected\def\xample@hango{%
