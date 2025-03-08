@@ -1,5 +1,36 @@
 \DocumentMetadata{}
 \documentclass{cusdoc}
+\usepackage{texhigh}
+\ExplSyntaxOn\makeatletter
+\sys_if_shell_unrestricted:T
+  {
+    \THSetClassCS[]{cus}{\mbox{\THcolor{blue!80!black}\bfseries
+      \transparent{0.7}\texhigh@underline{\transparent{1}#1#2}}}
+    \texhighsetclassfallback{cs}{cus.l}{cus, latex}
+    \texhighsetclassfallback{cs}{cus.r}{cus, latex}
+    \texhighsetclassfallback{cs}{cus.more}{cus, latex}
+    \texhighsetclassfallback{cs}{ekeys}{cus, latex}
+    \texhighsetclassfallback{cs}{fmulticol}{cus, latex}
+    \cs_if_exist:NTF \xeCJKsetup
+      {
+        \THSaveStyle{xamplestyle}{
+          \SetKeys[texhigh/high]{config-file+=cus-cn-texhigh.cfg,
+            font=\xeCJKsetup{CJKecglue={\hskip 0pt plus 0.08\baselineskip}}\normalfont\ttfamily\small}
+        }
+      }
+      {
+        \THSaveStyle{xamplestyle}{
+          \SetKeys[texhigh/high]{config-file+=cus-cn-texhigh.cfg, font=\normalfont\ttfamily\small}
+        }
+      }
+    \RenewDocumentCommand{\xamplecodefile}{+m+m+m}
+      {
+        \IfBlankTF{#2}
+          {\texhighfile[{#1}]{#3}\par\vskip-5pt plus 1pt minus 1pt\relax}
+          {\lstinputlisting[#1,#2]{#3}}
+      }
+  }
+\makeatother\ExplSyntaxOff
 
 \hypersetup{pdfauthor={Longaster, \CusTeX},
   pdftitle=\CusTeX 宏集手册,
@@ -665,6 +696,46 @@ Unicode 代码点。
 \end{function}
 
 
+\section{\cusmodule{space}模块}
+
+\cusmodule{space} 模块提供与空吧间距有关的接口。
+
+\begin{function}{\needspace,\Needspace,\NeedspaceTF}
+  \begin{syntax}
+    \V\needspace   \marg{dim expr}
+    \V\Needspace   \marg{dim expr}
+    \V\Needspace * \marg{dim expr}
+    \V\NeedspaceTF \marg{dim expr} \marg{true code} \marg{false code}
+    \V\NeedspaceTF*\marg{dim expr} \marg{true code} \marg{false code}
+  \end{syntax}
+判断当前页的版心是否至少留有 \meta{dim expr} 的垂直空白。
+\cs{needspace} 为粗略估算，
+\cs{Needspace} 和 \cs{NeedspaceTF} 则是要求必须至少留有 \meta{dim expr} 的空白。
+\cs{NeedspaceTF} 会在需要分页（或已经是新的一页）时使用 \meta{truec code}，
+反之则使用 \meta{false code}。
+
+带星号的 \cs{Needspace} 和 \cs{NeedspaceTF} 会使得 \tn{flushbuttom} 生效。
+
+它们只在主垂直列中有效。
+\end{function}
+
+\begin{function}{\needhspace}
+  \begin{syntax}
+    \V\needhspace \marg{dim expr}
+  \end{syntax}
+要求当前行至少留有 \meta{dim expr} 的间距，为粗略估算。若要严格的值，可参考 \pkg{tab} 宏包。
+
+只在垂直模式中有效。
+\end{function}
+
+\begin{function}{\breakablevspace,\breakablehspace}
+  \begin{syntax}
+    \V\breakablevspace \marg{skip expr}
+  \end{syntax}
+留下 \meta{skip expr} 的垂直或水平空白，为粗略值，可断行和分页。
+\end{function}
+
+
 \section[float-barrier=on]{页面布局，\cusmodule{layout}模块}
 
 \cusmodule{layout} 提供页面布局的相关接口。
@@ -1248,7 +1319,7 @@ Unicode 代码点。
   \end{syntax}
 \cs{usepagestyle} 页眉页脚的样式 \meta{pagestyle}。\cs{usethispagestyle} 设置本页的样式。
 
-有一个预定义的样式 \texttt{totalempty}，它将页眉页脚设置为空，并将页眉页脚横线的厚度设为 \texttt{0pt}。
+有预定义的样式 \texttt{totalempty} 以及 \texttt{totalempty*}，它将页眉页脚设置为空，并将页眉页脚横线的厚度设为 \texttt{0pt}，后者还会把页眉页脚的额外伸长设置为 \texttt{0pt}。
 \end{function}
 
 \begin{function}[EXP]{\@currpagestyle, \@specialstyle}
@@ -1262,6 +1333,7 @@ Unicode 代码点。
     \verb|\setpagestyle| * \marg{pagestyle_1} \oarg{pagestyle_2} \marg{code}
     \verb|\setpagestyle| . \marg{pagestyle_1} \oarg{pagestyle_2} \marg{code}
     \verb|\setpagestyle| + \marg{pagestyle_1} \oarg{pagestyle_2} \marg{code}
+    \verb|\setpagestyle| ! \marg{pagestyle_1} \oarg{pagestyle_2} \marg{code}
     \V\copypagestyle  \marg{pagestyle_1} \marg{pagestyle_2}
   \end{syntax}
 设置样式 \marg{pagestyle}，或基于样式 \meta{pagestyle_2} 设置 \meta{pagestyle_1}。
@@ -1271,6 +1343,7 @@ Unicode 代码点。
 带 \verb|*| 的，还会立刻使用该样式，但不会修改 \cs{usethispagestyle} 所设置的样式。
 带 \verb|.| 的，修改 \cs{usethispagestyle} 所设置的样式。
 带 \verb|+| 的，相当于同时使用 \cs{usepagestyle} 和 \cs{usethispagestyle}。
+带 \verb|!| 的，等同于 \cs{fancypagestyle}\texttt{*}。
 
 \cs{copypagestyle} 把样式 \meta{pagestyle_2} 复制给 \meta{pagestyle_1}。
 \end{function}
@@ -7327,16 +7400,16 @@ $ \foo<a|b> $\quad $ \foo\displaystyle<\sum|\prod> $.
 \CHToA{geometry}{\tn[no-index]{Gm@..paper}};
 \CHToI{geometry}{\tn{Gm@setsize}};
 \CHToI{geometry}{\tn{Gm@changelayout}};
-\CHToI{fancyhdr}{\tn{f@nch@O@olh}, \tn{f@nch@O@orh}, \tn{f@nch@O@elh}, \tn{f@nch@O@erh}};
-\CHToI{fancyhdr}{\tn{f@nch@O@olf}, \tn{f@nch@O@orf}, \tn{f@nch@O@elf}, \tn{f@nch@O@erf}};
+\CHToI{fancyhdr}{\tn{f@nch@offset@olh}, \tn{f@nch@offset@orh}, \tn{f@nch@offset@elh}, \tn{f@nch@offset@erh}};
+\CHToI{fancyhdr}{\tn{f@nch@offset@olf}, \tn{f@nch@offset@orf}, \tn{f@nch@offset@elf}, \tn{f@nch@offset@erf}};
 \CHToM{latex}{\tn{pagestyle}, \tn{thispagestyle}}
 \CHToP{latex}{\tn{@outputpage}}
 \CHToI{latex}{\tn{ps@\meta{pagestyle}}, \tn{is@specialpage}, \tn{@specialstyle}}
-\CHToI{fancyhdr}{\tn{f@nch@pagestyle}};
+\CHToI{fancyhdr}{\tn{iff@nch@pagestyle@star}};
+\CHToI{fancyhdr}{\tn{f@nch@pagestyle}, \tn{iff@nch@footnote}, \tn{f@nch@topfloat}, \tn{f@nch@topfloat}};
 \CHToI{fancyhdr}{\tn{f@nch@headinit}, \tn{f@nch@footinit}};
 \CHToI{fancyhdr}{\tn{ps@f@nch@fancyproto}, \tn{f@nch@def}, \tn{f@nch@ps@\meta{pagestyle}-is-fancyhdr}};
 \CHToI{latex}{\tn{if@fcolmade}};
-\CHToI{fancyhdr}{\tn{iff@nch@footnote}};
 
 
 \section{\CHFrom{module.box}}
@@ -7429,8 +7502,8 @@ $ \foo<a|b> $\quad $ \foo\displaystyle<\sum|\prod> $.
 \section{\CHFrom{library.pgf}}
 \CHToI{pgf}{\tn{pgf@declareimage}};
 \CHToI{tikz}{\tn{tikz@finish}, \tn{tikz@path@do@at@end}};
-\CHToI{fancyhdr}{\tn{f@nch@O@olh}, \tn{f@nch@O@orh}, \tn{f@nch@O@elh}, \tn{f@nch@O@erh}};
-\CHToI{fancyhdr}{\tn{f@nch@O@olf}, \tn{f@nch@O@orf}, \tn{f@nch@O@elf}, \tn{f@nch@O@erf}};
+\CHToI{fancyhdr}{\tn{f@nch@offset@olh}, \tn{f@nch@offset@orh}, \tn{f@nch@offset@elh}, \tn{f@nch@offset@erh}};
+\CHToI{fancyhdr}{\tn{f@nch@offset@olf}, \tn{f@nch@offset@orf}, \tn{f@nch@offset@elf}, \tn{f@nch@offset@erf}};
 
 \section{\CHFrom{library.tcb}}
 \CHToI{tcolorbox}{\tn{kvtcb@boxsep}};
