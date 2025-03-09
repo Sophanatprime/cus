@@ -2825,7 +2825,7 @@ template 格式目录的完整形式。
 \xampleprint
 \end{xample}
 
-template 格式的目录，使用 \pkg{xtemplate} 宏包处理键值。
+template 格式的目录，使用 \pkg{lttemplates} 宏包处理键值。
 一个模板的对象类型用于规定的参数的数量，
 一个对象类型可以定义多个模板，每个模板有自己的处理代码和可用的键，
 在模板的基础上为一些键设置固定的值就构成了对象类型的实例。
@@ -2834,7 +2834,7 @@ template 格式的目录，使用 \pkg{xtemplate} 宏包处理键值。
 template 格式的目录，其对象类型为 \texttt{templatecbl}，可使用 7 个参数，为目录条目
 所保存的值。默认的模板为 \verb*|by name|，实例为目录条目的层级，如 \texttt{part}、
 \texttt{chapter} 等等。用户可以自己定义新的模板，详见\cref{sec:template-cbl}。
-关于如何修改定义模板、修改实例等见\cref{sec:lttemplates}或 \file{xtemplate.pdf}。
+关于如何修改定义模板、修改实例等见\cref{sec:lttemplates}或 \file{lttemplates.pdf}。
 
 \begin{figure}[ht]
 \includegraphics[width=\linewidth]{templatetoc-para}
@@ -2842,7 +2842,7 @@ template 格式的目录，其对象类型为 \texttt{templatecbl}，可使用 7
 \end{figure}
 
 \texttt{by name} 模板可用的键如下（注意它们不能用 \cs{cussetup} 设置，且每个键都必须给出
-值，不能省略，包括布尔值的 \texttt{true} 也不能省，这是 \pkg{xtemplate} 所限）：
+值，不能省略，包括布尔值的 \texttt{true} 也不能省，这是 \pkg{lttemplates} 所限）：
 \begin{description}
   \item[\texttt{space.before}] 如果不是为 \texttt{0pt}，且在垂直模式，则在该目录项之前添加指定的间距；结果保存于 \tn{tmcbl@beforeskip} 寄存器之中；
   \item[\texttt{space.left}] 左侧间距；结果保存于 \tn{tmcbl@leftskip} 寄存器之中；
@@ -3142,14 +3142,13 @@ template 格式的目录，其对象类型为 \texttt{templatecbl}，可使用 7
 或者可供修改的变量。其中用户输入是未知的，而排布内容的方式和修改配置的方式则是固定的，
 且有多种实现方式，模板机制就是其中一种。
 
-本节内容简要介绍 \LaTeXe 的模板机制，更详细的用法请参考 \file{xtemplate.pdf}。
-目前暂以单独的宏包提供此功能，\LaTeXe Released 2024-06-01 版本将把此机制合并入内核。
+本节内容简要介绍 \LaTeXe 的模板机制，更详细的用法请参考 \file{lttemplates-doc.pdf}。
 
 对象类型（object type）是对用户输入的抽象描述，它限定了用户输入参数的数目，一般也限定了顺序。
 例如，对于一个章节标题来说，用户输入参数可能是：短标题、完整标题。
-\begin{function}[module=lttemplates]{\DeclareOjbectType}
+\begin{function}[module=lttemplates]{\NewTemplateType}
   \begin{syntax}
-    \V\DeclareObjectType \marg{object type} \marg{no. of args}
+    \V\NewTemplateType \marg{object type} \marg{no. of args}
   \end{syntax}
 定义一个对象类型 \meta{object type}。
 \end{function}
