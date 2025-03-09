@@ -512,19 +512,23 @@
 \cus_pkg_code:nnn { pdfcomment } { } { \cus_cbl_add:nn { lpc } { lpcsec=1 } }
 \cus_pkg_code:nnn { poetry } { } { \cus_cbl_add:nn { lop } { poem=1, poemgroup=1 } }
 \cus_pkg_code:nnn { todonotes } { } { \cus_cbl_add:nn { tdo } { todo=1 } }
+\group_begin:
 \char_set_catcode_other:N \#
-\cus_pkg_code:nnn { float } { }
+\use:n
   {
-    \ctex_patch_cmd:Nnn \newfloat { \floatplacement }
-      { \addcombinedlisttype{#3}{#1=1}\floatplacement }
+    \group_end:
+    \cus_pkg_code:nnn { float } { }
+      {
+        \ctex_patch_cmd:Nnn \newfloat { \floatplacement }
+          { \addcombinedlisttype{#3}{#1=1}\floatplacement }
+      }
+    \cus_pkg_code:nnn { newfloat } { }
+      {
+        \ctex_patch_cmd:Nnn \@DeclareFloatingEnvironment 
+          { \newfloat@setoptions*{#2}{#1} }
+          { \newfloat@setoptions*{#2}{#1}\addcombinedlisttype{\@nameuse{ext@#2}}{#2=1} }
+      }
   }
-\cus_pkg_code:nnn { newfloat } { }
-  {
-    \ctex_patch_cmd:Nnn \@DeclareFloatingEnvironment 
-      { \newfloat@setoptions*{#2}{#1} }
-      { \newfloat@setoptions*{#2}{#1}\addcombinedlisttype{\@nameuse{ext@#2}}{#2=1} }
-  }
-\char_set_catcode_parameter:N \#
 \cus_pkg_code:nnn { floatrow } { }
   {
     \ctex_appto_cmd:NnnTF \DeclareNewFloatType { \ExplSyntaxOff \makeatletter }
