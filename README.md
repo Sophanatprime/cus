@@ -9,7 +9,7 @@ CUS 需依赖未上传到 CTAN 的 [`lt3ekeys`](https://github.com/Sophanatprime
 
 如果没有把 CUS 放在 TDS 目录下，可先设置环境变量 `TEXINPUTS` 为 `./;./lt3ekeys;./texhigh;./module;./library;../;../lt3ekeys;./texhigh;../module;../library;`，这样 kpathsea 就能找到 `lt3ekeys` 等目录下的文件。
 
-使用 `xelatex cus-cn.tex` 编译三次即可得到文档。索引等内容将自动编译处理。
+使用 `xelatex cus-cn.tex` 编译四次即可得到文档。索引等内容将自动编译处理。
 
 欢迎提交 [pr](https://github.com/Sophanatprime/cus/pulls) 和 [issue](https://github.com/Sophanatprime/cus/issues)。
 
