@@ -1,5 +1,5 @@
 \CUSDependency{ disable={titlesec,titletoc,tocloft,etoc,placeins,multitoc,minitoc}, 
-  module={util} }
+  module={util},package={zhnumber} }
 \CUSProvideExplModule{struct}{\cus@d@te}{\cus@versi@n}{structures of document}
 
 %SEE: ctexheading (ctexbook.cls), titlesec, titletoc, etoc, etc. 
@@ -1471,12 +1471,13 @@
             \l_keys_key_str { \exp_after:wN { \l_keys_value_tl } }
         }
         {
-          \exp_args:Nno \IfInstanceExistTF { templatecbl } \l_keys_key_str
+          \exp_args:Nno \IfInstanceExistsTF { templatecbl } \l_keys_key_str
             { \exp_args:Nooo \EditInstance { templatecbl } \l_keys_key_str \l_keys_value_tl }
             { \msg_error:nnx { cus } { unknown-templatecbl-key } \l_keys_key_str }
         } ,
   }
 \cs_new_protected:Npn \tmcbl@getinfo #1 {  \__cus_tmcbl_info:w #1, \s__cus_mark }
+\cs_new:Npn \tmcblretinfo { \prop_item:Nn \tmcbltheinfo }
 \cs_new:Npn \__cus_tmcbl_info:w #1, #2 \s__cus_mark
   {
     \str_set:Nx \tmcbltheclass {#1}
@@ -1505,7 +1506,7 @@
   {
     \cus_map_heading_level:nn \tmcblthetype
       {
-        \IfInstanceExistT { templatecbl } {##2}
+        \IfInstanceExistsT { templatecbl } {##2}
           { \EditInstance { templatecbl } {##2} {#1} }
       }
   }
@@ -3045,8 +3046,7 @@
   \title@addtocline{#3}%
   \hangindent\wd\title@box \hangafter-\count@ 
   \noindent\llap{\box\title@box}%
-  \let\cus@tmp\ignorespaces
-  \def\ignorespaces{\let\ignorespaces\cus@tmp\cus@ignorepars}} % 这里暂时使用 \ignorepars，另见 titlesec 的 \ttlhx@wrap
+  \cus@ignorepars} % 这里暂时使用 \ignorepars，另见 titlesec 的 \ttlhx@wrap
 
 \ifdefined\if@openright \else\ExpandArgs{c}\newif{if@openright}\@openrightfalse\fi
 \ifdefined\if@mainmatter \else\ExpandArgs{c}\newif{if@mainmatter}\@mainmattertrue\fi
@@ -3065,7 +3065,7 @@
 }
 \definetitle\chapter[top]{
   name={第,章},
-  number=\chinese{chapter},
+  number=\zhnum{chapter},
   format=\huge\bfseries\centering,
   aftername=\quad,
   aftertitle=\par,

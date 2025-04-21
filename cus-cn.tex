@@ -276,7 +276,7 @@ Logo。输出 \CusTeX，\CusLaTeX。
 \xampleprint
 \end{xample}
 
-\begin{function}[rEXP]{\numberfixedwidth,\numerzerofill}
+\begin{function}[rEXP]{\numberfixedwidth,\numberzerofill}
   \begin{syntax}
     \V\numberfixedwidth \marg{width} \marg{filler} \marg{printer} \marg{number}
     \V\numberzerofill \marg{width} \marg{number}
@@ -2889,6 +2889,7 @@ template 格式的目录，其对象类型为 \texttt{templatecbl}，可使用 7
   \item[\tn{tmcblthetype}] 当前使用的目录类型；
   \item[\tn{tmcbltheclass}] 当前目录层级名；
   \item[\tn{tmcblthelevel}] 当前目录层级对应的整数；
+  \item[\tn{tmcblretinfo}]\marg{key} 返回此目录条目中 \meta{key} 键保存的额外信息，若不存在则为空；
   \item[\tn{tmcbltheinfo}] 此目录条目保存的额外信息，为一个 \LaTeX3 prop 变量，即 \cs{titleaddinfo} 添加的值；
   \item[\tn{tmcblthename}] \texttt{name} 的文字，可能为空；
   \item[\tn{tmcblthetitle}] \texttt{title} 的文字；
@@ -3148,15 +3149,15 @@ template 格式的目录，其对象类型为 \texttt{templatecbl}，可使用 7
 例如，对于一个章节标题来说，用户输入参数可能是：短标题、完整标题。
 \begin{function}[module=lttemplates]{\NewTemplateType}
   \begin{syntax}
-    \V\NewTemplateType \marg{object type} \marg{no. of args}
+    \V\NewTemplateType \marg{type} \marg{no. of args}
   \end{syntax}
-定义一个对象类型 \meta{object type}。
+定义一个对象类型 \meta{type}。
 \end{function}
 
 模板规定了如何处理可配置的项和用户输入的参数，亦即排布内容的方式。
 \begin{function}[module=lttemplates]{\DeclareTemplateInterface}
   \begin{syntax}
-    \V\DeclareTemplateInterface \marg{object type} \marg{template} \marg{no. of args} \marg{key list}
+    \V\DeclareTemplateInterface \marg{type} \marg{template} \marg{no. of args} \marg{key list}
   \end{syntax}
 \LaTeXe 模板机制以键值对的方式处理可配置的项，
 本命令用于限定用户可配置哪些项，以及用何种方式保存这些项，以及这些项的默认值。
@@ -3164,7 +3165,7 @@ template 格式的目录，其对象类型为 \texttt{templatecbl}，可使用 7
 
 \begin{function}[module=lttemplates]{\DeclareTemplateCode}
   \begin{syntax}
-    \V\DeclareTemplateCode \marg{object type} \marg{template} \marg{no. of args}
+    \V\DeclareTemplateCode \marg{type} \marg{template} \marg{no. of args}
     ~~\marg{key bindings} \marg{code}
   \end{syntax}
 定义可配置项与哪一命令绑定起来，以及排布内容的方式。
@@ -3172,21 +3173,21 @@ template 格式的目录，其对象类型为 \texttt{templatecbl}，可使用 7
 
 \begin{function}[module=lttemplates]{\UseTemplate}
   \begin{syntax}
-    \V\UseTemplate \marg{object type} \marg{template} \marg{settings} \meta{arguments}
+    \V\UseTemplate \marg{type} \marg{template} \marg{settings} \meta{arguments}
   \end{syntax}
 把配置项设置为某些固定的值，并立刻使用它。
 \end{function}
 
 \begin{function}[module=lttemplates]{\SetTemplateKeys}
   \begin{syntax}
-    \V\SetTemplateKeys \marg{object type} \marg{template} \marg{keyvalues}
+    \V\SetTemplateKeys \marg{type} \marg{template} \marg{keyvalues}
   \end{syntax}
 用于在模板的代码中修改实例的值。
 \end{function}
 
 \begin{function}[module=lttemplates]{\EditTemplateDefaults}
   \begin{syntax}
-    \V\EditTemplateDefaults \marg{object type} \marg{template} \marg{new defaults}
+    \V\EditTemplateDefaults \marg{type} \marg{template} \marg{new defaults}
   \end{syntax}
 修改模板的默认值。只会应用到新创建的实例。
 \end{function}
@@ -3194,8 +3195,8 @@ template 格式的目录，其对象类型为 \texttt{templatecbl}，可使用 7
 用某一模板把可配置项设置为某些特定的值就成为了实例。
 \begin{function}[module=lttemplates]{\DeclareInstance,\DeclareInstanceCopy}
   \begin{syntax}
-    \V\DeclareInstance \marg{object type} \marg{instance} \marg{template} \marg{parameters}
-    \V\DeclareInstanceCopy \marg{object type} \marg{instance_2} \marg{instance_1}
+    \V\DeclareInstance \marg{type} \marg{instance} \marg{template} \marg{parameters}
+    \V\DeclareInstanceCopy \marg{type} \marg{instance_2} \marg{instance_1}
   \end{syntax}
 使用 \meta{parameters} 创建 \meta{template} 的实例。
 或创建 \meta{instance_1} 的复本 \meta{instance_2}。
@@ -3203,21 +3204,21 @@ template 格式的目录，其对象类型为 \texttt{templatecbl}，可使用 7
 
 \begin{function}[module=lttemplates]{\UseInstance}
   \begin{syntax}
-    \V\UseInstance \marg{object type} \marg{instance} \meta{arguments}
+    \V\UseInstance \marg{type} \marg{instance} \meta{arguments}
   \end{syntax}
 使用实例。
 \end{function}
 
 \begin{function}[module=lttemplates]{\EditInstance}
   \begin{syntax}
-    \V\EditInstance \marg{object type} \marg{instance} \marg{new values}
+    \V\EditInstance \marg{type} \marg{instance} \marg{new values}
   \end{syntax}
 修改已有的实例。
 \end{function}
 
-\begin{function}[module=lttemplates]{\IfInstanceExistTF,\IfInstanceExistT,\IfInstanceExistF}
+\begin{function}[module=lttemplates]{\IfInstanceExistsTF,\IfInstanceExistsT,\IfInstanceExistsF}
   \begin{syntax}
-    \V\IfInstanceExistTF \marg{object type} \marg{instance} \marg{true code} \marg{false code}
+    \V\IfInstanceExistsTF \marg{type} \marg{instance} \marg{true code} \marg{false code}
   \end{syntax}
 判断实例是否存在。
 \end{function}
@@ -4531,7 +4532,7 @@ cbl 列表除了 \cs{cus@type@contentsline}、\cs{cus@type@contentsline@}、
 模板目录实际上由名为 \texttt{templatecbl} 的 socket 和 template 这两种抽象结构共同作用。
 对于一个模板格式的目录，socket 和 template 是纵向和横向的关系。
 \texttt{templatecbl} socket 用于控制模板目录的整体，
-而 \texttt{templatecbl} object type 用于控制目录项的内容。
+而 \texttt{templatecbl} type 用于控制目录项的内容。
 关于 socket 的作用和用法请参考 \file{ltsocket-doc.pdf}。
 
 默认的按照目录层级名来排布目录项是名为 \verb|by name| 的 plug，
@@ -4543,9 +4544,9 @@ cbl 列表除了 \cs{cus@type@contentsline}、\cs{cus@type@contentsline@}、
 \veta{templatecbl keys}、\veta{multicolumns keys}、目录自动添加的章节标题
 以及目录项的范围。用户可为该 socket 定义 plug，它用来规定如何处理目录项。
 
-名为 \texttt{templatecbl} 的 object type 需要 7 个参数，
+名为 \texttt{templatecbl} 的 type 需要 7 个参数，
 为目录条目保存的内容，前面已经多次提及。
-用户可为该 object type 定义 template，然后基于 template 定义实例。
+用户可为该 type 定义 template，然后基于 template 定义实例。
 
 如果自定义了标题命令，每个标题命令都会定义一个与命令名相同的目录层级名，
 如果要基于 \texttt{by name} template 输出目录，则需要定义同名的实例，

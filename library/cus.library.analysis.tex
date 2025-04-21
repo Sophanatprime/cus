@@ -20,18 +20,6 @@
       \exp_after:wN \use_ii:nn
     \fi:
   }
-\cs_new:Npn \__cus_tl_odd_items:n #1 { \__cus_tl_even_items:n { ? #1 } }
-\cs_new:Npn \__cus_tl_even_items:n #1
-  {
-    \__cus_tl_even_items_loop:nn #1 \q__cus_nil \q__cus_nil
-    \prg_break_point:
-  }
-\cs_new:Npn \__cus_tl_even_items_loop:nn #1#2
-  {
-    \__cus_use_none_delimit_by_q_nil:w #2 \prg_break: \q__cus_nil
-    { \exp_not:n {#2} }
-    \__cus_tl_even_items_loop:nn
-  }
 
 \cs_new_eq:NN \__cus_if_newoptcommand:NTF \@if@newcommand 
 \cs_new_eq:NN \__cus_if_robustcommand:NTF \@if@DeclareRobustCommand
