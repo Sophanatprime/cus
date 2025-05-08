@@ -107,8 +107,9 @@
 \RequirePackage{hyperref}
 \hypersetup{colorlinks}
 \RequirePackage{nameref,varioref}
-\ExpandArgs{c}\let{ver@listings.sty}\@undefined % emergency fix for cleveref
-\RequirePackage{cleveref}
+% \ExpandArgs{c}\let{ver@listings.sty}\@undefined % emergency fix for cleveref
+% \RequirePackage{cleveref}
+\RequirePackage{zref-clever}
 \RequirePackage[numbered,open,openlevel=1]{bookmark}
 \RequirePackage{glossaries}
 \RequirePackage{zhlipsum}
@@ -196,13 +197,22 @@
   texcsstyle={[3]{\color{red!70}}}, texcsstyle={[4]{\bfseries\color{green!50!black}}},
   texcsstyle={[5]{\bfseries\color{cyan}}}}
 
-\crefformat{figure}{#2图#1#3}
-\crefformat{table}{#2表#1#3}
-\crefformat{example}{#2例#1#3}
-\crefformat{part}{#2第\zhnumber{#1}部分#3}
-\crefformat{chapter}{#2第\zhnumber{#1}章#3}
-\crefformat{section}{第 #2#1#3 节}
-\crefformat{subsection}{第 #2#1#3 小节}
+\zcsetup{noname}
+\zcRefTypeSetup{figure}{refbounds={,图,,}}
+\zcRefTypeSetup{table}{refbounds={,表,,}}
+\zcRefTypeSetup{example}{refbounds={,例,,}}
+\zcRefTypeSetup{part}{refbounds={,第,部分,}}
+\zcRefTypeSetup{chapter}{refbounds={,第,章,}}
+\zcRefTypeSetup{section}{refbounds={,第,节,}}
+\zcRefTypeSetup{subsection}{refbounds={,第,小节,}}
+\let\cref\zcref
+% \crefformat{figure}{#2图#1#3}
+% \crefformat{table}{#2表#1#3}
+% \crefformat{example}{#2例#1#3}
+% \crefformat{part}{#2第\zhnumber{#1}部分#3}
+% \crefformat{chapter}{#2第\zhnumber{#1}章#3}
+% \crefformat{section}{第 #2#1#3 节}
+% \crefformat{subsection}{第 #2#1#3 小节}
 
 
 %region xample env
