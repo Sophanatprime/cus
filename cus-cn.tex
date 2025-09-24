@@ -1,4 +1,4 @@
-\DocumentMetadata{}
+\DocumentMetadata{lang=cn}
 \documentclass{cusdoc}
 \usepackage{texhigh}
 \ExplSyntaxOn\makeatletter
@@ -1819,7 +1819,7 @@ Unicode 代码点。
 \end{xample}
 
 
-\subsection{多栏文字}\label{sec:multicol}
+\subsection{多栏文字}\label{sec:fmulticol}
 
 \CusTeX 中排版多栏文字有两种方式，本节描述其中一种，使用 \pkg{multicol} 宏包实现。另一种方式见\cref{sec:lib-box}。
 
@@ -1837,38 +1837,38 @@ Unicode 代码点。
 
 \begin{function}{\startmulticolumns,\stopmulticolumns}
   \begin{syntax}
-    \verb|\startmulticolumns| \oarg{multicolumns key-val}
+    \verb|\startmulticolumns| \oarg{fmulticol key-val}
     ~~<content>
     \verb|\stopmulticolumns|
   \end{syntax}
 将 \meta{content} 以多栏排版。
 \end{function}
 
-\begin{keyval}[path=multicolumns]{columns,cols}
+\begin{keyval}[path=fmulticol]{columns,cols}
   \begin{syntax}
     columns|cols = \marg{整数表达式} & 2
   \end{syntax}
 设置多栏数。也可不必写出键名，只写数字。
 
-可用的栏数为 1--20，如果 \keyref[multicolumns]{adj} 为
+可用的栏数为 1--20，如果 \keyref[fmulticol]{adj} 为
 \opt{true}，则可用的栏数为 1--10。
 \end{keyval}
 
-\begin{keyval}[path=multicolumns]{outer-sep}
+\begin{keyval}[path=fmulticol]{outer-sep}
   \begin{syntax}
     outer-sep = \marg{skip expr} & 12.0pt plus 4.0pt minus 3.0pt
   \end{syntax}
 设置 \tn{multicolsep}，即多栏文字与上下文的间距。
 \end{keyval}
 
-\begin{keyval}[path=multicolumns]{column-sep,sep}
+\begin{keyval}[path=fmulticol]{column-sep,sep}
   \begin{syntax}
     column-sep|sep = \marg{length} & 10pt 
   \end{syntax}
 设置 \tn{columnsep}，即多栏文字两栏的间隙。
 \end{keyval}
 
-\begin{keyval}[path=multicolumns]{first-minimal,last-minimal}
+\begin{keyval}[path=fmulticol]{first-minimal,last-minimal}
   \begin{syntax}
     first-minimal = \marg{pre length} & 50pt 
     last-minimal  = \marg{post length} & 20pt 
@@ -1881,14 +1881,14 @@ Unicode 代码点。
 \opt{last-minimal} 设置 \tn{postmulticols}。
 \end{keyval}
 
-\begin{keyval}[path=multicolumns]{heading}
+\begin{keyval}[path=fmulticol]{heading}
   \begin{syntax}
     heading = \marg{content}
   \end{syntax}
 设置在多栏文字之前的横跨所有栏的文字。可以使用 \tn{section} 等。它与其后的多栏文字保持在同一页。
 \end{keyval}
 
-\begin{keyval}[path=multicolumns]{rule-width,rule-color}
+\begin{keyval}[path=fmulticol]{rule-width,rule-color}
   \begin{syntax}
     rule-width = \marg{length} & 0pt 
     rule-color = \marg{color}
@@ -1897,7 +1897,7 @@ Unicode 代码点。
 设置 \tn{columnseprule}、\tn{columnseprulecolor}，即多栏间竖线的宽度和颜色。
 \end{keyval}
 
-\begin{keyval}[path=multicolumns]{flush,aligned,ragged,not-aligned}
+\begin{keyval}[path=fmulticol]{flush,aligned,ragged,not-aligned}
   \begin{syntax}
     flush |aligned &&
     ragged|not-aligned &&
@@ -1907,7 +1907,7 @@ Unicode 代码点。
 初始为 \opt{aligned}，将使各栏头部和尾部的基线尽量对齐。
 \end{keyval}
 
-\begin{keyval}[path=multicolumns]{balanced,not-balanced}
+\begin{keyval}[path=fmulticol]{balanced,not-balanced}
   \begin{syntax}
     balanced = <&\TTF> & true 
     not-balanced &&
@@ -1917,7 +1917,7 @@ Unicode 代码点。
 前者为 \opt{balanced}，后者为 \opt{not-balanced}。
 \end{keyval}
 
-\begin{keyval}[path=multicolumns]{columns*,cols*}
+\begin{keyval}[path=fmulticol]{columns*,cols*}
   \begin{syntax}
     columns*|cols* = \marg{栏数}
   \end{syntax}
@@ -1926,7 +1926,7 @@ Unicode 代码点。
 注意 \opt{columns} 并未决定使用 \opt{balanced} 还是 \opt{not-balanced}。
 \end{keyval}
 
-\begin{keyval}[path=multicolumns]{swap-column,enable-swap-column,disable-swap-column}
+\begin{keyval}[path=fmulticol]{swap-column,enable-swap-column,disable-swap-column}
   \begin{syntax}
     swap-column = <&\TTF> & false 
     enable-swap-column &&
@@ -1937,7 +1937,7 @@ Unicode 代码点。
 \opt{enable-swap-column} 用于启用此功能，\opt{disable-swap-column} 用于禁用此功能。
 \end{keyval}
 
-\begin{keyval}[path=multicolumns]{framed,framed-options,framed-options+}
+\begin{keyval}[path=fmulticol]{framed,framed-options,framed-options+}
   \begin{syntax}
     framed = <&none|fbox|...>
     framed-options = \marg{options}
@@ -1946,13 +1946,13 @@ Unicode 代码点。
 \opt{framed-options} 为可能的选项。
 
 默认仅提供 \opt{fbox} 这个可选值，表示用 \tn{fbox} 框住。其它库可能提供额外的值。如 
-\cusmodule{tcb} 库提供 \opt{tcbox} 值（\cref{sec:multicolumns/framed=tcbox}），
-\cusmodule{box} 库提供 \opt{lfbox} 值（\cref{sec:multicolumns/framed=lfbox}）。
+\cusmodule{tcb} 库提供 \opt{tcbox} 值（\cref{sec:fmulticol/framed=tcbox}），
+\cusmodule{box} 库提供 \opt{lfbox} 值（\cref{sec:fmulticol/framed=lfbox}）。
 
-使用此选项时，最好把 \keyref[multicolumns]{overflow} 设置为 \texttt{0pt}，否则可能无法正常分页。
+使用此选项时，最好把 \keyref[fmulticol]{overflow} 设置为 \texttt{0pt}，否则可能无法正常分页。
 \end{keyval}
 
-\begin{keyval}[path=multicolumns]{adj,adj*,adj-inner,adj-outer,shorten,widen}
+\begin{keyval}[path=fmulticol]{adj,adj*,adj-inner,adj-outer,shorten,widen}
   \begin{syntax}
     adj  = <&\TTF> & false 
     adj* &&
@@ -1962,7 +1962,7 @@ Unicode 代码点。
     widen     = \marg{长度} | \{ \meta{内侧长度}, \meta{外侧长度} \}
   \end{syntax}
 多栏文字还可以通过调整边距来调整总的文字宽度。\opt{adj} 用于启用或关闭此功能。
-\opt{adj*} 设置 \verb|adj=true| 及 \keyref[multicolumns]{not-balanced}。
+\opt{adj*} 设置 \verb|adj=true| 及 \keyref[fmulticol]{not-balanced}。
 
 \opt{adj-inner} 的 \meta{内侧长度} 和 \opt{adj-outer} 的 \meta{外侧长度} 
 分别调整文字的内侧和外侧边距。正值表示向文字内调整
@@ -1980,7 +1980,7 @@ Unicode 代码点。
 
 \sdanger
 
-\begin{keyval}[path=multicolumns]{wrap-box}
+\begin{keyval}[path=fmulticol]{wrap-box}
   \begin{syntax}
     wrap-box = <&\TTF> & false
   \end{syntax}
@@ -1992,14 +1992,14 @@ Unicode 代码点。
 一般情况无需特别设置该选项。
 \end{keyval}
 
-\begin{keyval}[path=multicolumns]{addto-baselineskip}
+\begin{keyval}[path=fmulticol]{addto-baselineskip}
   \begin{syntax}
     addto-baselineskip = \marg{length}
   \end{syntax}
 设置 \tn{multicolbaselineskip}。% 将 \meta{length} 加到 \tn{baselineskip} 上。
 \end{keyval}
 
-\begin{keyval}[path=multicolumns]{tolerance,pretolerance}
+\begin{keyval}[path=fmulticol]{tolerance,pretolerance}
   \begin{syntax}
     tolerance    = \marg{int expr} & 9999
     pretolerance = \marg{int expr}
@@ -2007,7 +2007,7 @@ Unicode 代码点。
 设置 \tn{multicoltolerance}、\tn{multicolpretolerance}。
 \end{keyval}
 
-\begin{keyval}[path=multicolumns]{collectmore,minrows,unbalance,column-badness,final-column-badness}
+\begin{keyval}[path=fmulticol]{collectmore,minrows,unbalance,column-badness,final-column-badness}
   \begin{syntax}
     collectmore = \marg{int expr}
   \end{syntax}
@@ -2015,7 +2015,7 @@ Unicode 代码点。
 \texttt{columnbadness}，\texttt{finalcolumnbadness} 计数器。
 \end{keyval}
 
-\begin{keyval}[path=multicolumns]{top-fuzz,bottom-fuzz}
+\begin{keyval}[path=fmulticol]{top-fuzz,bottom-fuzz}
   \begin{syntax}
     top-fuzz    = \marg{dim expr} & 0pt 
     bottom-fuzz = \marg{dim expr} & 2pt 
@@ -2023,21 +2023,21 @@ Unicode 代码点。
 设置 \tn{multicolovershoot}、\tn{multicolundershoot}。
 \end{keyval}
 
-\begin{keyval}[path=multicolumns]{v-fuzz,h-fuzz}
+\begin{keyval}[path=fmulticol]{v-fuzz,h-fuzz}
   \begin{syntax}
     v-fuzz = \marg{length}
   \end{syntax}
 \opt{v-fuzz} 设置 \opt{top-fuzz} 和 \opt{bottom-fuzz}。\opt{h-fuzz} 设置 \tn{hfuzz}。
 \end{keyval}
 
-\begin{keyval}[path=multicolumns]{overflow}
+\begin{keyval}[path=fmulticol]{overflow}
   \begin{syntax}
     overflow = \marg{dim expr} & 12pt 
   \end{syntax}
 设置 \tn{maxbalancingoverflow}。
 \end{keyval}
 
-\begin{keyval}[path=multicolumns]{left-to-right,LR,right-to-left,RL}
+\begin{keyval}[path=fmulticol]{left-to-right,LR,right-to-left,RL}
   \begin{syntax}
     left-to-right|LR &&
     right-to-left|RL &&
@@ -2053,7 +2053,7 @@ Unicode 代码点。
 \begin{function}{\startextrawidth,\stopextrawidth}
   \begin{syntax}
     \V\startextrawidth \marg{inner extra width} \marg{outer extra width}
-    \V\startextrawidth \oarg{multicolumns key-val} \marg{inner extra width} \marg{outer extra width}
+    \V\startextrawidth \oarg{fmulticol key-val} \marg{inner extra width} \marg{outer extra width}
     ~~\meta{material}
     \V\stopextrawidth
   \end{syntax}
@@ -2063,7 +2063,7 @@ Unicode 代码点。
 \begin{function}{\startfullpagewidth,\stopfullpagewidth}
   \begin{syntax}
     \V\startfullpagewidth
-    \V\startfullpagewidth \oarg{multicolumns} \string<\meta{inner shrink},\meta{outer shrink}\string>
+    \V\startfullpagewidth \oarg{fmulticol} \string<\meta{inner shrink},\meta{outer shrink}\string>
     ~~<material>
     \V\stopfullpagewidth
   \end{syntax}
@@ -2720,8 +2720,8 @@ plain 格式目录不会附带章节标题，否则将自动添加一个正常�
 
 \begin{function}{\tableofcontents,\listoffigures,\listoftables,\localtableofcontents}
 \begin{syntax}
-  \V\tableofcontents      \oarg{multicolumns keyval}
-  \V\localtableofcontents \oarg{multicolumns keyval} \string(<level>,<index>\string)
+  \V\tableofcontents      \oarg{fmulticol keyval}
+  \V\localtableofcontents \oarg{fmulticol keyval} \string(<level>,<index>\string)
 \end{syntax}
 输出 plain 格式的标题、图片和表格目录。
 
@@ -2740,16 +2740,16 @@ plain 格式目录不会附带章节标题，否则将自动添加一个正常�
 
 \begin{function}{\multicolplaincombinedlist}
   \begin{syntax}
-    \verb|\multicolplaincombinedlist| \oarg{multicolumns key-val} \marg{title} \marg{cbl type}
+    \verb|\multicolplaincombinedlist| \oarg{fmulticol key-val} \marg{title} \marg{cbl type}
   \end{syntax}
 \cs{multicolplaincombinedlist} 输出 plain 格式的多栏目录，该目录的类型是 \meta{cbl type}，
 并以 \meta{title} 作为标题。如果 \meta{title} 为空，则不输出标题。
-\meta{multicolumns key-val} 设置多栏选项，如果栏数为 1，则相当于默认的单栏目录。
+\meta{fmulticol key-val} 设置多栏选项，如果栏数为 1，则相当于默认的单栏目录。
 \end{function}
 
 \begin{function}{\multicollocalplaincombinedlist}
   \begin{syntax}
-    \V\multicollocalplaincombinedlist \oarg{multicolumns keyval}
+    \V\multicollocalplaincombinedlist \oarg{fmulticol keyval}
     ~~~~\marg{title} \marg{cbl type} \marg{min} \marg{max}
   \end{syntax}
 输出多栏局部目录。局部目录从 \meta{min} 开始，到 \meta{max} 终止。如果 \meta{title} 为空，则不输出标题。
@@ -2768,7 +2768,7 @@ template 格式目录不会附带章节标题，否则将自动添加一个正�
 \begin{function}{\templatetoc,\templatelof,\templatelot}
   \begin{syntax}
     \V\templatetoc
-    \V\templatetoc \oarg{templatecbl keys} \oarg{multicolumns key} \string(\meta{level},\meta{index}\string)
+    \V\templatetoc \oarg{templatecbl keys} \oarg{fmulticol key} \string(\meta{level},\meta{index}\string)
   \end{syntax}
 输出 ``template'' 格式的目录。\meta{templatecbl keys} 用于局部修改目录的输出。
 \end{function}
@@ -2776,7 +2776,7 @@ template 格式目录不会附带章节标题，否则将自动添加一个正�
 \begin{function}{\templatecombinedlist}
   \begin{syntax}
     \V\templatecombinedlist \marg{type} \marg{title}
-    \V\templatecombinedlist \oarg{templatecbl keys} \oarg{multicolumns key} \marg{cbl type} 
+    \V\templatecombinedlist \oarg{templatecbl keys} \oarg{fmulticol key} \marg{cbl type} 
     ~~\string(\meta{level},\meta{index}\string) \marg{title}
   \end{syntax}
 template 格式目录的完整形式。
@@ -4381,7 +4381,7 @@ cbl 列表除了 \cs{cus@type@contentsline}、\cs{cus@type@contentsline@}、
   \end{syntax}
 添加 mark 到当前的垂直列中，这个 mark 包含 \meta{text}（被完全展开）。
 
-在不能使用浮动体的地方也无法使用这个命令，如在一个盒子中使用它们时无效。特别的，在 \env{multocols} 等多栏环境中使用它们将无效。
+在不能使用浮动体的地方也无法使用这个命令，如在一个盒子中使用它们时无效。
 \end{function}
 
 \begin{function}[module=hook point,type=hook point]{insertmark}
@@ -4401,7 +4401,7 @@ cbl 列表除了 \cs{cus@type@contentsline}、\cs{cus@type@contentsline@}、
 
 目前，\meta{region} 可选值为 \texttt{page}、\texttt{previous-page}、\texttt{column}、
 \texttt{previous-column}。在多栏（双栏）文档中，\texttt{first-column}、
-\texttt{last-column} 分别代表最左列和最右列。
+\texttt{last-column} 分别代表最左列和最右列。以及 \texttt{mcol-\meta{i}} 用于 \pkg{multicol} 宏包的个栏。
 
 \meta{region} 默认为 \texttt{page}。
 \end{function}
@@ -4475,7 +4475,7 @@ cbl 列表除了 \cs{cus@type@contentsline}、\cs{cus@type@contentsline@}、
 \end{xample}
 
 \csref{multicolplaincombinedlist} 则是用于输出默认的多栏目录。可以使用一个可选参数
-设置多栏的样式，见\cref{sec:multicol}。
+设置多栏的样式，见\cref{sec:fmulticol}。
 
 \CusTeX 的目录机制适配了许多宏包，诸如 \pkg{algorithm2e}、\pkg{chemmacros}、
 \pkg{listings}、\pkg{thmtools} 等有固定目录扩展名（即目录类型）的宏包，以及
@@ -4541,7 +4541,7 @@ cbl 列表除了 \cs{cus@type@contentsline}、\cs{cus@type@contentsline@}、
 它限定了目录项应当如何排布它的内容。
 
 名为 \texttt{templatecbl} 的 socket 需要 5 个参数，分别为目录类型、
-\veta{templatecbl keys}、\veta{multicolumns keys}、目录自动添加的章节标题
+\veta{templatecbl keys}、\veta{fmulticol keys}、目录自动添加的章节标题
 以及目录项的范围。用户可为该 socket 定义 plug，它用来规定如何处理目录项。
 
 名为 \texttt{templatecbl} 的 type 需要 7 个参数，
@@ -4991,7 +4991,7 @@ cbl 列表除了 \cs{cus@type@contentsline}、\cs{cus@type@contentsline@}、
   \item \texttt{options}：编译索引时的选项，索引文件名和输出文件名将自动添加；
   \item \texttt{exec}：终端中实际编译索引执行的代码，如果未设置，则组合 \texttt{program} 及 \texttt{options}；
   \item \texttt{auto}；布尔值，是否自动编译索引文件；
-  \item \texttt{multi}：多栏选项（\meta{multicolumns key-val}）；
+  \item \texttt{multi}：多栏选项（\meta{fmulticol key-val}）；
   % \item \texttt{heading}：标题层级；
   \item \texttt{heading*}：标题命令，如 \verb|\chapter[numbering=false]|；
   \item \texttt{init}：索引开头的初始化设置；索引文件不存在时不会执行；
@@ -5164,10 +5164,10 @@ verbatim 和分段。
 \cuslibrary{tcb} 库使用 \pkg{tcolorbox} 宏包的功能，定制了一些其它功能。用户
 \emph{需自行加载} \pkg{tcolorbox} 宏包。
 
-\subsection{\texttt{multicolumns/framed=tcbox}}\label{sec:multicolumns/framed=tcbox}
+\subsection{\texttt{fmulticol/framed=tcbox}}\label{sec:fmulticol/framed=tcbox}
 
 本库提供为多栏文字的外框提供了 \opt{tcbox} 可选值。表示用 \pkg{tcolorbox} 宏包的 
-\tn{tcbox} 作为盒子外框。\keyref[multicolumns]{framed-options} 可以使用 \pkg{tcolorbox}
+\tn{tcbox} 作为盒子外框。\keyref[fmulticol]{framed-options} 可以使用 \pkg{tcolorbox}
 宏包提供的选项。
 
 % \begin{keyval}[path=frame]{tcbox-frame,tcbox-first,tcbox-middle,tcbox-last,tcbox-whole}
@@ -5525,6 +5525,15 @@ verbatim 和分段。
 
 \begin{function}{\g_cus_doc_type_alias_prop,\g_cus_doc_module_alias_prop}
 这两个 prop 分别用于设置 \opt{type} 和 \opt{module} 的实际值。
+\end{function}
+
+\begin{function}{\cus@doc@get@hypertarget,\cus_doc_get_hyper_target:nnN,\cus_doc_get_hyper_target:eeN}
+  \begin{syntax}
+    \V{\cus_doc_get_hyper_target:nnN} \marg{cs name} <{type}> \meta{cmd}
+  \end{syntax}
+把控制序列 \meta{cs name} 的引用名（即 \tn{label} 的参数）保存到 \meta{cmd} 中。
+\meta{type} 为类型，一般为 \texttt{function}，也可为 \texttt{keyval}、\texttt{environment}、
+\texttt{hook point}、\texttt{socket point}、\texttt{color name} 等。
 \end{function}
 
 \section{\cuslibrary{bnf}库}
@@ -5948,10 +5957,10 @@ s_0,s_1,s_2&w_0&g_0&w_1&g_1&w_2\rlap{ (in \texttt{pt})}\\\hline
 
 关于 \pkg{paracol} 宏包的其它用法见 \pkgdoc{paracol}。
 
-\subsection{\texttt{multicolumns/framed=lfbox}}\label{sec:multicolumns/framed=lfbox}
+\subsection{\texttt{fmulticol/framed=lfbox}}\label{sec:fmulticol/framed=lfbox}
 
 本库提供为多栏文字的外框提供了了 \opt{lfbox} 可选值。表示用 \pkg{longfbox} 宏包的 
-\tn{lfbox} 作为盒子外框。\keyref[multicolumns]{framed-options} 可以使用 \pkg{longfbox} 
+\tn{lfbox} 作为盒子外框。\keyref[fmulticol]{framed-options} 可以使用 \pkg{longfbox} 
 宏包提供的选项。
 
 \subsection{\cs[no-index]{fparbox} 和 \cs[no-index]{fvarbox}，可设置外框的命令}
@@ -6098,6 +6107,10 @@ s_0,s_1,s_2&w_0&g_0&w_1&g_1&w_2\rlap{ (in \texttt{pt})}\\\hline
 
 
 \chapter{可单独加载的宏包}
+
+\section{\pkg{framedmulticol}}
+
+见\cref{sec:fmulticol}。
 
 \section{\pkg{collectn}}\label{sec:collectn}
 
