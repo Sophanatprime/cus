@@ -487,8 +487,23 @@
 \protected\def\thispagestyle#1{%
   \@ifundefined{ps@#1}{\undefinedpagestyle{#1}}
     {\global\@specialpagetrue\xdef\@specialstyle{#1}}}
-\ctex_patch_cmd:Nnn \@outputpage { \if@specialpage } 
-  { \if@specialpage \let\@currpagestyle\@specialstyle }
+\cs_if_exist:NTF \pcol@@outputpage
+  {
+    \regex_replace_once:nnNTF
+      { \c{if@specialpage} }
+      { \c{if@specialpage}\c{let}\c{@currpagestyle}\c{@specialstyle} }
+      \pcol@@outputpage
+      { }
+      { \cus_patch_failure:N \pcol@@outputpage }
+  }
+  {
+    \regex_replace_once:nnNTF
+      { \c{if@specialpage} }
+      { \c{if@specialpage}\c{let}\c{@currpagestyle}\c{@specialstyle} }
+      \@outputpage
+      { }
+      { \cus_patch_failure:N \@outputpage }
+  }
 \ekeysdeclarecmd \setpagestyle { p{*.+!} s m O{f@nch@fancyproto} m }
   {
     \legacy_if_set:nn { f@nch@pagestyle@star }

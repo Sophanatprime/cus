@@ -1,15 +1,17 @@
 \NeedsTeXFormat{LaTeX2e}
-\ProvidesExplClass{cusdoc}{2024-04-16}{0.0.5}{cus doc class}
+\ProvidesExplClass{cusdoc}{2025-09-14}{0.0.5}{cus doc class}
 
 \keys_define:nn { cusdoc } 
   {
+    class .tl_set:N = \@cusdocclass ,
+    class .initial:n = book ,
     tcbxample .bool_set:N = \l__cusdoc_tcbxample_bool , 
-    unknown .code:n = \PassOptionsToClass{#1}{book} 
+    unknown .code:n = \PassOptionsToClass{#1}{\@cusdocclass} 
   }
 \ExplSyntaxOff
 
 \ProcessKeyOptions
-\LoadClass{book}
+\LoadClass{\@cusdocclass}
 
 \PassOptionsToPackage{silent}{xeCJK}
 \RequirePackage{ctex}
@@ -77,6 +79,7 @@
 
 %region shorthands
 \newcommand{\hook}{\cmd[module=hook point,type=hook point]}
+\newcommand{\socket}{\cmd[module=socket point,type=socket point]}
 \newcommand{\colna}{\key[module=color name,type=color name]}
 
 \RequirePackage{marginnote}
@@ -91,12 +94,21 @@
 \setuplayout*[balance]{hmargin=1.7cm,top=2.3cm,bottom=2.5cm,
   hfoffset=0pt,nomarginpar,
   columnsep=35pt,headsep=10pt,footskip=30pt,}
-\setuplayout[main]{paper=a4,
-  marginparsep=10pt,marginparwidth=15\ccwd,
-  textwidth=35\ccwd,inner=1.7cm,top=2.3cm,bottom=2.5cm,
-  headsep=10pt,footskip=30pt,
-  hfoffset={[OR,EL]168.1pt},
-}
+\if@twoside
+  \setuplayout[main]{paper=a4,
+    marginparsep=10pt,marginparwidth=15\ccwd,
+    textwidth=35\ccwd,inner=1.7cm,top=2.3cm,bottom=2.5cm,
+    headsep=10pt,footskip=30pt,
+    hfoffset={[OR,EL]168.1pt},
+  }
+\else
+  \setuplayout[main]{paper=a4,
+    marginparsep=10pt,marginparwidth=15\ccwd,
+    textwidth=35\ccwd,inner=1.7cm,top=2.3cm,bottom=2.5cm,
+    headsep=10pt,footskip=30pt,
+    hfoffset={[R]168.1pt},
+  }
+\fi
 
 \RequirePackage{enumitem}
 \setlist{nosep}
