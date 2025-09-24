@@ -4,13 +4,13 @@
 \ExplSyntaxOn\makeatletter
 \sys_if_shell_unrestricted:T
   {
-    \THSetClassCS[]{cus}{\mbox{\THcolor{blue!80!black}\bfseries
+    \THSetCS[]{cus}{\mbox{\THcolor{blue!80!black}\bfseries
       \transparent{0.7}\texhigh@underline{\transparent{1}#1#2}}}
-    \texhighsetclassfallback{cs}{cus.l}{cus, latex}
-    \texhighsetclassfallback{cs}{cus.r}{cus, latex}
-    \texhighsetclassfallback{cs}{cus.more}{cus, latex}
-    \texhighsetclassfallback{cs}{ekeys}{cus, latex}
-    \texhighsetclassfallback{cs}{fmulticol}{cus, latex}
+    \THSetFallback{cs}{cus.l}{cus, latex}
+    \THSetFallback{cs}{cus.r}{cus, latex}
+    \THSetFallback{cs}{cus.more}{cus, latex}
+    \THSetFallback{cs}{ekeys}{cus, latex}
+    \THSetFallback{cs}{fmulticol}{cus, latex}
     \cs_if_exist:NTF \xeCJKsetup
       {
         \THSaveStyle{xamplestyle}{

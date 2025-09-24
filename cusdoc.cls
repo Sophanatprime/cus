@@ -1,5 +1,5 @@
 \NeedsTeXFormat{LaTeX2e}
-\ProvidesExplClass{cusdoc}{2025-09-14}{0.0.5}{cus doc class}
+\ProvidesExplClass{cusdoc}{2025-09-24}{0.0.7}{cus doc class}
 
 \keys_define:nn { cusdoc } 
   {
