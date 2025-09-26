@@ -1,9 +1,9 @@
 \DocumentMetadata{lang=cn}
 \documentclass{cusdoc}
-\usepackage{texhigh}
 \ExplSyntaxOn\makeatletter
 \sys_if_shell_unrestricted:T
   {
+    \usepackage{texhigh}
     \THSetCS[]{cus}{\mbox{\THcolor{blue!80!black}\bfseries
       \transparent{0.7}\texhigh@underline{\transparent{1}#1#2}}}
     \THSetFallback{cs}{cus.l}{cus, latex}
