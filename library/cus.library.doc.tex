@@ -817,7 +817,7 @@
   }
 \cs_new:Npn \__cus_doc_special_index_module_TeX:NNn #1#2#3
   { 
-    { TeX~and~LaTeX2e } { \string\TeX{}~and~\string\LaTeXe{} } 
+    { TeX~and~LaTeX2e } { \string\TeX{}~和~\string\LaTeXe{} } 
     {
       的 \bool_if:NT #1 { 内部 }
       \bool_if:NTF #2 { 选项： } { 命令： }
@@ -833,8 +833,7 @@
   }
 % 第一个参数为 module，
 % 第二个参数有三项，第一项为用于排序的字符，第二项为显示的字符，第三项附加到前两项后面，
-% 可使用三个参数，第一个为布尔值，表示是否是内部变量，第二个为布尔值，表示是否为键值，
-% 第三个为 module
+% 可使用三个参数，第一个为布尔值，表示是否是内部变量，第二个为布尔值，表示是否为键值，第三个为 module
 \cs_new_protected:Npn \cus_doc_gset_special_index_print:nn #1
   { \cs_gset:cpn { __cus_doc_special_index_module_#1:NNn } ##1##2##3 }
 \cus_doc_gset_special_index_print:nn { hook~point }

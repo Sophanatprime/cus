@@ -162,7 +162,12 @@
             \head@fc\head@cl\head@ifempty\head@sl{}{\@chaptosec\head@fs\head@sl}}}}%
   }{\head@fc\head@cf\@splitrange\head@fc\head@cl}}
 
-\providecommand\headlink@warp[1]{#1}
+\ifdefined\pdfannot@link@on@@
+  % latex disables the links on header and footer
+  \providecommand\headlink@warp[1]{\pdfannot@link@on@@ #1}
+\else
+  \providecommand\headlink@warp[1]{#1}
+\fi
 \setpagestyle{plain}[totalempty]{}
 %endregion
 
