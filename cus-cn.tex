@@ -5316,8 +5316,8 @@ verbatim 和分段。
 键名默认为 \texttt{keyval}，环境为 \texttt{environment} ，如若修改了此值，
 在引用时也必须修改。
 
-\veta{module} 有几个特殊的值 \verb*|hook point|、\verb*|color name|，
-分别用于标记此命令为钩子、颜色名称。使用这几个值时最好也将 \opt{type} 也改为相同的值。
+\veta{module} 有几个特殊的值 \texttt{hook point}、\texttt{socket point}、\texttt{color name}，
+分别用于标记此命令为钩子、代码槽、颜色名称。使用这几个值时最好也将 \opt{type} 也改为相同的值。
 
 \begin{keyval}[path=doc/cmd]{hyphen-opacity}
   \begin{syntax}
@@ -5525,6 +5525,20 @@ verbatim 和分段。
 
 \begin{function}{\g_cus_doc_type_alias_prop,\g_cus_doc_module_alias_prop}
 这两个 prop 分别用于设置 \opt{type} 和 \opt{module} 的实际值。
+\end{function}
+
+\begin{function}{\changes}
+  \begin{syntax}
+    \V\changes \marg{版本} \marg{日期} \marg{内容}
+    \V\changes \oarg{小标题} \marg{版本} \marg{日期} \marg{内容}
+  \end{syntax}
+设置版本历史信息。\meta{版本}一般以 \texttt{v} 开头。\meta{日期} 为 \texttt{yyyy-mm-dd} 或 \texttt{yyyy/mm/dd}。
+\meta{小标题} 若不设置，则为 \cs{generalname} 的值，必须非空，且只能包含纯文字。
+\end{function}
+
+\begin{function}{\generalname,\removegeneralname,\changesitemtitle}
+\cs{changes} 的小标题。不能为空，且只能包含纯文字。\cs{removegeneralname} 用于删除它。
+\cs{changesitemtitle} 用于设置小标题的格式，可重定义它以修改小标题的样式。
 \end{function}
 
 \begin{function}{\cus@doc@get@hypertarget,\cus_doc_get_hyper_target:nnN,\cus_doc_get_hyper_target:eeN}
@@ -6694,6 +6708,13 @@ $2^{15}-1=32767$，在 \LuaLaTeX 和 (u)p\LaTeX 中为 $2^{16}-1=65535$。
   \end{syntax}
 把局部定义的 \meta{ekeys-cmd} 改为全局定义的。\cs{ekeysdeclarecmd} 总是局部地定义命令。
 如果不是 \veta{ekeys-cmd} 则\emph{保持不变}。
+\end{function}
+
+\begin{function}[EXP,added=2025/10/10]{\ekeys_cmd_arg_spec:N}
+  \begin{syntax}
+    \V*{\ekeys_cmd_arg_spec:N} \meta{ekeys-cmd}
+  \end{syntax}
+获得 \meta{ekeys-cmd} 的参数类型。如果该命令未定义或不是 \veta{ekeys-cmd} 则为 \texttt{X}。
 \end{function}
 
 \begin{function}[EXP]{\__ekeys_if_cmd:NTF}

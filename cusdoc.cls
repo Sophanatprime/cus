@@ -1,5 +1,5 @@
 \NeedsTeXFormat{LaTeX2e}
-\ProvidesExplClass{cusdoc}{2025-09-24}{0.0.7}{cus doc class}
+\ProvidesExplClass{cusdoc}{2025-10-10}{0.0.7}{cus doc class}
 
 \keys_define:nn { cusdoc } 
   {
@@ -279,6 +279,9 @@
       \expandafter\string\@firstofone}
   {\end{longfbox}\xample@test\goodbreak}
 
+\NewDocumentCommand \docchange {} {\changes[文档]}
+\NewDocumentCommand \newfeature {} {\changes[新增]}
+\NewDocumentCommand \cschange {m} {\changes[\cs{#1}]}
 
 \ExplSyntaxOn
 

@@ -8,9 +8,13 @@
   {
     no-index-file .bool_set_inverse:N = \l__cus_doc_index_file_bool,
     no-index-file .initial:n = false,
+    allow-index   .bool_set:N = \l__cus_doc_allow_indexing_bool,
   }
 
 \ProcessKeyOptions[cus/doc-options]
+
+\bool_if:NF \l__cus_doc_index_file_bool
+  { \bool_set_false:N \l__cus_doc_allow_indexing_bool }
 
 \cus_add_pdf_disable:n 
   { 
@@ -29,7 +33,7 @@
   exec={makeindex~-s~gind.ist~-o~\jobname.docusage.ind~\jobname.docusage.idx},
   title={代码索引}, heading*={\section}, auto=true, 
   multi={ragged,sep=1em,outer-skip=0pt},
-  init={\def\+{+}\lineskip\z@},
+  init={\def\+{+}\lineskip\z@ \bool_set_false:N \l__cus_doc_allow_indexing_bool},
 ]{docusage}
 %\setindexprologue[docusage]{{\normalfont\itshape 意大利体的数字表示描述对应索引项的页码；带下划线的数字表示定义对应索引项的代码行号；罗马字体的数字表示使用对应索引项的代码行号。}}
 \setindexprologue[docusage]{{\normalfont\itshape 粗体的数字表示描述对应索引项的页码；意大利体的数字表示使用对应索引项的页码。}}
@@ -38,9 +42,13 @@
 \newindextype[filename=\jobname.docchange.glo,output=\jobname.docchange.gls,
   exec={makeindex~-s~gglo.ist~-o~\jobname.docchange.gls~\jobname.docchange.glo},
   title={版本历史}, heading*={\section}, auto=true, 
-  multi={ragged,sep=1cm,outer-skip=0pt}
+  multi={ragged,sep=1em,outer-skip=0pt},
 ]{docchange}
-\setindexinit[docchange]{\let\theglossary\theindex \let\endtheglossary\endtheindex}
+\setindexinit[docchange]{
+  \def\indexspace{\par}
+  \let\theglossary\theindex \let\endtheglossary\endtheindex
+  \bool_set_false:N \l__cus_doc_allow_indexing_bool
+}
 \def\PrintChanges{\printindex[docchange]}
   }
 
@@ -110,8 +118,6 @@
 \tl_new:N \g__cus_doc_module_name_tl
 \bool_new:N \g__cus_doc_cs_break_bool
 \bool_set_true:N \g__cus_doc_cs_break_bool
-\bool_new:N \l__cus_doc_allow_indexing_bool
-\bool_set_eq:NN \l__cus_doc_allow_indexing_bool \l__cus_doc_index_file_bool
 \bool_new:N \l__cus_doc_macro_visible_space_bool
 \tl_new:N \l__cus_doc_framed_setting_tl
 
@@ -1011,14 +1017,14 @@
             { 
               #1 \levelchar
               \if_meaning:w \saved@macroname \@empty
-                \space \actualchar \generalname
+                \quotechar! \actualchar \generalname
               \else:
                 \saved@indexname \actualchar
                 \token_to_str:N \verb \quotechar*%
                 \verbatimchar \saved@macroname
                 \verbatimchar
               \fi:
-              : \levelchar #3
+              \changesitemtitlesep \levelchar #3
               \exp_not:n { \encapchar \encapchar \@nil }
             }
             { \exp_not:N \thepage }
@@ -1028,14 +1034,17 @@
   }
 \bool_if:NF \l__cus_doc_index_file_bool
   { \cs_set_protected:Npn \__cus_doc_ltx_changes:nnn #1#2#3 { \group_end: \@esphack } }
-\cs_set_protected:Npn \changes@ #1#2
+\protected\def \changesitemtitle #1 { { \def\seriesdefault{\bfdefault}\normalfont #1 } }
+\def \changesitemtitlesep  { ： }
+\ekeysdeclarecmd \changes@ { @O{} m m }
   {
+    \tl_if_blank:nF {#1} { \def\generalname{ \quotechar \c_backslash_str changesitemtitle {#1} } }
     \exp_args:Nne \__cus_doc_save_version_date:nn 
-      {#1} { \__cus_date_normalize:n {#2} }
-    \tl_if_empty:nTF {#1}
+      {#2} { \__cus_date_normalize:n {#3} }
+    \tl_if_empty:nTF {#2}
       { \__cus_doc_ltx_changes:nnn }
-      { \__cus_doc_version_zfill:wnnn #1 \q_stop }
-      {#1} {#2}
+      { \__cus_doc_version_zfill:wnnn #2 \q_stop }
+      {#2} {#3}
   }
 \cs_new_protected:Npn \__cus_doc_version_zfill:wnnn #1#2 \q_stop
   {
