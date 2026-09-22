@@ -20,7 +20,7 @@
 % cus.module.pdfmana.tex, cus.module.space.tex, cus.module.struct.tex,
 % cus.module.util.tex and cusclass.cls .
 \NeedsTeXFormat{LaTeX2e}[2024/11/01]
-\def\cus@d@te{2025/09/24}
+\def\cus@d@te{2026/09/22}
 \def\cus@versi@n{0.0.7}
 \ProvidesExplPackage{cus}{\cus@d@te}{\cus@versi@n}{Chinese User Scheme (CUS) basic file}
 
@@ -405,9 +405,9 @@
   }
 \cs_new_protected:Npn \CUSPassOptionsToLibrary #1#2
   {
-    \clist_if_exist:cF { cus/library-options-passed~#2 }
-      { \clist_new:c { cus/library-options-passed~#2 } }
-    \clist_put_right:cn { cus/library-options-passed~#2 } {#1}
+    \clist_if_exist:cF { cus/library-options~#2 }
+      { \clist_new:c { cus/library-options~#2 } }
+    \clist_put_right:co { cus/library-options~#2 } {#1}
   }
 \NewDocumentCommand \CUSLoadLibrary { +O{} m O{0000/00/00} }
   {
@@ -624,7 +624,6 @@
         \ctex_patch_cmd:Nnn \HoLogo@LaTeXe
           { \hbox { \HOLOGO@MathSetup 2 $ _{ \textstyle \varepsilon } $ } }
           {
-            \hbox
               {
                 \mathsurround 0pt \relax
                 2
@@ -642,10 +641,10 @@
               {
                 \mathsurround 0pt \relax
                 $ \symbf { \varepsilon } $
-                -
-                \HOLOGO@NegativeKerning{-T,T-,To}
-                \hologo{TeX}
               }
+            -
+            \HOLOGO@NegativeKerning{-T,T-,To}
+            \hologo{TeX}
           }
       }
   }

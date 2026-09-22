@@ -4986,6 +4986,7 @@ cbl 列表除了 \cs{cus@type@contentsline}、\cs{cus@type@contentsline@}、
 \end{function}
 
 \meta{index keys} 不同于 \CusTeX 中其它的键值选项，仅具有类似的接口。
+其原因是索引属于“模板”。
 
 \begin{itemize}[nosep]
   \item \texttt{filename}：索引文件名，一般以 \texttt{idx} 结尾，如果未设置，则为：
@@ -5043,6 +5044,55 @@ cbl 列表除了 \cs{cus@type@contentsline}、\cs{cus@type@contentsline@}、
   \end{syntax}
 \cs{index} 添加索引项 \meta{index item} 到索引 \meta{index type} 中，默认添加到名称为空的索引中；\cs{printindex} 输出索引，以 \texttt{name} 键标识要输出的索引，否则输出名称为空的索引。\meta{index keys} 为前述的键。
 \end{function}
+
+\href{https://github.com/Sophanatprime/cindex}{cindex} 是一个新的索引制作工具，它除了基本兼容 \pkg{makeindex} 外，还支持使用 \texttt{lua} 进一步定制。同时也支持一种 \texttt{ikv} 格式的索引输入文件。本库为这一格式提供了支持。
+
+\begin{function}{\kvindex}
+  \begin{syntax}
+    \V\kvindex \oarg{index type} \marg{index-kv options}
+  \end{syntax}
+写入一个 \texttt{ikv} 格式的索引条目。索引的内容由 \meta{index-kv options} 指定。
+\end{function}
+
+\begin{keyval}[path=index-kv]{page}
+  \begin{syntax}
+    page = \marg{page}
+  \end{syntax}
+设置索引条目的页码，可以是多级页码。会在合适的地方展开，因此，某些脆弱的命令可能需要用 \tn{protect} 保护起来。
+\end{keyval}
+
+\begin{keyval}[path=index-kv]{page-commands}
+  \begin{syntax}
+    page-commands = \marg{page-commands}
+  \end{syntax}
+设置显示页码所需的命令。会在合适的地方展开，因此，某些脆弱的命令可能需要用 \tn{protect} 保护起来。
+\end{keyval}
+
+\begin{keyval}[path=index-kv]{
+  key1,display1,
+  key2,display2,
+  key3,display3,
+  key4,display4,
+  key5,display5,
+}
+  \begin{syntax}
+    key1     = \marg{sort key}
+    display1 = \marg{display text}
+  \end{syntax}
+设置对应级别的排序键以及显示文本。从 1 级开始，最多 5 级，级别之间不能断开，否则可能显示不全。
+若某个 \texttt{key} 为空，则认为它等于对应级别的 \texttt{display}。
+
+会在合适的地方展开，因此，某些脆弱的命令可能需要用 \tn{protect} 保护起来。
+\end{keyval}
+
+\begin{keyval}[path=index-kv]{key-display-list}
+  \begin{syntax}
+    key-display-list = \marg{key_1}\marg{display_1}\marg{key_2}\marg{display_2}...
+  \end{syntax}
+统一设置对应的级别。级别可以超过 5 个。当 \opt{key-display-list} 给出时，总是使用此选项设置的值，而忽略 \opt{key1} 等设置的值。
+
+会在合适的地方展开，因此，某些脆弱的命令可能需要用 \tn{protect} 保护起来。
+\end{keyval}
 
 
 \section{\cuslibrary{pgf}库}

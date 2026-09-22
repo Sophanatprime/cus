@@ -199,7 +199,10 @@
   }
 \cs_new:Npn \__cus_index_kv_use:n #1
   {
-    \iow_newline: \tl_use:c { l__cus_index_key_ \romannumeral #1 _tl }
+    \iow_newline:
+      \tl_if_empty:cTF { l__cus_index_key_ \romannumeral #1 _tl }
+        { \tl_use:c { l__cus_index_display_ \romannumeral #1 _tl } }
+        { \tl_use:c { l__cus_index_key_ \romannumeral #1 _tl } }
     \iow_newline: \tl_use:c { l__cus_index_display_ \romannumeral #1 _tl }
   }
 \cs_new_protected:Npn \cus@wrindexkv #1
