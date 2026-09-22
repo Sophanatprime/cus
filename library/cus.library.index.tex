@@ -1,46 +1,175 @@
-% splitidx are not supported, currently
 \CUSDependency{disable={splitidx,imakeidx,makeindex}}
 \CUSProvideExplLibrary{index}{\cus@d@te}{\cus@versi@n}{index and glossary}
 
+\keys_define:nn { cus/index-options }
+  {
+    kv-format .bool_set:N = \l__cus_index_kv_bool ,
+    kv-separator .str_gset:N = \g__cus_index_separator_str ,
+    kv-separator .initial:n = { , } ,
+    % indents .tl_set:N = \l__cus_index_indents_tl ,
+  }
+
+\ProcessKeyOptions[cus/index-options]
+
 \msg_new:nnn { cus } { index-exist } { Index~`#1'~already~eixsts. }
 \msg_new:nnn { cus } { index-unknown } { Index~`#1'~is~unknown. }
-\msg_new:nnn { cus } { index-key-unknown } { Setup~key~`#2'~of~index~`#1'~is~unknown. }
 
-\cs_set_protected_nopar:Npn \indexspace { \par \vskip 10\p@ \@plus 5\p@ \@minus 5\p@ \relax }
+\cs_set_protected_nopar:Npn \indexspace
+  { \par\vskip 10\p@ \@plus 5\p@ \@minus 5\p@\relax}
 
-\clist_const:Nn \c__cus_index_key_clist
+\NewTemplateType { cus/index } { 2 }
+\DeclareTemplateInterface { cus/index } { declare } { 2 }
   {
-    filename , % index filename 
-    output , % output filename 
-    name , % index id 
-    title , % plain text 
-    program , % program 
-    options , % options 
-    exec , % shell 
-    auto , % auto call program 
-    multi , % multicolumn options 
-    heading , % heading level 
-    heading* , % heading cmd 
-    init , %
-    prologue , %
+    filename : tokenlist = \q_no_value ,
+    output : tokenlist = \q_no_value ,
+    name : tokenlist ,
+    title : tokenlist = \indexname ,
+    program : tokenlist = makeindex ,
+    options : commalist ,
+    exec : tokenlist ,
+    auto : boolean = false ,
+    multi : commalist = 2 ,
+    heading : tokenlist = 0 ,
+    heading* : tokenlist = \chapter* ,
+    init : tokenlist ,
+    prologue : tokenlist ,
+    kv-format : boolean = false ,
   }
-\prop_const_from_keyval:Nn \c__cus_index_prop
-  {
-    % filename = \jobname.idx , %
-    % output = \jobname.ind , %
-    name     = , % index id 
-    title    = \indexname , % plain text 
-    program  = makeindex , % program 
-    options  = , % options 
-    % exec     = makeindex~\jobname @.idx , % shell 
-    auto     = 0 , % auto call program
-    multi    = 2 , % multicolumn options 
-    heading  = 0, % heading level 
-    heading* = \chapter* , % heading cmd 
-    init     = , %
-    prologue = , %
-  }
+\tl_new:N \l__cus_index_filename_tl
+\tl_new:N \l__cus_index_output_tl
+\tl_new:N \l__cus_index_name_tl
+\tl_new:N \l__cus_index_title_tl
+\tl_new:N \l__cus_index_program_tl
+\clist_new:N \l__cus_index_options_clist
+\tl_new:N \l__cus_index_exec_tl
+\bool_new:N \l__cus_index_auto_bool
+\clist_new:N \l__cus_index_multi_bool
+\tl_new:N \l__cus_index_heading_tl
+\tl_new:N \l__cus_index_heading_cmd_tl
+\tl_new:N \l__cus_index_init_tl
+\tl_new:N \l__cus_index_prologue_tl
 \seq_new:N \g__cus_index_seq
+\str_const:Ne \c__cus_index_blank_tl { \c_percent_str DEFAULT \c_percent_str }
+\DeclareTemplateCode { cus/index } { declare } { 2 }
+  {
+    filename = \l__cus_index_filename_tl ,
+    output = \l__cus_index_output_tl ,
+    name = \l__cus_index_name_tl ,
+    title = \l__cus_index_title_tl ,
+    program = \l__cus_index_program_tl ,
+    options = \l__cus_index_options_clist ,
+    exec = \l__cus_index_exec_tl ,
+    auto = \l__cus_index_auto_bool ,
+    multi = \l__cus_index_multi_clist ,
+    heading = \l__cus_index_heading_tl ,
+    heading* = \l__cus_index_heading_cmd_tl ,
+    init = \l__cus_index_init_tl ,
+    prologue = \l__cus_index_prologue_tl ,
+    kv-format = \l__cus_index_kv_bool ,
+  }
+  {
+    \AssignTemplateKeys
+    \SetTemplateKeys { cus/index } { declare } {#2}
+    \cus_exp_args:NNe \str_set:Nn \l__cus_index_name_tl {#1}
+    \tl_if_blank:VT \l__cus_index_name_tl
+      { \tl_set_eq:NN \l__cus_index_name_tl \c__cus_index_blank_tl }
+    \seq_if_in:NVTF \g__cus_index_seq \l__cus_index_name_tl
+      { \msg_error:nne { cus } { index-exist } { \l__cus_index_name_tl } }
+      {
+        \seq_gpush:NV \g__cus_index_seq \l__cus_index_name_tl
+        \tl_gset:cn
+          { @index@basic~ \l__cus_index_name_tl @init } { \g__cus_index_basic_init_tl }
+        \tl_set:Ne \l__cus_tmpa_tl
+          {
+            @indexfile
+            \str_if_eq:NNF \l__cus_index_name_tl \c__cus_index_blank_tl
+              { \l__cus_index_name_tl }
+          }
+        \quark_if_no_value:NTF \l__cus_index_filename_tl
+          {
+            \cus_exp_args:NNe \tl_set:Nn \l__cus_index_filename_tl
+              {
+                \c_sys_jobname_str @
+                \str_if_eq:NNF \l__cus_index_name_tl \c__cus_index_blank_tl
+                  { \l__cus_index_name_tl }
+                \bool_if:NTF \l__cus_index_kv_bool { .ikv } { .idx }
+              }
+          }
+          {
+            \cus_exp_args:NNe \tl_set:Nn \l__cus_index_filename_tl
+              { \l__cus_index_filename_tl }
+          }
+        \iow_new:c { \l__cus_tmpa_tl }
+        \iow_open:cn { \l__cus_tmpa_tl } { \l__cus_index_filename_tl }
+        \quark_if_no_value:NTF \l__cus_index_output_tl
+          {
+            \file_parse_full_name:nNNN
+              { ./ \l__cus_index_filename_tl }
+              \l__cus_file_dir_tl 
+              \l__cus_file_name_tl
+              \l__cus_file_ext_tl 
+            \tl_set:Ne \l__cus_index_output_tl
+              { \l__cus_file_dir_tl / \l__cus_file_name_tl . ind }
+          }
+          {
+            \cus_exp_args:NNe \tl_set:Nn \l__cus_index_output_tl
+              { \l__cus_index_output_tl }
+          }
+
+        \use:e
+          {
+            \DeclareInstance { cus/index } { \l__cus_index_name_tl } { declare }
+              {
+                \exp_not:n {#2} ,
+                name = { \l__cus_index_name_tl } ,
+                filename = { \l__cus_index_filename_tl } ,
+                output = { \l__cus_index_output_tl } ,
+              }
+            \exp_not:N \cus_hook_gput_aa:n
+              {
+                \iow_close:N \exp_not:c { \l__cus_tmpa_tl }
+                \tl_set:Ne \exp_not:N \l__cus_shell_tl
+                  { \exp_not:N \__cus_index_value:nn { \l__cus_index_name_tl } { exec } }
+                \exp_not:N \tl_if_blank:oT { \exp_not:N \l__cus_shell_tl }
+                  {
+                    \tl_set:Ne \exp_not:N \l__cus_shell_tl
+                      {
+                        \exp_not:N \__cus_index_value:nn { \l__cus_index_name_tl } { program }
+                        \c_space_tl
+                        \exp_not:N \__cus_index_value:nn { \l__cus_index_name_tl } { options }
+                        \c_space_tl -o ~
+                        \exp_not:N \__cus_index_value:nn { \l__cus_index_name_tl } { output }
+                        \c_space_tl
+                        \exp_not:N \__cus_index_value:nn { \l__cus_index_name_tl } { filename }
+                      }
+                  }
+                \exp_not:N \exp_args:Ne \exp_not:N \str_if_eq:nnT
+                  {
+                    \exp_not:N \__cus_index_value:nn { \l__cus_index_name_tl } { auto }
+                  }
+                  { true }
+                  { \sys_shell_now:e { \exp_not:N \l__cus_shell_tl } }
+              }
+          }
+      }
+  }
+\cs_new:Npn \__cus_index_value:nn #1#2
+  { \exp_args:Nne \prop_item:cn { \c__template_values_root_tl cus/index/#1 } {#2} }
+\NewDocumentCommand \newindextype { +O{} >{\TrimSpaces} m }
+  { \UseTemplate { cus/index } { declare } {} {#2} {#1} }
+\NewDocumentCommand \setupindex { O{} +m }
+  {
+    \tl_if_blank:nTF {#1}
+      { \__cus_index_setup:nn { } {#2} }
+      { \clist_map_inline:nn {#1} { \__cus_index_setup:nn {##1} {#2} } }
+  }
+\cs_new:Npn \__cus_index_setup:nn #1#2
+  {
+    \cus_exp_args:NNe \str_set:Nn \l__cus_tmp_tl {#1}
+    \str_if_empty:NT \l__cus_tmp_tl
+      { \tl_set_eq:NN \l__cus_tmp_tl \c__cus_index_blank_tl }
+    \exp_args:Nno \EditInstance { cus/index } { \l__cus_tmp_tl } {#2}
+  }
 
 \prg_new_conditional:Npnn \cus_index_if_exist:n #1 { p, T, F, TF }
   {
@@ -48,112 +177,73 @@
       { \prg_return_true: } { \prg_return_false: }
   }
 
-\NewDocumentCommand \setupindex { >{\TrimSpaces} O{} }
+\int_new:N \l__cus_index_range_int
+\keys_define:nn { cus/index-kv }
   {
-    \keyval_parse:nnn { \msg_warning:nnn { cus } { key-missing-value } }
-      { \__cus_index_setup:nnn {#1} }
+    page .tl_set:N = \l__cus_index_page_tl ,
+    range .choices:nn = { Open, Close, None, open, close, none, start, end, single }
+      { \int_set:Nn \l__cus_index_range_int { \int_mod:nn \l_keys_choice_int { 3 } } } ,
+    page-commands .tl_set:N = \l__cus_index_commands_tl ,
+    key1 .tl_set:N = \l__cus_index_key_i_tl ,
+    key2 .tl_set:N = \l__cus_index_key_ii_tl ,
+    key3 .tl_set:N = \l__cus_index_key_iii_tl ,
+    key4 .tl_set:N = \l__cus_index_key_iv_tl ,
+    key5 .tl_set:N = \l__cus_index_key_v_tl ,
+    display1 .tl_set:N = \l__cus_index_display_i_tl ,
+    display2 .tl_set:N = \l__cus_index_display_ii_tl ,
+    display3 .tl_set:N = \l__cus_index_display_iii_tl ,
+    display4 .tl_set:N = \l__cus_index_display_iv_tl ,
+    display5 .tl_set:N = \l__cus_index_display_v_tl ,
+    key-display-list .tl_set:N = \l__cus_index_kd_tl ,
+    % indents .tl_set:N = \l__cus_index_indents_tl ,
   }
-% 使用次数很少，一点点性能浪费，问题不大
-\cs_new:Npn \__cus_index_setup:nnn #1#2#3
+\cs_new:Npn \__cus_index_kv_use:n #1
   {
-    \tl_if_empty:nTF {#1}
-      { \prop_gput:cnn { g__cus_index-#1_prop } {#2} {#3} }
+    \iow_newline: \tl_use:c { l__cus_index_key_ \romannumeral #1 _tl }
+    \iow_newline: \tl_use:c { l__cus_index_display_ \romannumeral #1 _tl }
+  }
+\cs_new_protected:Npn \cus@wrindexkv #1
+  {
+    \keys_set:nn { cus/index-kv } {#1}
+    \int_zero:N \l__cus_tmpa_int
+    \exp_args:NNV \tl_set:No \l__cus_index_kd_tl \l__cus_index_kd_tl
+    \tl_if_empty:NTF \l__cus_index_kd_tl
       {
-        \str_if_eq:eeTF { #1 } { * }
+        \int_step_inline:nn { 5 }
           {
-            \seq_map_inline:Nn \g__cus_index_seq
-              { \prop_gput:cnn { g__cus_index-##1_prop } {#2} {#3} }
-          }
-          {
-            \clist_map_inline:nn {#1}
-              {
-                \clist_if_in:NnTF \c__cus_index_key_clist {#2}
-                  { \prop_gput:cnn { g__cus_index-##1_prop } {#2} {#3} }
-                  { \msg_warning:nnxx { cus } { index-key-unknown } {##1} {#2} }
-              }
+            \tl_if_empty:cF { l__cus_index_display_ \romannumeral ##1 _tl }
+              { \int_incr:N \l__cus_tmpa_int }
           }
       }
+      { \int_set:Nn \l__cus_tmpa_int { \tl_count:N \l__cus_index_kd_tl / 2 } }
+    \protected@write\@indexfile {}
+      {
+        \l__cus_index_page_tl \g__cus_index_separator_str
+        \if_case:w \l__cus_index_range_int \or: Open \or: Close \fi:
+          \g__cus_index_separator_str
+        \l__cus_index_commands_tl \g__cus_index_separator_str
+        \int_use:N \l__cus_tmpa_int
+        \tl_if_empty:NTF \l__cus_index_kd_tl
+          { \int_step_function:nN { \l__cus_tmpa_int } \__cus_index_kv_use:n }
+          { \tl_map_tokens:Nn \l__cus_index_kd_tl { \iow_newline: \use:n } }
+      }
+    \endgroup \@esphack
   }
 
-\NewDocumentCommand \newindextype { +O{} >{\TrimSpaces} m }
-  {
-    \cus_index_if_exist:nTF { #2 } 
-      { \msg_warning:nnx { cus } { index-exist } {#2} }
-      {
-        \seq_gput_right:Nx \g__cus_index_seq {#2}
-        \iow_new:c { @indexfile #2 }
-        \tl_gset:cn { @index@basic~#2@init } { \g__cus_index_basic_init_tl }
-        \cs_gset_eq:cN { g__cus_index-#2_prop } \c__cus_index_prop
-        \exp_args:Ncx \prop_gput_from_keyval:Nn { g__cus_index-#2_prop } 
-          { \exp_not:n {#1} , name=#2 }
-        \prop_get:cnN { g__cus_index-#2_prop } { filename } \l__cus_filename_tl 
-        \quark_if_no_value:NTF \l__cus_filename_tl
-          { 
-            \tl_set:Nx \l__cus_filename_tl { \c_sys_jobname_str @ #2 .idx } 
-            \prop_gput:cno { g__cus_index-#2_prop } { filename } \l__cus_filename_tl
-          }
-          { \prop_gput:cnx { g__cus_index-#2_prop } { filename } \l__cus_filename_tl }
-        \iow_open:cn { @indexfile #2 } { \l__cus_filename_tl }
-        \prop_get:cnN { g__cus_index-#2_prop } { output } \l__cus_output_tl
-        \quark_if_no_value:NTF \l__cus_output_tl
-          {
-            \file_parse_full_name:nNNN { ./ \l__cus_filename_tl } \l__cus_file_dir_tl 
-              \l__cus_file_name_tl \l__cus_file_ext_tl 
-            \prop_put:cnx { g__cus_index-#2_prop } { output }
-              { \l__cus_file_dir_tl / \l__cus_file_name_tl . ind }
-          }
-          { \prop_put:cnx { g__cus_index-#2_prop } { output } \l__cus_output_tl }
-        \use:e 
-          {
-            \exp_not:N \cus_hook_gput_aa:n 
-              {
-                \iow_close:N \exp_not:c { @indexfile #2 }
-                \tl_set:Nx \exp_not:N \l__cus_shell_tl
-                  { \exp_not:N \prop_item:Nn \exp_not:c { g__cus_index-#2_prop } { exec } }
-                \exp_not:N \tl_if_blank:oT \exp_not:N \l__cus_shell_tl
-                  {
-                    \prop_get:NnN \exp_not:c { g__cus_index-#2_prop } { program } \exp_not:N \l__cus_tmpb_tl
-                    \prop_get:NnN \exp_not:c { g__cus_index-#2_prop } { options } \exp_not:N \l__cus_tmpc_tl
-                    \tl_set:Nx \exp_not:N \l__cus_shell_tl 
-                      { 
-                        \exp_not:n { \l__cus_tmpb_tl \c_space_tl \l__cus_tmpc_tl \c_space_tl }
-                        \quark_if_no_value:NF \l__cus_output_tl
-                          { -o \c_space_tl \l__cus_output_tl \c_space_tl }
-                        \l__cus_filename_tl
-                      }
-                  }
-                \exp_not:N \bool_if:nT 
-                  { 
-                    \exp_not:N \str_case_e:nnF 
-                      { \exp_not:N \prop_item:Nn \exp_not:c { g__cus_index-#2_prop } { auto } }
-                      {
-                        { 0 } { \c_false_bool }
-                        { 1 } { \c_true_bool }
-                        { true } { \c_true_bool }
-                        { false } { \c_false_bool }
-                        { } { \c_true_bool }
-                      }
-                      { \exp_not:N \prop_item:Nn \exp_not:c { g__cus_index-#2_prop } { auto } }
-                  }
-                  { \sys_shell_now:x \exp_not:N \l__cus_shell_tl }
-              }
-          }
-      }
-  }
 \tl_new:N \g__cus_index_basic_init_tl
 \NewDocumentCommand \setindexprologue { >{\TrimSpaces} O{} }
-  { \tl_gset:cn { @index@#1@prologue } }
+  { \tl_gset:cn { @index@ \str_if_empty:nTF {#1} { \c__cus_index_blank_tl } {#1} @prologue } }
 \NewDocumentCommand \setindexinit { >{\TrimSpaces} O{} }
-  { \tl_gset:cn { @index@#1@init } }
+  { \tl_gset:cn { @index@ \str_if_empty:nTF {#1} { \c__cus_index_blank_tl } {#1} @init } }
 \cs_new_protected_nopar:Npn \index@presetting #1 
   { 
-    \cs:w @index@basic~#1@init \cs_end:
+    \cs:w @index@basic~ \str_if_empty:nTF {#1} { \c__cus_index_blank_tl } {#1} @init \cs_end:
     \cs:w l__cus_index_init_tl \cs_end:
     \cs:w l__cus_index_prologue_tl \cs_end:
   }
 \cs_new_protected:Npn \cus@theindex #1
   {
-    \legacy_if:nTF { @twocolumn } 
+    \legacy_if:nTF { @twocolumn }
       { \legacy_if_set_true:n { @restonecol } \onecolumn }
       { \legacy_if_set_false:n { @restonecol } }
     \cs_set_eq:NN \item \@idxitem
@@ -162,18 +252,34 @@
     \parskip\z@ \@plus .3\p@\relax
   }
 \cs_new_protected:Npn \endcus@theindex
-  { 
+  {
     \stopmulticolumns
     \cs_gset_eq:NN \l__cus_index_empty_do_tl \scan_stop:
     \legacy_if:nTF { @restonecol } { \twocolumn } {  } 
   }
-\cus_hook_gput_pe:n 
+
+\cs_new:Npn \__cus_index_check_name:n #1
+  { \cus_exp_args:NNe \str_set:Nn \l__cus_tmp_tl {#1} }
+\cs_new:Npn \__cus_index_check_name:nn #1#2
   {
-    \DeclareDocumentCommand \makeindex { +O{} >{\TrimSpaces} O{} } 
-      { \newindextype [{#1}] {#2} }
+    \str_if_eq:nnTF {#1} { name } { \__cus_index_check_name:n {#2} }
+      { \tl_put_right:Nn \l__cus_tmpa_tl { #1 = {#2}, } }
+  }
+
+\NewDocumentCommand \kvindex { >{\TrimSpaces} O{} +m }
+  {
+    \@bsphack
+    \group_begin:
+    \cs_set_eq:Nc \@indexfile { @indexfile #1 }
+    \cus@wrindexkv {#2}
+  }
+
+\cus_hook_gput_pe:n
+  {
+    \DeclareDocumentCommand \makeindex { +O{} O{} } { \newindextype [{#1}] {#2} }
     \DeclareDocumentCommand \index { >{\TrimSpaces} O{} +m }
       {
-        \cus_index_if_exist:nTF { #1 }
+        \cus_index_if_exist:nTF {#1}
           {
             \@bsphack
             \group_begin:
@@ -186,59 +292,71 @@
     \DeclareDocumentCommand \printindex { +O{} }
       {
         \group_begin:
-        \__cus_if_keyval:nTF {#1}
-          { 
-            \prop_set_from_keyval:Nn \l__cus_tmpa_prop {#1} 
-            \tl_set:Nx \l__cus_index_name_tl { \prop_item:Nn \l__cus_tmpa_prop { name } }
-            \cus_index_if_exist:nF { \l__cus_index_name_tl } 
-              { \msg_error:nnx { cus } { index-unknown } { \l__cus_index_name_tl } }
-            \exp_args:Ncc \prop_concat:NNN 
-              { g__cus_index-\l__cus_index_name_tl _prop }
-              { g__cus_index-\l__cus_index_name_tl _prop }
-              \l__cus_tmpa_prop
-          }
-          { \tl_set:Nx \l__cus_index_name_tl { \tl_trim_spaces:n {#1} } }
-        \prop_map_inline:cn { g__cus_index-\l__cus_index_name_tl _prop }
-          { \tl_set:cn { l__cus_index_ ##1 _tl } {##2} }
-        \tl_set:Nx \l__cus_index_heading_multi_tl
+        \tl_clear:N \l__cus_tmp_tl
+        \tl_clear:N \l__cus_tmpa_tl
+        \keyval_parse:NNn \__cus_index_check_name:n \__cus_index_check_name:nn {#1}
+        \str_if_empty:NT \l__cus_tmp_tl
+          { \tl_set_eq:NN \l__cus_tmp_tl \c__cus_index_blank_tl }
+        \seq_if_in:NVTF \g__cus_index_seq \l__cus_tmp_tl
           {
-            \tl_if_empty:NTF \l__cus_index_title_tl
-              { }
+            \use:e
               {
-                \tl_if_empty:cTF { l__cus_index_heading*_tl }
+                \EditInstance { cus/index }
+                  { \exp_not:o \l__cus_tmp_tl }
+                  { \exp_not:o \l__cus_tmpa_tl }
+              }
+            \tl_set:Ne \l__cus_index_title_tl
+              { \__cus_index_value:nn { \l__cus_tmp_tl } { title } }
+            \tl_set:Ne \l__cus_index_multi_tl
+              { \__cus_index_value:nn { \l__cus_tmp_tl } { multi } }
+            \tl_set:Ne \l__cus_index_heading_tl
+              { \__cus_index_value:nn { \l__cus_tmp_tl } { heading } }
+            \tl_set:Ne \l__cus_index_heading_cmd_tl
+              { \__cus_index_value:nn { \l__cus_tmp_tl } { heading* } }
+            \tl_set:Ne \l__cus_index_init_tl
+              { \__cus_index_value:nn { \l__cus_tmp_tl } { init } }
+            \tl_set:Ne \l__cus_index_prologue_tl
+              { \__cus_index_value:nn { \l__cus_tmp_tl } { prologue } }
+            \tl_set:Ne \l__cus_index_heading_multi_tl
+              {
+                \tl_if_empty:NTF \l__cus_index_title_tl { }
                   {
-                    \exp_not:o \l__cus_index_heading_tl
-                    { \exp_not:o \l__cus_index_title_tl }
-                  }
-                  {
-                    \exp_not:v { l__cus_index_heading*_tl }
-                    { \exp_not:o \l__cus_index_title_tl }
+                    \tl_if_empty:NTF \l__cus_index_heading_tl
+                      {
+                        \exp_not:o \l__cus_index_heading_tl
+                        { \exp_not:o \l__cus_index_title_tl }
+                      }
+                      {
+                        \exp_not:o \l__cus_index_heading_cmd_tl
+                        { \exp_not:o \l__cus_index_title_tl }
+                      }
                   }
               }
+            \tl_set:Ne \l__cus_index_empty_do_tl
+              {
+                \exp_not:o \l__cus_index_heading_multi_tl
+                \exp_not:c { @index@ \l__cus_tmp_tl @prologue }
+              }
+            \cs_set:Npx \theindex
+              {
+                \cus@theindex
+                  {
+                    heading =
+                      {
+                        \exp_not:o \l__cus_index_heading_multi_tl
+                        \exp_not:c { @index@ \l__cus_tmp_tl @prologue }
+                      } ,
+                    \exp_not:o \l__cus_index_multi_tl
+                  }
+                \index@presetting { \l__cus_tmp_tl }
+                \par 
+              }
+            \cs_set_eq:NN \endtheindex \endcus@theindex
+            \cs:w @index@ \l__cus_tmp_tl @init \cs_end:
+            \@input@ { \__cus_index_value:nn { \l__cus_tmp_tl } { output } }
+            \l__cus_index_empty_do_tl
           }
-        \tl_set:Nx \l__cus_index_empty_do_tl 
-          { 
-            \exp_not:o \l__cus_index_heading_multi_tl
-            \exp_not:c { @index@#1@prologue }
-          }
-        \cs_set:Npx \theindex 
-          { 
-            \cus@theindex 
-              { 
-                heading= 
-                  { 
-                    \exp_not:o \l__cus_index_heading_multi_tl 
-                    \exp_not:c { @index@#1@prologue }
-                  } , 
-                \exp_not:o \l__cus_index_multi_tl 
-              } 
-            \index@presetting { \l__cus_index_name_tl } 
-            \par 
-          }
-        \cs_set_eq:NN \endtheindex \endcus@theindex 
-        \cs:w @index@#1@init \cs_end:
-        \@input@ { \l__cus_index_output_tl }
-        \l__cus_index_empty_do_tl
+          { \msg_error:nnn { cus } { index-unknown } {#1} }
         \group_end:
       }
   }

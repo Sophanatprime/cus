@@ -2579,6 +2579,13 @@ Unicode 代码点。
 必须要先执行 \tn{pdfsavepos}，则可以使用该键。
 \end{keyval}
 
+\begin{keyval}[path=title/...]{write-tocline}
+  \begin{syntax}
+    write-tocline = \TTF & true
+  \end{syntax}
+指定是否写入目录及书签。
+\end{keyval}
+
 \begin{keyval}[path=title/...]{tocline}
   \begin{syntax}
     tocline = \marg{格式定义}
@@ -5263,6 +5270,9 @@ verbatim 和分段。
 版本历史。使用 \cs{PrintUsages}、\cs{PrintChanges} 分别输出代码索引和版本历史。
 可使用 \opt{no-index-file} 库选项来阻止创建它们。
 
+\opt{kv-usage} 用于将命令的索引格式切换至 cindex 的 \texttt{ikv} 格式。
+\opt{reverse-list} 用于反转命令列表的显示位置，默认 \texttt{oneside} 文档显示在右边，\texttt{twoside} 文档，奇数页在右边，偶数页在左边。
+
 本库的详细用法可参考本说明文档的源码。
 
 本库提供 \cs{cs}、\cs{cmd}、\cs{tn} 来排版宏。
@@ -7512,6 +7522,7 @@ $ \foo<a|b> $\quad $ \foo\displaystyle<\sum|\prod> $.
 \CHToM{latex}{\tn{index}, \tn{makeindex}, \tn{printindex}};
 \CHToI{latex}{\tn{@bsphack}, \tn{@sanitize}, \tn{@wrindex}};
 \CHToI{latex}{\tn{@input@}};
+\CHToI{latex}{\cs{\cs{c__template_values_root_tl}..}};
 
 \section{\CHFrom{library.box}}
 \CHToA{latex}{\tn{@tempdimd}};

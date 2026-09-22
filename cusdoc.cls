@@ -6,7 +6,8 @@
     class .tl_set:N = \@cusdocclass ,
     class .initial:n = book ,
     tcbxample .bool_set:N = \l__cusdoc_tcbxample_bool , 
-    unknown .code:n = \PassOptionsToClass{#1}{\@cusdocclass} 
+    doc .tl_set:N = \cusdoc@doc@options ,
+    unknown .code:n = \PassOptionsToClass{#1}{\@cusdocclass} ,
   }
 \ExplSyntaxOff
 
@@ -18,6 +19,7 @@
 
 \InputIfFileExists{cusdoc.cfg}{}{}
 \RequirePackage{cus}
+\CUSPassOptionsToLibrary{\cusdoc@doc@options}{doc}
 \CUSDependency{library={doc,box,bnf,ref,counter,pgf}}
 \SetKeys[updatemarks]{multicol}
 
@@ -215,13 +217,13 @@
   texcsstyle={[5]{\bfseries\color{cyan}}}}
 
 \zcsetup{noname}
-\zcRefTypeSetup{figure}{refbounds={,图,,}}
-\zcRefTypeSetup{table}{refbounds={,表,,}}
-\zcRefTypeSetup{example}{refbounds={,例,,}}
-\zcRefTypeSetup{part}{refbounds={,第,部分,}}
-\zcRefTypeSetup{chapter}{refbounds={,第,章,}}
-\zcRefTypeSetup{section}{refbounds={,第,节,}}
-\zcRefTypeSetup{subsection}{refbounds={,第,小节,}}
+\zcRefTypeSetup{figure}{refbounds={,图,,},pairsep=和,listsep={、},lastsep=和,rangesep=至}
+\zcRefTypeSetup{table}{refbounds={,表,,},pairsep=和,listsep={、},lastsep=和,rangesep=至}
+\zcRefTypeSetup{example}{refbounds={,例,,},pairsep=和,listsep={、},lastsep=和,rangesep=至}
+\zcRefTypeSetup{part}{refbounds={,第,部分,},pairsep=和,listsep={、},lastsep=和,rangesep=至}
+\zcRefTypeSetup{chapter}{refbounds={,第,章,},pairsep=和,listsep={、},lastsep=和,rangesep=至}
+\zcRefTypeSetup{section}{refbounds={,第,节,},pairsep=和,listsep={、},lastsep=和,rangesep=至}
+\zcRefTypeSetup{subsection}{refbounds={,第,小节,},pairsep=和,listsep={、},lastsep=和,rangesep=至}
 \let\cref\zcref
 % \crefformat{figure}{#2图#1#3}
 % \crefformat{table}{#2表#1#3}

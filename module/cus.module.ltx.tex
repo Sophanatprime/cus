@@ -65,10 +65,12 @@
 \tl_new:N \l__cus_hyphen_color_tl
 \cs_new_protected:cpn { @dischyph/opacity } 
   {
-    { \l__cus_hyphen_color_tl 
-      \discretionary{\char
-        \ifnum\hyphenchar\font<\z@\defaulthyphenchar\else\hyphenchar\font\fi}
-      {}{} } 
+    \discretionary
+      {
+        \hbox:n { \l__cus_hyphen_color_tl \char
+          \ifnum\hyphenchar\font<\z@\defaulthyphenchar\else\hyphenchar\font\fi}
+      }
+    {} {}
   }
 \cs_new_protected:cpn { @dischyph/none } { \discretionary{}{}{} }
 \keys_define:nn { cus/typo }

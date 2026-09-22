@@ -2129,7 +2129,7 @@
         hang        .switch_set:c = title~parameter@#1@hang ,
         hang           .initial:n = true ,
         runin       .switch_set:c = title~parameter@#1@runin ,
-        float-barrier .switch_set:c = title~parameter@#1@floatbarrier ,
+        float-barrier .switch_set:c = title~parameter@#1@float-barrier ,
         pagestyle   .tl_set_e:c = title~parameter@#1@pagestyle ,
         pagestyle    .initial:n = plain ,
         mark          .tl_set:c = title~parameter@#1@mark ,
@@ -2144,6 +2144,8 @@
           { title~parameter@#1@beforerecord } {##1} ,
         tocline      .cs_set:cp = { title~parameter@#1@tocline } ##1##2 ,
         tocline      .initial:n = \titlenumberline{##1}##2 ,
+        write-tocline.bool_set:c = title~parameter@#1@write-tocline ,
+        write-tocline.initial:n = true ,
         properties .clist_set:c = { title~parameter@#1@properties } ,
         properties+ .code:n = \clist_put_right:cn 
           { title~parameter@#1@properties } {##1} ,
@@ -2578,16 +2580,19 @@
     \prop_gconcat:NNN \g__cus_title_info_prop
       \g__cus_title_info_stay_prop \g__cus_title_info_prop
     \prop_map_function:NN \g__cus_title_info_prop \__cus_title_info_gput:nn
-    \addcontentsline {toc} 
-      % bookmark needs #1 to determine level
-      { 
-        \CurrentTitleName \__cus_if_incsname:TF { } 
-          { , \use:c { title~parameter@ \CurrentTitleName @info } } 
-      } 
-      { 
-        \cs:w title~parameter@ \CurrentTitleName @tocline \exp_after:wN \cs_end: 
-          \exp_after:wN { \CurrentTitleName } {#1} 
-      } 
+    \bool_if:cT { title~parameter@ \CurrentTitleName @ write-tocline }
+      {
+        \addcontentsline {toc} 
+          % bookmark needs #1 to determine level
+          { 
+            \CurrentTitleName \__cus_if_incsname:TF { } 
+              { , \use:c { title~parameter@ \CurrentTitleName @info } } 
+          } 
+          { 
+            \cs:w title~parameter@ \CurrentTitleName @tocline \exp_after:wN \cs_end: 
+              \exp_after:wN { \CurrentTitleName } {#1} 
+          }
+      }
   }
 \cs_new:Npn \title@heading@format@initial 
   {
@@ -2637,7 +2642,7 @@
 \cs_new:Npn \title@ifrunin 
   { \bool_if:cTF { title~parameter@ \CurrentTitleName @runin } }
 \cs_new:Npn \title@iffloatbarrier
-  { \bool_if:cTF { title~parameter@ \CurrentTitleName @floatbarrier } }
+  { \bool_if:cTF { title~parameter@ \CurrentTitleName @float-barrier } }
 \cs_new:Npn \title@indentbox #1
   {
     \dim_set:Nn \tex_parindent:D {#1}
